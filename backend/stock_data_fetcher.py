@@ -4,6 +4,7 @@ from datetime import datetime
 
 class PolygonStockFetcher:
     def __init__(self, api_key):
+        self.database_connect = db.DBManager()
         self.api_key = api_key
         self.base_url = "https://api.polygon.io"
     
@@ -11,7 +12,6 @@ class PolygonStockFetcher:
         # Define the parameters for the API request
         endpoint = f"/v2/aggs/grouped/locale/us/market/stocks/{date}"
         url = self.base_url + endpoint
-        
         params = {
             'adjusted': 'true',
             'apikey': self.api_key
@@ -31,15 +31,10 @@ class PolygonStockFetcher:
         else:
             print(f"Error fetching data: {response.status_code} - {response.text}")
             return None
-
-if __name__ == "__main__":
-    api_key = 'PExIEzmSroZNIvEejszRnb2_ygmps_Mb'
-    stock_fetcher = PolygonStockFetcher(api_key)
-    date = '2024-10-18'
-    data = stock_fetcher.get_stock_data(date)
-    data_insert = db.DBManager()
-    if data:
-        for stock in data:
-           timestamp = datetime.now()
-           data_insert.insert_stock(stock['T'], stock['c'], stock['h'], stock['l'], stock['o'], stock['t'], timestamp)
+        
+    def load_stock_data(self, stock_data):
+        if stock_data:
+            for stock in stock_data:
+                timestamp = datetime.now()
+                self.database_connect.insert_stock(stock['T'], stock['c'], stock['h'], stock['l'], stock['o'], stock['t'], timestamp)
            

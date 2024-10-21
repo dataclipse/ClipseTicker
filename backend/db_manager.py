@@ -28,6 +28,14 @@ class DBManager:
             Column('insert_timestamp', DateTime)
         )
 
+        # Define the api_keys table
+        self.api_keys = Table(
+            'api_keys', self.metadata,
+            Column('id', Integer, primary_key=True, autoincrement=True),
+            Column('service', String),
+            Column('api_key', String)
+        )
+
         # Create the table if it does not exist
         self.metadata.create_all(self.engine)
         print("Table created successfully.")
@@ -56,6 +64,21 @@ class DBManager:
         finally:
             session.close() # Close the session
 
+    def insert_api_key(self, service, api_key):
+        session = self.Session() # Create a new Session
+        try:
+            insert_stmt = self.api_keys.insert().values(
+                service=service,
+                api_key=api_key
+                )
+            session.execute(insert_stmt)
+            session.commit()
+        except Exception as e:
+            print(f"Error inserting api key: {e}")
+            session.rollback()
+        finally:
+            session.close()
+
     def select_stocks(self):
         # Select all rows
         session = self.Session()
@@ -74,3 +97,23 @@ class DBManager:
                 print("No stock data found.")
         finally:
             session.close() # Close the session
+
+    def select_api_key(self, service):
+        session = self.Session()
+        try:
+            select_stmt = select(self.api_keys.c.api_key).where(self.api_keys.c.service == service)
+            result = session.execute(select_stmt)
+            api_key = result.scalar()
+
+            if api_key:
+                print(f"API Key retrieved for service '{service}': {api_key}")
+                return api_key
+            else:
+                print(f"No API Key found for service '{service}'.")
+                return None
+        except Exception as e:
+            print(f"Error retrieving API Key: {e}")
+            return None
+        finally:
+            session.close()
+
