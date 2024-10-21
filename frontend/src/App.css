@@ -1,0 +1,110 @@
+/* General styling*/
+.App {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Navbar styling */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: black;
+  padding: 10px 20px;
+  color: white;
+  height: 60px;
+}
+
+.navbar-right {
+  display: flex;
+  font-size: 24px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  color: gray;
+}
+
+.navbar-left h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+/* Layout for sidebar and content */
+.content-container {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar styling*/
+.sidebar {
+  width: 200px;
+  background-color: white;
+  color: black;
+  padding: 20px;
+  font-size: 24px;
+}
+
+.sidebar nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.sidebar nav ul li {
+  margin: 15px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar nav ul li svg {
+  margin-right: 10px;
+}
+
+.sidebar nav ul li:hover {
+  text-decoration: underline;
+}
+
+/* Search bar styling */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: grey;
+  border-radius: 5px;
+  padding: 5px 10px;
+  width: 400px;
+}
+
+.search-icon {
+  font-size: 20px;
+  color: black;
+  margin-right: 8px;
+}
+
+.search-input {
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background-color: grey;
+  width: 100%;
+}
+
+.search-input::placeholder {
+  color:black;
+}
+
+/* Content area*/
+.content{
+  padding: 20px;
+  flex-grow: 1;
+  background-color: #f0f0f0;
+}

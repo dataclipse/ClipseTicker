@@ -7,7 +7,7 @@ class PolygonStockFetcher:
         self.api_key = api_key
         self.base_url = "https://api.polygon.io"
     
-    def get_stock_price(self, date):
+    def get_stock_data(self, date):
         # Define the parameters for the API request
         endpoint = f"/v2/aggs/grouped/locale/us/market/stocks/{date}"
         url = self.base_url + endpoint
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     api_key = 'PExIEzmSroZNIvEejszRnb2_ygmps_Mb'
     stock_fetcher = PolygonStockFetcher(api_key)
     date = '2024-10-18'
-    data = stock_fetcher.get_stock_price(date)
+    data = stock_fetcher.get_stock_data(date)
     data_insert = db.DBManager()
     if data:
         for stock in data:
