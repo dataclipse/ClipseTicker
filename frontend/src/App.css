@@ -108,3 +108,32 @@
   flex-grow: 1;
   background-color: #f0f0f0;
 }
+
+/* Styling for the settings page */
+.settings-page {
+  padding: 40px;
+  background-color:#f0f0f0;
+  flex-grow: 1;
+  margin-left: 300px;
+  margin-right: 300px;
+}
+
+.settings-page h1 {
+  font-size: 36px;
+}
+
+.settings-page h2 {
+  font-size: 24px;
+}
+
+.settings-page ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.settings-page hr {
+  width: 100%;
+  border: 2px solid #333;
+  margin-bottom: 20px;
+} 

@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update
 from sqlalchemy.orm import sessionmaker
 
 class DBManager:
@@ -47,16 +47,42 @@ class DBManager:
         # Insert a new stock row
         session = self.Session() # Create a new Session
         try:
-            insert_stmt = self.stocks.insert().values(
-                ticker_symbol=ticker, 
-                close_price=close_price, 
-                highest_price=highest_price, 
-                lowest_price=lowest_price, 
-                open_price=open_price,
-                timestamp_end=timestamp_end,
-                insert_timestamp=timestamp
+            # First, check if the stock for the given ticker and timestamp_end already exists
+            select_stmt = select(self.stocks).where(
+                self.stocks.c.ticker_symbol == ticker,
+                self.stocks.c.timestamp_end == timestamp_end
+            )
+            result = session.execute(select_stmt)
+            existing_stock = result.fetchone()
+
+            if existing_stock:
+                # If the stock exists, update the record
+                update_stmt = update(self.stocks).where(
+                    self.stocks.c.ticker_symbol == ticker,
+                    self.stocks.c.timestamp_end == timestamp_end
+                ).values(
+                    close_price=close_price,
+                    highest_price=highest_price,
+                    lowest_price=lowest_price,
+                    open_price=open_price,
+                    insert_timestamp=timestamp
                 )
-            session.execute(insert_stmt)
+                session.execute(update_stmt)
+                print(f"Stock data for {ticker} at {timestamp_end} updated successfully.")
+            else:
+                # If the stock does not exist, insert a new row
+                insert_stmt = self.stocks.insert().values(
+                    ticker_symbol=ticker, 
+                    close_price=close_price, 
+                    highest_price=highest_price, 
+                    lowest_price=lowest_price, 
+                    open_price=open_price,
+                    timestamp_end=timestamp_end,
+                    insert_timestamp=timestamp
+                )
+                session.execute(insert_stmt)
+                print(f"Stock data for {ticker} at {timestamp_end} inserted successfully.")
+
             session.commit()
         except Exception as e:
             print(f"Error inserting stock data: {e}")
@@ -67,11 +93,25 @@ class DBManager:
     def insert_api_key(self, service, api_key):
         session = self.Session() # Create a new Session
         try:
-            insert_stmt = self.api_keys.insert().values(
-                service=service,
-                api_key=api_key
+            # First, check if the API key for a given service already exists
+            select_stmt = select(self.api_keys.c.api_key).where(self.api_keys.c.service == service)
+            result = session.execute(select_stmt)
+            existing_key = result.scalar()
+
+            if existing_key:
+                # If the API key exists, update it
+                update_stmt = update(self.api_keys).where(self.api_keys.c.service == service).values(api_key=api_key)
+                session.execute(update_stmt)
+                print(f"API Key for service '{service}' updated successfully.")
+            else:
+                # If the API key does not exist, insert it
+                insert_stmt = self.api_keys.insert().values(
+                    service=service,
+                    api_key=api_key
                 )
-            session.execute(insert_stmt)
+                session.execute(insert_stmt)
+                print(f"API Key for service '{service}' inserted successfully.")
+
             session.commit()
         except Exception as e:
             print(f"Error inserting api key: {e}")
@@ -117,3 +157,27 @@ class DBManager:
         finally:
             session.close()
 
+    def select_all_api_keys(self):
+        session = self.Session()
+        try:
+            # Query to select all api keys
+            select_stmt = select(self.api_keys.c.service, self.api_keys.c.api_key)
+            result = session.execute(select_stmt)
+            rows = result.fetchall()
+
+            # Create a list of service and api keys
+            api_keys_list = [{"service": row.service, "api_key": row.api_key} for row in rows]
+
+            if not api_keys_list:
+                print("No API keys found.")
+            else:
+                print(f"Retrieved {len(api_keys_list)} API keys.")
+
+            return api_keys_list
+        
+        except Exception as e:
+            print(f"Error retrieving all API keys: {e}")
+            return []
+        
+        finally:
+            session.close()
