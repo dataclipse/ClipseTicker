@@ -55,7 +55,4 @@ if __name__ == '__main__':
     #db_api_key = database_connect.select_api_key('Polygon.io')
 
     polygon_fetcher = PolygonStockFetcher(api_key=api_key)
-    start_date = "2024-10-14"
-    end_date = "2024-10-21"
-
-    polygon_fetcher.fetch_data_for_date_range(start_date, end_date)
+    polygon_fetcher.fetch_previous_two_years()

@@ -96,4 +96,21 @@ class PolygonStockFetcher:
             
             # Increment Date
             current_date += timedelta(days=1)
-            
+    
+    def fetch_previous_two_years(self):
+        # Get today's date
+        today = datetime.now()
+        
+        # Calculate the date two years ago
+        two_years_ago = (today - timedelta(days=365*2)) + timedelta(days=1)
+
+        # Calculate the end date as yesterday 
+        end_date = today - timedelta(days=1)
+
+        # Convert dates to string format 'YYYY-MM-DD'
+        start_date_str = two_years_ago.strftime("%Y-%m-%d")
+        end_date_str = end_date.strftime("%Y-%m-%d")
+
+        # Fetch data for this range
+        print(f"Fetching stock data from {start_date_str} to {end_date_str}...")
+        self.fetch_data_for_date_range(start_date_str, end_date_str)
