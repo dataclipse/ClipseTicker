@@ -1,7 +1,6 @@
 import requests, db_manager as db, threading, queue, time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from cryptography.fernet import Fernet
 
 class PolygonStockFetcher:
     def __init__(self):
@@ -49,11 +48,6 @@ class PolygonStockFetcher:
         if stock_data_batch:
             # Batch insertion to optimize database operations
             self.database_connect.insert_stock_batch(stock_data_batch)
-            
-            #(Old Logic)
-            #for stock in stock_data:
-            #    timestamp = datetime.now()
-            #    self.database_connect.insert_stock(stock['T'], stock['c'], stock['h'], stock['l'], stock['o'], stock['t'], timestamp)
 
     def fetch_data_for_date(self, date):
         # Fetch stock data for a single date and add it to the database queue.

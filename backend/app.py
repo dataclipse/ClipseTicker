@@ -38,9 +38,9 @@ def load_api_key(file_path):
 if __name__ == '__main__':
     #app.run(debug=True)
     database_connect = DBManager()
-    #api_key_file = 'api_key.txt'
-    #api_key = load_api_key(api_key_file)
-    #database_connect.insert_api_key('Polygon.io', api_key)
+    api_key_file = 'api_key.txt'
+    api_key = load_api_key(api_key_file)
+    database_connect.insert_api_key('Polygon.io', api_key)
     #db_api_key = database_connect.select_api_key('Polygon.io')
 
     start_date = '2023-10-10'

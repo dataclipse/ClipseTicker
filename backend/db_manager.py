@@ -7,30 +7,49 @@ from cryptography.fernet import Fernet
 
 class DBManager:
     def __init__(self):
-        # Create a folder for the Database if it does not exist
-        if not os.path.exists('db'):
-            os.makedirs('db')
-
-        # Connect to or Create DB
-        self.db_file_path = os.path.join('db', 'nyse_data.db')
+        # Initialize the database connection
+        self.db_file_path = self._initialize_database()
         self.engine = create_engine(f'sqlite:///{self.db_file_path}')
         self.metadata = MetaData()
 
+        # Load or generate encryption key
+        self.cipher, self.encryption_key = self._initialize_encryption()
+
+        # Define the stocks and api_keys tables
+        self.stocks, self.api_keys = self._define_tables()
+
+        # Create the tables if they do no exist
+        self.metadata.create_all(self.engine)
+        print("Tables created successfully, if they didn't exist.")
+
+        # Create a session
+        self.Session = sessionmaker(bind=self.engine)
+
+    def _initialize_database(self):
+        # Create a folder for the Database if it does not exist
+        if not os.path.exists('db'):
+            os.makedirs('db')
+        
+        db_file_path = os.path.join('db', 'nyse_data.db')
+        print("Database created and/or connected successfully at:", db_file_path)
+        return db_file_path
+    
+    def _initialize_encryption(self):
         key_file_path = 'encrypt_key.txt'
         if os.path.exists(key_file_path):
             with open(key_file_path, 'rb') as file:
-                self.encryption_key = file.read()
+                encryption_key = file.read()
         else:
-            self.encryption_key = Fernet.generate_key()
+            encryption_key = Fernet.generate_key()
             with open(key_file_path, 'wb') as file:
-                file.write(self.encryption_key)
+                file.write(encryption_key)
 
-        self.cipher = Fernet(self.encryption_key)
-
-        print("Database created and/or connected successfully at:", self.db_file_path)
-
+        cipher = Fernet(encryption_key)
+        return cipher, encryption_key
+    
+    def _define_tables(self):
         # Define the stocks table
-        self.stocks = Table(
+        stocks = Table(
             'stocks', self.metadata,
             Column('ticker_symbol', String),
             Column('close_price', Float),
@@ -43,7 +62,7 @@ class DBManager:
         )
 
         # Define the api_keys table
-        self.api_keys = Table(
+        api_keys = Table(
             'api_keys', self.metadata,
             Column('id', Integer, primary_key=True, autoincrement=True),
             Column('service', String, unique=True, nullable=False),
@@ -52,13 +71,8 @@ class DBManager:
             Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
         )
 
-        # Create the table if it does not exist
-        self.metadata.create_all(self.engine)
-        print("Table created successfully.")
-
-        # Create a session
-        self.Session = sessionmaker(bind=self.engine)
-        
+        return stocks, api_keys
+    
     def encrypt_api_key(self, api_key):
         return self.cipher.encrypt(api_key.encode()).decode()
     
