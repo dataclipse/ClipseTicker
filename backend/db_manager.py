@@ -1,8 +1,9 @@
 import os
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update, PrimaryKeyConstraint
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update, PrimaryKeyConstraint, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
+from cryptography.fernet import Fernet 
 
 class DBManager:
     def __init__(self):
@@ -15,7 +16,18 @@ class DBManager:
         self.engine = create_engine(f'sqlite:///{self.db_file_path}')
         self.metadata = MetaData()
 
-        print("Database created and connected successfully at:", self.db_file_path)
+        key_file_path = 'encrypt_key.txt'
+        if os.path.exists(key_file_path):
+            with open(key_file_path, 'rb') as file:
+                self.encryption_key = file.read()
+        else:
+            self.encryption_key = Fernet.generate_key()
+            with open(key_file_path, 'wb') as file:
+                file.write(self.encryption_key)
+
+        self.cipher = Fernet(self.encryption_key)
+
+        print("Database created and/or connected successfully at:", self.db_file_path)
 
         # Define the stocks table
         self.stocks = Table(
@@ -34,8 +46,10 @@ class DBManager:
         self.api_keys = Table(
             'api_keys', self.metadata,
             Column('id', Integer, primary_key=True, autoincrement=True),
-            Column('service', String),
-            Column('api_key', String)
+            Column('service', String, unique=True, nullable=False),
+            Column('encrypted_api_key', String, nullable=False),
+            Column('created_at', DateTime, default=func.now()),
+            Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
         )
 
         # Create the table if it does not exist
@@ -44,7 +58,69 @@ class DBManager:
 
         # Create a session
         self.Session = sessionmaker(bind=self.engine)
+        
+    def encrypt_api_key(self, api_key):
+        return self.cipher.encrypt(api_key.encode()).decode()
     
+    def decrypt_api_key(self, encrypted_api_key):
+        return self.cipher.decrypt(encrypted_api_key.encode()).decode()
+    
+    def insert_api_key(self, service, api_key):
+        # Insert or update an API key with encryption.
+        session = self.Session() # Create a new Session
+        encrypted_key = self.encrypt_api_key(api_key)
+
+        try:
+            # First, check if the API key for a given service already exists
+            select_stmt = select(self.api_keys.c.encrypted_api_key).where(self.api_keys.c.service == service)
+            result = session.execute(select_stmt)
+            existing_key = result.scalar()
+
+            if existing_key:
+                # If the API key exists, update it
+                update_stmt = update(self.api_keys).where(self.api_keys.c.service == service).values(
+                    encrypted_api_key = encrypted_key,
+                    updated_at = func.now()
+                )
+                session.execute(update_stmt)
+                print(f"API Key for service '{service}' updated successfully.")
+            else:
+                # If the API key does not exist, insert it
+                insert_stmt = self.api_keys.insert().values(
+                    service = service,
+                    encrypted_api_key = encrypted_key
+                )
+                session.execute(insert_stmt)
+                print(f"API Key for service '{service}' inserted successfully.")
+
+            session.commit()
+        except Exception as e:
+            print(f"Error inserting api key: {e}")
+            session.rollback()
+        finally:
+            session.close()
+
+    def select_api_key(self, service):
+        # Retrieve and decrypt the API key for a given service.
+        session = self.Session()
+        try:
+            select_stmt = select(self.api_keys.c.encrypted_api_key).where(self.api_keys.c.service == service)
+            result = session.execute(select_stmt)
+            encrypted_api_key = result.scalar()
+
+            if encrypted_api_key:
+                decrypted_key = self.decrypt_api_key(encrypted_api_key)
+                print(f"API Key retrieved for service '{service}': {decrypted_key}")
+                return decrypted_key
+            else:
+                print(f"No API Key found for service '{service}'.")
+                return None
+        except Exception as e:
+            print(f"Error retrieving API Key: {e}")
+            return None
+        finally:
+            session.close()
+
     def insert_stock(self, ticker, close_price, highest_price, lowest_price, open_price, timestamp_end, timestamp):
         # Insert a new stock row
         session = self.Session() # Create a new Session
@@ -92,35 +168,6 @@ class DBManager:
         finally:
             session.close() # Close the session
 
-    def insert_api_key(self, service, api_key):
-        session = self.Session() # Create a new Session
-        try:
-            # First, check if the API key for a given service already exists
-            select_stmt = select(self.api_keys.c.api_key).where(self.api_keys.c.service == service)
-            result = session.execute(select_stmt)
-            existing_key = result.scalar()
-
-            if existing_key:
-                # If the API key exists, update it
-                update_stmt = update(self.api_keys).where(self.api_keys.c.service == service).values(api_key=api_key)
-                session.execute(update_stmt)
-                print(f"API Key for service '{service}' updated successfully.")
-            else:
-                # If the API key does not exist, insert it
-                insert_stmt = self.api_keys.insert().values(
-                    service=service,
-                    api_key=api_key
-                )
-                session.execute(insert_stmt)
-                print(f"API Key for service '{service}' inserted successfully.")
-
-            session.commit()
-        except Exception as e:
-            print(f"Error inserting api key: {e}")
-            session.rollback()
-        finally:
-            session.close()
-
     def select_stocks(self):
         # Select all rows
         session = self.Session()
@@ -139,25 +186,6 @@ class DBManager:
                 print("No stock data found.")
         finally:
             session.close() # Close the session
-
-    def select_api_key(self, service):
-        session = self.Session()
-        try:
-            select_stmt = select(self.api_keys.c.api_key).where(self.api_keys.c.service == service)
-            result = session.execute(select_stmt)
-            api_key = result.scalar()
-
-            if api_key:
-                print(f"API Key retrieved for service '{service}': {api_key}")
-                return api_key
-            else:
-                print(f"No API Key found for service '{service}'.")
-                return None
-        except Exception as e:
-            print(f"Error retrieving API Key: {e}")
-            return None
-        finally:
-            session.close()
 
     def select_all_api_keys(self):
         session = self.Session()
@@ -221,3 +249,6 @@ class DBManager:
         
         finally:
             session.close()
+
+if __name__ == '__main__':
+    print("Placeholder")

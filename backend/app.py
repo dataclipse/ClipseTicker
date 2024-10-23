@@ -23,17 +23,6 @@ def get_api_keys():
 
         return jsonify({"error": "Unable to retrieve API keys"}), 500
 
-    
-
-@app.route('/api/data', methods =['GET'])
-def get_data():
-    data = {
-        'message': 'Hello from Flask!',
-        'items': [1, 2, 3, 4, 5]
-    }
-
-    return jsonify(data)
-
 def load_api_key(file_path):
         try:
             with open(file_path, 'r') as file:
@@ -48,11 +37,14 @@ def load_api_key(file_path):
 
 if __name__ == '__main__':
     #app.run(debug=True)
-    api_key_file = 'api_key.txt'
-    api_key = load_api_key(api_key_file)
-    #database_connect = db.DBManager()
+    database_connect = DBManager()
+    #api_key_file = 'api_key.txt'
+    #api_key = load_api_key(api_key_file)
     #database_connect.insert_api_key('Polygon.io', api_key)
     #db_api_key = database_connect.select_api_key('Polygon.io')
 
-    polygon_fetcher = PolygonStockFetcher(api_key=api_key)
-    polygon_fetcher.fetch_previous_two_years()
+    start_date = '2023-10-10'
+    end_date = '2023-10-12'
+
+    polygon_fetcher = PolygonStockFetcher()
+    polygon_fetcher.fetch_data_for_date_range(start_date, end_date)

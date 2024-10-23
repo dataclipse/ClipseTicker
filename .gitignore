@@ -6,6 +6,9 @@ __pycache__/
 # sqlite db
 db/
 
+# api key secret
+encrypt_key.txt
+
 # C extensions
 *.so
 

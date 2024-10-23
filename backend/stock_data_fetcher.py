@@ -1,15 +1,12 @@
-import requests
-import db_manager as db
+import requests, db_manager as db, threading, queue, time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
-import queue
-import time
+from cryptography.fernet import Fernet
 
 class PolygonStockFetcher:
-    def __init__(self, api_key):
+    def __init__(self):
         self.database_connect = db.DBManager()
-        self.api_key = api_key
+        self.polygon_api_key = self.database_connect.select_api_key('Polygon.io')
         self.base_url = "https://api.polygon.io"
         self.max_requests_per_minute = 5
         self.retry_limit = 3
@@ -22,7 +19,7 @@ class PolygonStockFetcher:
         url = self.base_url + endpoint
         params = {
             'adjusted': 'true',
-            'apikey': self.api_key
+            'apikey': self.polygon_api_key
         }
 
         # Make the API request
@@ -130,52 +127,34 @@ class PolygonStockFetcher:
                 break # Exit the thread
 
     def fetch_data_for_date_range(self, start_date, end_date):
-        # Fetches stock data or a range of dates
-        # Limits API requests to 5 per minute (free tier polygon.io api limit)
-        # Retries on failure up to a limit o 3 retries
-        
-        current_date = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-        request_times = []
+        # Fetch stock data for a given date range using producer-consumer threading model.
+        start_time = time.time()
 
-        while current_date <= end_date:
-            formatted_date = current_date.strftime("%Y-%m-%d")
-            success = False
-            retries = 0
+        print(f"Fetching stock data from {start_date} to {end_date}...")
 
-            # Check if the time since the first of the last 5 requests is within the rate limit
-            if len(request_times) >= self.max_requests_per_minute:
-                time_since_first_request = time.time() - request_times[0]
-                if time_since_first_request < 60:
-                    # If the time difference is less than 60 seconds, wait for the required time
-                    wait_time = 60 - time_since_first_request
-                    print(f"Reached request limit. Waiting for {wait_time:.2f} seconds before continuing...")
-                    time.sleep(wait_time)
+        # Initialize the producer and consumer threads
+        producer = threading.Thread(target=self.producer_thread, args=(start_date, end_date))
+        consumer = threading.Thread(target=self.consumer_thread)
 
-            while not success and retries < self.retry_limit:
-                try:
-                    print(f"Fetching data for {formatted_date}...")
-                    stock_data = self.get_stock_data(formatted_date)
-                    if stock_data is not None: # Handle valid responses, even if they are empty
-                        self.load_stock_data(stock_data)
-                        success = True
-                        print(f"Data for {formatted_date} loaded successfully.")
-                        request_times.append(time.time()) # Record the time of the successful request
+        # Start the threads
+        producer.start()
+        consumer.start()
 
-                        # Keep only the last 'max_requests_per_minute' timestamps
-                        if len(request_times) > self.max_requests_per_minute:
-                            request_times.pop(0)
-                    else:
-                        raise Exception("Failed to fetch data from API.")
-                except Exception as e:
-                    retries += 1
-                    print(f"Attempt {retries}/{self.retry_limit} failed for {formatted_date}. Error: {e}")
-                    if retries < self.retry_limit:
-                        print(f"Retrying {formatted_date}...")
-                        time.sleep(5)
-            
-            # Increment Date
-            current_date += timedelta(days=1)
+        # Wait for the producer thread to finish and the consumer to process all data
+        producer.join()
+        self.db_insert_queue.join()
+        consumer.join()
+
+        # End the timer and print the time taken
+        end_time = time.time()
+        total_time = end_time -start_time
+
+        # Convert total_time to hours, minutes, and seconds
+        hours, remainder = divmod(total_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        print(f"Finished fetching data for date range {start_date} to {end_date}.")
+        print(f"Time Taken: {int(hours)} hours, {int(minutes)} minutes, and {seconds:.2f} seconds.")
     
     def fetch_previous_two_years(self):
         # Start a timer for timing how long this function will take to run.
@@ -210,4 +189,9 @@ class PolygonStockFetcher:
         # End the Timer and print the time taken
         end_time = time.time()
         total_time = end_time - start_time
-        print(f"Finished fetching data. Time Taken: {total_time:.2f} seconds.")
+
+        # Convert total_time to hours, minutes, and seconds
+        hours, remainder = divmod(total_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        print(f"Finished fetching data. Time Taken: {int(hours)} hours, {int(minutes)} minutes, and {seconds:.2f} seconds.")
