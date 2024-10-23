@@ -205,15 +205,20 @@ class DBManager:
         session = self.Session()
         try:
             # Query to select all api keys
-            select_stmt = select(self.api_keys.c.service, self.api_keys.c.api_key)
+            select_stmt = select(self.api_keys.c.service, self.api_keys.c.encrypted_api_key)
             result = session.execute(select_stmt)
             rows = result.fetchall()
 
             # Create a list of service and api keys
-            api_keys_list = [{"service": row.service, "api_key": row.api_key} for row in rows]
-
+            api_keys_list = []
+            for row in rows:
+                service = row.service
+                encrypted_api_key = row.encrypted_api_key
+                decrypted_api_key = self.decrypt_api_key(encrypted_api_key)
+                api_keys_list.append({"service": service, "api_key": decrypted_api_key})
+            
             if not api_keys_list:
-                print("No API keys found.")
+                print("No API key found.")
             else:
                 print(f"Retrieved {len(api_keys_list)} API keys.")
 

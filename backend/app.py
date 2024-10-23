@@ -36,15 +36,15 @@ def load_api_key(file_path):
             return None
 
 if __name__ == '__main__':
-    #app.run(debug=True)
-    database_connect = DBManager()
-    api_key_file = 'api_key.txt'
-    api_key = load_api_key(api_key_file)
-    database_connect.insert_api_key('Polygon.io', api_key)
+    app.run(debug=True)
+    #database_connect = DBManager()
+    #api_key_file = 'api_key.txt'
+    #api_key = load_api_key(api_key_file)
+    #database_connect.insert_api_key('Polygon.io', api_key)
     #db_api_key = database_connect.select_api_key('Polygon.io')
 
-    start_date = '2023-10-10'
-    end_date = '2023-10-12'
+    #start_date = '2023-10-10'
+    #end_date = '2023-10-12'
 
-    polygon_fetcher = PolygonStockFetcher()
-    polygon_fetcher.fetch_data_for_date_range(start_date, end_date)
+    #polygon_fetcher = PolygonStockFetcher()
+    #polygon_fetcher.fetch_data_for_date_range(start_date, end_date)
