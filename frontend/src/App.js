@@ -52,14 +52,35 @@ function App() {
   };
 
   const save_changes  = (updated_service, updated_api_key) => {
-    const updated_keys  = api_keys.map(key => {
-     if (key.service === selected_service) {
-      return { service: updated_service, api_key: updated_api_key  };
-     } 
-     return key;
+    fetch(`/api/keys/${selected_service}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service: updated_service,
+        api_key: updated_api_key,
+      }),
+    })
+    .then(response => {
+      if(!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      const updated_keys = api_keys.map(key => {
+        if (key.service === selected_service) {
+          return { service: updated_service, api_key: updated_api_key};
+        }
+        return key;
+      });
+      set_api_keys(updated_keys);
+    })
+    .catch(err => {
+      console.error('Error updating API key:', err);
     });
-    set_api_keys(updated_keys);
-  }
+  };
 
   return (
     <div className='App'>

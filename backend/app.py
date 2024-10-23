@@ -23,6 +23,27 @@ def get_api_keys():
 
         return jsonify({"error": "Unable to retrieve API keys"}), 500
 
+@app.route('/api/keys/<string:service>', methods=['PUT'])
+def update_api_key(service):
+    try:
+        # Get the updated API Key from the request body
+        data = request.get_json()
+        updated_service = service
+        updated_api_key = data.get('api_key')
+
+        if not updated_api_key:
+            return jsonify({"error": "API key is required"}), 400
+        
+        # Use the DBmanager instance to update the API key
+        db_manager.insert_api_key(updated_service, updated_api_key)
+
+        # Return a success message
+        return jsonify({"message": "API Key updated successfully"}), 200
+    
+    except Exception as e:
+        print(f"Error updating API key: {e}")
+        return jsonify({"error": "Unable to update API key"}), 500
+
 def load_api_key(file_path):
         try:
             with open(file_path, 'r') as file:
