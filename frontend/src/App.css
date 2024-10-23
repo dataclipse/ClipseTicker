@@ -137,3 +137,79 @@
   border: 2px solid #333;
   margin-bottom: 20px;
 } 
+
+.add-api-button {
+  background-color: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #333;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 15px;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-api-button:hover {
+  background-color: #333;
+  color: white;
+}
+
+.configure-button{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color:#333;
+  margin-left: 10px;
+}
+
+.trash-button{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color:#333;
+  margin-left: 10px; 
+}
+
+.api-keys-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.api-keys-table th, .api-keys-table td {
+  border: 2px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.api-keys-table th {
+  background-color: #5f5f5f;
+  color: white;
+}
+
+.api-keys-table th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.api-keys-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.api-keys-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.api-keys-table td:last-child {
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+
+.api-keys-table tr:hover {
+  background-color: #e1e1e1;
+}
