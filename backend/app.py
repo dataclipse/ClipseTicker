@@ -10,6 +10,18 @@ CORS(app, resources={r"/*":{"origins": "*"}})
 
 db_manager = DBManager()
 
+@app.route('/api/stocks', methods=['GET'])
+def get_stocks():
+    try:
+        # Fetch unique ticker symbol with their most recent open and close prices and timestamp
+        stocks_data = db_manager.get_recent_stock_prices()
+
+        # Return the stocks data in JSON format
+        return jsonify(stocks_data), 200
+    except Exception as e:
+        print(f"Error retrieving stock data: {e}")
+        return jsonify({"error": "Unable to retrieve stock data"}), 500
+
 @app.route('/api/keys', methods=['GET'])
 def get_api_keys():
     try:

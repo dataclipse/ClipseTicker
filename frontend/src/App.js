@@ -1,21 +1,26 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, act } from 'react';
 import { FaHome, FaQuestionCircle, FaBars, FaSearch, FaPlus, FaTrash, FaCog } from 'react-icons/fa';
 import { HiMiniChartBarSquare } from 'react-icons/hi2';
 import ConfigureModal from './configure_modal';
 import AddApiModal from './add_api_modal';
 
 function App() {
-  const [show_settings, set_show_settings] = useState(false);
   const [api_keys, set_api_keys] = useState([]);
   const [show_modal, set_show_modal] = useState(false);
   const [show_add_modal, set_show_add_modal] = useState(false);
   const [selected_api_key, set_selected_api_key] = useState(null);
   const [selected_service, set_selected_service] = useState(null);
+  const [active_content, set_active_content] = useState('home');
+  const [stocks, set_stocks] = useState([]);
+  const [current_page, set_current_page] = useState(0);
+  const [rows_per_page] = useState(500);
+  const [sort_column, set_sort_column] = useState('ticker_symbol');
+  const [sort_direction, set_sort_direction] = useState('asc');
 
   // Fetch API keys when settings page is opened
   useEffect(() => {
-    if (show_settings){
+    if (active_content === 'settings') {
       fetch('/api/keys')
         .then(response => {
           if (!response.ok) {
@@ -26,12 +31,38 @@ function App() {
         .then(data => set_api_keys(data))
         .catch(err => console.error('Error fetching API keys:', err));
     }
-  }, [show_settings]);
+  }, [active_content]);
 
-  // Function to naviagate back to the main content
+  useEffect(() => {
+    if (active_content === 'stocks') {
+      fetch('/api/stocks')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          const sorted_stocks = sort_stocks_ticker(data, sort_column, sort_direction);  
+          set_stocks(sorted_stocks);
+        })
+        .catch(err => console.error('Error fetching stocks data:', err));
+    }
+  }, [active_content, sort_column, sort_direction]);
+
+  // Function to navigate back to the main content
   const go_to_home  = () => {
-    set_show_settings(false);
+    set_active_content('home');
   };
+
+  const go_to_stocks = () => {
+    set_active_content('stocks');
+    set_current_page(0);
+  };
+
+  const go_to_settings = () => {
+    set_active_content('settings');
+  }
 
   // Function to handle adding a new API key
   const add_api_key = () => {
@@ -116,6 +147,45 @@ function App() {
     });
   };
 
+  // Pagination logic
+  const handle_page_change = (pageNumber) => {
+    set_current_page(pageNumber);
+  };
+
+  const start_row = current_page * rows_per_page;
+  const end_row = start_row + rows_per_page;
+  const current_stocks = stocks.slice(start_row, end_row);
+
+  const format_currency = (value) => {
+    return `$${parseFloat(value).toFixed(2)}`;
+  };
+
+  const sort_stocks_ticker = (stocks_array, column, direction) => {
+    return [...stocks_array].sort((a, b) => {
+      const a_value = column === 'ticker_symbol' ? a[column].toLowerCase() : parseFloat(a[column]);
+      const b_value = column === 'ticker_symbol' ? b[column].toLowerCase() : parseFloat(b[column]);
+
+      return direction === 'asc' ? (a_value > b_value ? 1 : -1) : (a_value < b_value ? 1 : -1);
+    });
+  };
+
+  const sort_stocks = (column) => {
+    const direction = sort_column === column && sort_direction === 'asc' ? 'desc' : 'asc';
+
+    const sorted_stocks = sort_stocks_ticker(stocks, column, direction);
+
+    set_stocks(sorted_stocks);
+    set_sort_column(column);
+    set_sort_direction(direction);
+  };
+
+  const get_sort_icon = (column) => {
+    if (sort_column === column) {
+      return sort_direction === 'asc' ? '' : '';
+    }
+    return '';
+  }
+
   return (
     <div className='App'>
       <header className='navbar'>
@@ -136,7 +206,7 @@ function App() {
           </button>
           <button 
             className='icon-button'
-            onClick={() => set_show_settings(!show_settings)}
+            onClick={go_to_settings}
           >
             <FaBars />
           </button>
@@ -147,13 +217,61 @@ function App() {
           <nav>
             <ul>
               <li onClick={go_to_home}><FaHome /> Home</li>
-              <li><HiMiniChartBarSquare /> Stocks</li>
+              <li onClick={go_to_stocks}><HiMiniChartBarSquare /> Stocks</li>
             </ul>
           </nav>
         </aside>
         <main className='content'>
-          {/* Conditionally render content based on the state */}
-          {show_settings  ? (
+          {active_content === 'home' ? (
+            <div className='main-content'>
+              <h1>Home Content</h1>
+            </div>
+          ) : active_content === 'stocks' ? (
+            <div className='stocks-content'>
+              <h1>All Stock Symbols</h1>
+              <hr />
+              <table className='stocks-table'>
+                <thead>
+                  <tr>
+                    <th className={`sortable ${sort_column === 'ticker_symbol' ? sort_direction : ''}`} onClick={() => sort_stocks('ticker_symbol')}>Ticker Symbol {get_sort_icon('ticker_symbol')}</th>
+                    <th className={`sortable ${sort_column === 'open_price' ? sort_direction : ''}`}onClick={() => sort_stocks('open_price')}>Recent Open Prices {get_sort_icon('open_price')}</th>
+                    <th className={`sortable ${sort_column === 'close_price' ? sort_direction : ''}`}onClick={() => sort_stocks('close_price')}>Recent Close Prices {get_sort_icon('close_price')}</th>
+                    <th className={`sortable ${sort_column === 'highest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('highest_price')}>Recent Highest Prices {get_sort_icon('highest_price')}</th>
+                    <th className={`sortable ${sort_column === 'lowest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('lowest_price')}>Recent Lowest Prices {get_sort_icon('lowest_price')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {current_stocks.length > 0 ? (
+                    current_stocks.map((stock, index) => (
+                      <tr key={index}>
+                        <td>{stock.ticker_symbol}</td>
+                        <td>{format_currency(stock.open_price)}</td>
+                        <td>{format_currency(stock.close_price)}</td>
+                        <td>{format_currency(stock.highest_price)}</td>
+                        <td>{format_currency(stock.lowest_price)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5">No Stock Data Found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              {/* Pagination Controls */}
+              <div className='pagination'>
+                {Array.from({ length: Math.ceil(stocks.length / rows_per_page) }, (_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handle_page_change(index)}
+                    className={current_page === index ? 'active' : ''}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
             <div className='settings-page'>
               <h1>Settings</h1>
               <hr />
@@ -202,10 +320,6 @@ function App() {
                   )}
                 </tbody>
               </table>
-            </div>
-          ) : (
-            <div className='main-content'>
-              <p>Edit <code>src/app.js</code> and save to reload.</p>
             </div>
           )}
         </main>

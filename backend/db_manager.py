@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update, PrimaryKeyConstraint, func
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update, PrimaryKeyConstraint, func, delete
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
@@ -79,6 +79,53 @@ class DBManager:
     def decrypt_api_key(self, encrypted_api_key):
         return self.cipher.decrypt(encrypted_api_key.encode()).decode()
     
+    def get_recent_stock_prices(self):
+        session = self.Session()
+        try:
+            # Use a window function to rank the entries by timestamp_end for each ticker_symbol
+            subquery = (
+                select(
+                    self.stocks.c.ticker_symbol,
+                    self.stocks.c.open_price,
+                    self.stocks.c.close_price,
+                    self.stocks.c.highest_price,
+                    self.stocks.c.lowest_price,
+                    self.stocks.c.timestamp_end,
+                    func.row_number().over(
+                        partition_by=self.stocks.c.ticker_symbol,
+                        order_by=self.stocks.c.timestamp_end.desc()
+                    ).label('rank')
+                )
+            ).subquery()
+            
+            # Select only the rows where rank is 1 (most recent)
+            query = (
+                select(subquery)
+                .where(subquery.c.rank == 1)
+            )
+
+            # Execute the query
+            result = session.execute(query)
+
+            # Convert the result to a list of dictionaries
+            stocks_data = []
+            for row in result:
+                stocks_data.append({
+                    'ticker_symbol': row.ticker_symbol,
+                    'open_price': row.open_price,
+                    'close_price': row.close_price,
+                    'highest_price': row.highest_price,
+                    'lowest_price': row.lowest_price,
+                    'timestamp_end': row.timestamp_end
+                })
+            
+            return stocks_data
+        except Exception as e:
+            print(f"Error retrieving recent stock prices: {e}")
+            return []
+        finally:
+            session.close()
+
     def delete_api_key(self, service):
         # Delete API for a given service
         session = self.Session()

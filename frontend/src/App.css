@@ -109,6 +109,11 @@
   background-color: #f0f0f0;
 }
 
+/* Styling for the main content page */
+.main-content h1 {
+  font-size: 36px;
+}
+
 /* Styling for the settings page */
 .settings-page {
   padding: 40px;
@@ -138,6 +143,18 @@
   margin-bottom: 20px;
 } 
 
+/* Styling for the stocks content page */
+.stocks-content h1 {
+  font-size: 36px;
+}
+
+.stocks-content hr {
+  width: 100%;
+  border: 2px solid #333;
+  margin-bottom: 20px;
+}
+
+/* Styling for the api buttons */
 .add-api-button {
   background-color: transparent;
   border: 1px solid #333;
@@ -175,6 +192,7 @@
   margin-left: 10px; 
 }
 
+/* Styling for the api keys table */
 .api-keys-table {
   width: 100%;
   border-collapse: collapse;
@@ -218,3 +236,75 @@
 .api-keys-table tr:hover {
   background-color: #e1e1e1;
 }
+
+/* Styling for the stocks table */
+.stocks-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.stocks-table th, .stocks-table td {
+  border: 2px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.stocks-table th {
+  background-color: #5f5f5f;
+  color: white;
+  position: relative; 
+  cursor: pointer; 
+  padding-right: 25px; 
+  user-select: none;
+}
+
+.stocks-table th:first-child {
+  border-top-left-radius: 10px;
+  text-align: left;
+}
+
+.stocks-table th:not(:first-child), .stocks-table td:not(:first-child) {
+  text-align: right;
+}
+
+.stocks-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.stocks-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.stocks-table tr:hover {
+  background-color: #e1e1e1;
+}
+
+/* Arrow styles */
+.stocks-table th.sortable::after {
+  content: '';
+  position: absolute;
+  right: 10px; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  border-left: 5px solid transparent; 
+  border-right: 5px solid transparent; 
+  transition: border-color 0.3s; 
+}
+
+/* Ascending arrow */
+.stocks-table th.sortable.asc::after {
+  border-bottom: 5px solid #fff; 
+}
+
+/* Descending arrow */
+.stocks-table th.sortable.desc::after {
+  border-top: 5px solid #fff; 
+}
+
+/* Hover effects */
+.stocks-table th:hover::after {
+  border-bottom-color: gray; 
+  border-top-color: gray; 
+}
+
