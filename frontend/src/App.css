@@ -210,6 +210,11 @@
   justify-content: center;
 }
 
+.api-keys-table td:last-child button svg {
+  margin-right: 20px;
+  font-size: 18px;
+}
+
 .api-keys-table tr:hover {
   background-color: #e1e1e1;
 }

@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { FaHome, FaQuestionCircle, FaBars, FaSearch, FaPlus, FaTrash, FaCog } from 'react-icons/fa';
 import { HiMiniChartBarSquare } from 'react-icons/hi2';
 import ConfigureModal from './configure_modal';
+import AddApiModal from './add_api_modal';
 
 function App() {
   const [show_settings, set_show_settings] = useState(false);
   const [api_keys, set_api_keys] = useState([]);
   const [show_modal, set_show_modal] = useState(false);
+  const [show_add_modal, set_show_add_modal] = useState(false);
   const [selected_api_key, set_selected_api_key] = useState(null);
   const [selected_service, set_selected_service] = useState(null);
 
@@ -33,16 +35,48 @@ function App() {
 
   // Function to handle adding a new API key
   const add_api_key = () => {
-    // Logic to open a modal or form to add a new API key
-    console.log('Add new API key');
+    set_show_add_modal(true);
+  };
+
+  // Function to handle saving a new API key (passed to AddApiModal)
+  const save_new_api_key = (new_service, new_api_key) => {
+    fetch('/api/keys', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service: new_service,
+        api_key: new_api_key,
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Update UI with the new API key
+      set_api_keys([...api_keys, { service: new_service, api_key: new_api_key}]);
+    })
+    .catch(err => console.error('Error saving new API key:', err));
   };
 
   // Function to handle deleting an API key
-  const delete_api_key   = (service) => {
-    // Logic to delete the API key, possibly making a DELETE request to your server
-    console.log(`Delete API key for service: ${service}`);
-    // Refresh the API keys after deletion
-    set_api_keys(api_keys.filter(key => key.service !== service));
+  const delete_api_key = (service) => {
+    // Send DELETE request to the server to delete the API key
+    fetch(`/api/keys/${service}`, {
+      method: 'DELETE',
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        // Remove the key from the UI
+        set_api_keys(api_keys.filter(key => key.service !== service));
+      })
+      .catch(err => console.error(`Error deleting API key for service: ${service}`, err));
   };
 
   const open_modal  = (service, api_key) => {
@@ -147,12 +181,14 @@ function App() {
                           <button
                             className='configure-button'
                             onClick={() => open_modal(key.service, key.api_key)}
+                            title="Configure API Key"
                           >
                             <FaCog />
                           </button>
                           <button
                             className='trash-button'
                             onClick={() => delete_api_key(key.service)}
+                            title="Delete API Key"
                           >
                             <FaTrash />
                           </button>
@@ -180,6 +216,11 @@ function App() {
         service={selected_service}
         api_key={selected_api_key}
         on_save={save_changes}
+      />
+      <AddApiModal
+        show={show_add_modal}
+        on_close={() => set_show_add_modal(false)}
+        on_save={save_new_api_key}
       />
     </div>
   );

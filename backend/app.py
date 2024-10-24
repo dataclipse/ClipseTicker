@@ -44,6 +44,28 @@ def update_api_key(service):
         print(f"Error updating API key: {e}")
         return jsonify({"error": "Unable to update API key"}), 500
 
+@app.route('/api/keys/<string:service>', methods=['DELETE'])
+def delete_api_key(service):
+    try:
+        db_manager.delete_api_key(service)
+        return jsonify({"message": f"API key for {service} deleted succcessfully."}), 200
+    except Exception as e:
+        print(f"Error deleting API key for service {service}: {e}")
+        return jsonify({"error": "Unable to delete API key"}), 500
+    
+@app.route('/api/keys', methods=['POST'])
+def add_api_key():
+    data = request.get_json()
+    service = data.get('service')
+    api_key = data.get('api_key')
+
+    if not service or not api_key:
+        return jsonify({'error': 'Service and API key are required'}), 400
+    
+    # Insert the API key into the database
+    db_manager.insert_api_key(service, api_key)
+    return jsonify({'message': 'API key added successfully'}), 201
+
 def load_api_key(file_path):
         try:
             with open(file_path, 'r') as file:

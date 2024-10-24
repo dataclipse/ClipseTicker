@@ -79,6 +79,32 @@ class DBManager:
     def decrypt_api_key(self, encrypted_api_key):
         return self.cipher.decrypt(encrypted_api_key.encode()).decode()
     
+    def delete_api_key(self, service):
+        # Delete API for a given service
+        session = self.Session()
+
+        try:
+            # Attempt to delete the API key base on the service name
+            delete_stmt = self.api_keys.delete().where(self.api_keys.c.service == service)
+            result = session.execute(delete_stmt)
+
+            # Commit the transaction if the deletion is successful
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"API key for service '{service}' deleted successfully.")
+            else:
+                print(f"No API key found for service '{service}'.")
+
+        except Exception as e:
+            # Rollback the transaction if any error occurs
+            session.rollback()
+            print(f"Error deleting API key for service '{service}': {e}")
+
+        finally:
+            # Close the session
+            session.close()
+
     def insert_api_key(self, service, api_key):
         # Insert or update an API key with encryption.
         session = self.Session() # Create a new Session
