@@ -1,12 +1,14 @@
 import './App.css';
-import React, { useState, useEffect, act } from 'react';
+import React, { useState, useEffect} from 'react';
 import { FaHome, FaQuestionCircle, FaBars, FaSearch, FaPlus, FaTrash, FaCog } from 'react-icons/fa';
 import { HiMiniChartBarSquare } from 'react-icons/hi2';
+import { AiFillSchedule } from "react-icons/ai";
 import ConfigureModal from './configure_modal';
 import AddApiModal from './add_api_modal';
 
 function App() {
   const [api_keys, set_api_keys] = useState([]);
+  const [jobs, set_jobs] = useState([]);
   const [show_modal, set_show_modal] = useState(false);
   const [show_add_modal, set_show_add_modal] = useState(false);
   const [selected_api_key, set_selected_api_key] = useState(null);
@@ -18,7 +20,15 @@ function App() {
   const [sort_column, set_sort_column] = useState('ticker_symbol');
   const [sort_direction, set_sort_direction] = useState('asc');
 
-  // Fetch API keys when settings page is opened
+  // Fetch the jobs list
+  useEffect(() => {
+    fetch('/api/jobs')
+      .then(response => response.json())
+      .then(data => set_jobs(data))
+      .catch(err => console.error('Error fetching jobs:', err));
+  }, []);
+
+  // Fetch API keys when settings page is opened  
   useEffect(() => {
     if (active_content === 'settings') {
       fetch('/api/keys')
@@ -62,7 +72,11 @@ function App() {
 
   const go_to_settings = () => {
     set_active_content('settings');
-  }
+  };
+
+  const go_to_jobs = () => {
+    set_active_content('jobs');
+  };
 
   // Function to handle adding a new API key
   const add_api_key = () => {
@@ -184,7 +198,34 @@ function App() {
       return sort_direction === 'asc' ? '' : '';
     }
     return '';
-  }
+  };
+
+  const format_date = (unix_timestamp) => {
+    const timestamp_in_ms = unix_timestamp.toString().length === 10
+      ? unix_timestamp * 1000
+      : unix_timestamp;
+
+    const date = new Date(timestamp_in_ms);
+    return date.toLocaleDateString("en-US", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const add_new_job = () => {
+    // Logic to add new job
+  };
+
+  const delete_job = (job_id) => {
+    fetch(`/api/jobs/${job_id}`, {
+      method: 'DELETE',
+    })
+      .then(response => response.ok && set_jobs(jobs.filter(job => job.id !== job_id)))
+      .catch(err => console.error(`Error deleting job: ${job_id}`, err));
+  };
 
   return (
     <div className='App'>
@@ -218,6 +259,7 @@ function App() {
             <ul>
               <li onClick={go_to_home}><FaHome /> Home</li>
               <li onClick={go_to_stocks}><HiMiniChartBarSquare /> Stocks</li>
+              <li onClick={go_to_jobs}><AiFillSchedule /> Jobs</li>
             </ul>
           </nav>
         </aside>
@@ -234,10 +276,11 @@ function App() {
                 <thead>
                   <tr>
                     <th className={`sortable ${sort_column === 'ticker_symbol' ? sort_direction : ''}`} onClick={() => sort_stocks('ticker_symbol')}>Ticker Symbol {get_sort_icon('ticker_symbol')}</th>
-                    <th className={`sortable ${sort_column === 'open_price' ? sort_direction : ''}`}onClick={() => sort_stocks('open_price')}>Recent Open Prices {get_sort_icon('open_price')}</th>
-                    <th className={`sortable ${sort_column === 'close_price' ? sort_direction : ''}`}onClick={() => sort_stocks('close_price')}>Recent Close Prices {get_sort_icon('close_price')}</th>
-                    <th className={`sortable ${sort_column === 'highest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('highest_price')}>Recent Highest Prices {get_sort_icon('highest_price')}</th>
-                    <th className={`sortable ${sort_column === 'lowest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('lowest_price')}>Recent Lowest Prices {get_sort_icon('lowest_price')}</th>
+                    <th className={`sortable ${sort_column === 'open_price' ? sort_direction : ''}`}onClick={() => sort_stocks('open_price')}>Open Price {get_sort_icon('open_price')}</th>
+                    <th className={`sortable ${sort_column === 'close_price' ? sort_direction : ''}`}onClick={() => sort_stocks('close_price')}>Close Price {get_sort_icon('close_price')}</th>
+                    <th className={`sortable ${sort_column === 'highest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('highest_price')}>Highest Price (daily) {get_sort_icon('highest_price')}</th>
+                    <th className={`sortable ${sort_column === 'lowest_price' ? sort_direction : ''}`}onClick={() => sort_stocks('lowest_price')}>Lowest Price (daily) {get_sort_icon('lowest_price')}</th>
+                    <th className={`sortable ${sort_column === 'timestamp_end' ? sort_direction : ''}`}onClick={() => sort_stocks('timestamp_end')}>Date {get_sort_icon('timestamp_end')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,11 +292,12 @@ function App() {
                         <td>{format_currency(stock.close_price)}</td>
                         <td>{format_currency(stock.highest_price)}</td>
                         <td>{format_currency(stock.lowest_price)}</td>
+                        <td>{format_date(stock.timestamp_end)}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5">No Stock Data Found</td>
+                      <td colSpan="6">No Stock Data Found</td>
                     </tr>
                   )}
                 </tbody>
@@ -270,6 +314,44 @@ function App() {
                   </button>
                 ))}
               </div>
+            </div>
+          ) : active_content === 'jobs' ? (
+            <div className='jobs-page'>
+              <h1>Data Fetch Job Scheduler</h1>
+              <hr />
+              <button onClick={add_new_job} className='add-job-button'>
+                <FaPlus /> Add New Job
+              </button>
+              <table className='jobs-table'>
+                <thead>
+                  <tr>
+                    <th>Job Name</th>
+                    <th>Schedule</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.length > 0 ? (
+                    jobs.map((job, index) => (
+                      <tr key={index}>
+                        <td>{job.name}</td>
+                        <td>{job.schedule}</td>
+                        <td>{job.status}</td>
+                        <td>
+                          <button onClick={() => delete_job(job.id)} title="Delete Job">
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4">No Jobs Found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className='settings-page'>

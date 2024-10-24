@@ -16,7 +16,7 @@ class DBManager:
         self.cipher, self.encryption_key = self._initialize_encryption()
 
         # Define the stocks and api_keys tables
-        self.stocks, self.api_keys = self._define_tables()
+        self.stocks, self.api_keys, self.jobs = self._define_tables()
 
         # Create the tables if they do no exist
         self.metadata.create_all(self.engine)
@@ -71,7 +71,21 @@ class DBManager:
             Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
         )
 
-        return stocks, api_keys
+        # Define the jobs table
+        jobs = Table(
+            'jobs', self.metadata,
+            Column('job_name', String, nullable=False),
+            Column('scheduled_start_time', DateTime, nullable=False),
+            Column('status', String, nullable=False), # e.g., "pending", "running", "completed", "scheduled"
+            Column('start_time', DateTime),
+            Column('end_time', DateTime),
+            Column('run_time', String), # Duration in Hours Minutes and Seconds
+            Column('created_at', DateTime, default=func.now()),
+            Column('updated_at', DateTime, default=func.now(), onupdate=func.now()),
+            PrimaryKeyConstraint('job_name', 'scheduled_start_time') # Composite primary key
+        )
+
+        return stocks, api_keys, jobs
     
     def encrypt_api_key(self, api_key):
         return self.cipher.encrypt(api_key.encode()).decode()

@@ -308,3 +308,74 @@
   border-top-color: gray; 
 }
 
+.jobs-page hr {
+  width: 100%;
+  border: 2px solid #333;
+  margin-bottom: 20px;
+}
+
+/* Styling for the jobs table */
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.jobs-table th, .jobs-table td {
+  border: 2px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.jobs-table th {
+  background-color: #5f5f5f;
+  color: white;
+  position: relative;
+  cursor: pointer;
+  padding-right: 25px;
+  user-select: none;
+}
+
+.jobs-table th:first-child {
+  border-top-left-radius: 10px;
+}
+
+.jobs-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.jobs-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.jobs-table tr:hover {
+  background-color: #e1e1e1;
+}
+
+/* Arrow styles */
+.jobs-table th.sortable::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  transition: border-color 0.3s;
+}
+
+/* Ascending arrow */
+.jobs-table th.sortable.asc::after {
+  border-bottom: 5px solid #fff;
+}
+
+/* Descending arrow */
+.jobs-table th.sortable.desc::after {
+  border-top: 5px solid #fff;
+}
+
+/* Hover effects */
+.jobs-table th:hover::after {
+  border-bottom-color: gray;
+  border-top-color: gray;
+}
