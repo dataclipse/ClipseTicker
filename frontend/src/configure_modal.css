@@ -15,17 +15,6 @@
     border-radius: 20px;
 }
 
-.model-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    max-width: 100%;
-    box-shadow: 0 0px 15px rgba(0,0,0,0.3);
-    border: 1px solid #ccc;
-    z-index: 1001;
-}
-
 .modal-input-block {
     margin-bottom: 15px;
 }

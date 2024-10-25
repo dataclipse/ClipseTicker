@@ -93,6 +93,240 @@ class DBManager:
     def decrypt_api_key(self, encrypted_api_key):
         return self.cipher.decrypt(encrypted_api_key.encode()).decode()
     
+    def select_all_jobs(self):
+        session = self.Session()
+        try:
+            # Prepare the select statement for all rows in the jobs table
+            select_stmt = select(self.jobs)
+
+            # Execute the select statement
+            result = session.execute(select_stmt)
+            jobs = result.fetchall()
+
+            # Define your column names as a list to ensure the right keys are used
+            column_names = [column.name for column in self.jobs.columns]
+
+            # Convert the rows to a list of dictionaries for easier processing
+            jobs_list = [dict(zip(column_names, row)) for row in jobs]
+
+            if jobs_list:
+                print(f"Retrieved {len(jobs_list)} jobs.")
+            else:
+                print("No jobs found in the jobs table.")
+
+            return jobs_list
+        
+        except Exception as e:
+            print(f"Error selecting all jobs: {e}")
+            return []
+    
+        finally:
+            session.close()
+    
+    def select_job(self, job_name, scheduled_start_time):
+        session = self.Session()
+        try:
+            # Prepare the select statement
+            select_stmt = select(self.jobs).where(
+                self.jobs.c.job_name == job_name,
+                self.jobs.c.scheduled_start_time == scheduled_start_time
+            )
+
+            # Execute the select statement
+            result = session.execute(select_stmt)
+            job = result.fetchone()
+
+            # Return job information if found, otherwise None
+            if job:
+                print(f"Job '{job_name}' scheduled for {scheduled_start_time} exists.")
+                return dict(job)
+            else:
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                return None
+        
+        except Exception as e:
+            print(f"Error selecting job: {e}")
+            return None
+        
+        finally:
+            session.close()
+    
+    def update_job_run_time(self, job_name, scheduled_start_time, run_time):
+        session = self.Session()
+
+        try:
+            # Prepared the values to update
+            update_values = {
+                'run_times': run_time,
+                'updated_at': datetime.now()
+            }
+
+            # Prepare the update statement
+            update_stmt = (
+                update(self.jobs)
+                .where(
+                    self.jobs.c.job_name == job_name,
+                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                )
+                .values(**update_values)
+            )
+
+            # Execute the update statement
+            result = session.execute(update_stmt)
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"Job '{job_name}' run time updated to '{run_time}' successfully.")
+            else:
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+        
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating job run time: {e}")
+        
+        finally:
+            session.close()
+    
+    def update_job_end_time(self, job_name, scheduled_start_time, end_time):
+        session = self.Session()
+
+        try:
+            # Prepare the values to update
+            update_values = {
+                'end_time': end_time,
+                'updated_at': datetime.now()
+            }
+
+            # Prepare the update statement
+            update_stmt = (
+                update(self.jobs)
+                .where(
+                    self.jobs.c.job_name == job_name,
+                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                )
+                .values(**update_values)
+            )
+
+            # Execute the update statement
+            result = session.execute(update_stmt)
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"Job '{job_name}' end time updated to '{end_time}' successfully.")
+            else:
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating job end time: {e}")
+
+        finally:
+            session.close()
+    
+    def update_job_start_time(self, job_name, scheduled_start_time, start_time):
+        session = self.Session()
+
+        try:
+            # Prepare the values to update
+            update_values = {
+                'start_time': start_time,
+                'updated_at': datetime.now()
+            }
+
+            # Prepare the update statement
+            update_stmt = (
+                update(self.jobs)
+                .where(
+                    self.jobs.c.job_name == job_name,
+                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                )
+                .values(**update_values)
+            )
+
+            # Execute the update statement
+            result = session.execute(update_stmt)
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"Job '{job_name}' start time updated to '{start_time}' successfully.")
+            else:
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating job start time: {e}")
+
+        finally:
+            session.close()
+
+    def update_job_status(self, job_name, scheduled_start_time, new_status):
+        session = self.Session()
+        
+        try:
+            # Prepare the values to update
+            update_values = {
+                'status': new_status,
+                'updated_at': datetime.now()
+            }
+
+            # Prepare the update statement
+            update_stmt = (
+                update(self.jobs)
+                .where(
+                    self.jobs.c.job_name == job_name,
+                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                )
+                .values(**update_values)
+            )
+
+            # Execute the update statement
+            result = session.execute(update_stmt)
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"Job '{job_name}' status updated to '{new_status}' successfully.")
+            else:
+                print(f"No job found with name '{job_name}' scheduled fo {scheduled_start_time}.")
+        
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating job status: {e}")
+        
+        finally:
+            session.close()
+
+    def insert_job(self, job_name, scheduled_start_time, status, start_time=None, end_time = None, run_time = None):
+        session = self.Session()
+
+        try:
+            # Insert a new job row into the jobs table
+            insert_stmt = self.jobs.insert().values(
+                job_name=job_name,
+                scheduled_start_time=scheduled_start_time,
+                status=status,
+                start_time=start_time,
+                end_time=end_time,
+                run_time=run_time,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+
+            # Execute the insert statement
+            session.execute(insert_stmt)
+
+            # Commit the transaction
+            session.commit()
+
+            print(f"Job '{job_name}' scheduled for {scheduled_start_time} inserted successfully.")
+        
+        except Exception as e:
+            # Rollback in case of any error
+            session.rollback()
+            print(f"Error inserting job '{job_name}': {e}")
+
+        finally:
+            # Close the session
+            session.close()
+
     def get_recent_stock_prices(self):
         session = self.Session()
         try:

@@ -379,3 +379,27 @@
   border-bottom-color: gray;
   border-top-color: gray;
 }
+
+.add-job-button {
+  background-color: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #333;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 15px;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-job-button{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color:#333;
+  margin-left: 10px; 
+}

@@ -5,6 +5,7 @@ import { HiMiniChartBarSquare } from 'react-icons/hi2';
 import { AiFillSchedule } from "react-icons/ai";
 import ConfigureModal from './configure_modal';
 import AddApiModal from './add_api_modal';
+import FetchDataModal from './fetch_data_modal';
 
 function App() {
   const [api_keys, set_api_keys] = useState([]);
@@ -19,14 +20,17 @@ function App() {
   const [rows_per_page] = useState(500);
   const [sort_column, set_sort_column] = useState('ticker_symbol');
   const [sort_direction, set_sort_direction] = useState('asc');
+  const [show_fetch_data_modal, set_show_fetch_data_modal] = useState(false);
 
   // Fetch the jobs list
   useEffect(() => {
-    fetch('/api/jobs')
-      .then(response => response.json())
-      .then(data => set_jobs(data))
-      .catch(err => console.error('Error fetching jobs:', err));
-  }, []);
+    if (active_content === 'jobs') {
+      fetch('/api/jobs')
+        .then(response => response.json())
+        .then(data => set_jobs(data))
+        .catch(err => console.error('Error fetching jobs:', err));
+    }
+  }, [active_content]);
 
   // Fetch API keys when settings page is opened  
   useEffect(() => {
@@ -59,6 +63,16 @@ function App() {
         .catch(err => console.error('Error fetching stocks data:', err));
     }
   }, [active_content, sort_column, sort_direction]);
+
+  // Fetch the jobs list
+  useEffect(() => {
+    if (active_content === 'jobs') {
+      fetch('/api/jobs')
+        .then(response => response.json())
+        .then(data => set_jobs(data))
+        .catch(err => console.error('Error fetching jobs:', err));
+    }
+  }, [active_content]);
 
   // Function to navigate back to the main content
   const go_to_home  = () => {
@@ -215,10 +229,6 @@ function App() {
     });
   };
 
-  const add_new_job = () => {
-    // Logic to add new job
-  };
-
   const delete_job = (job_id) => {
     fetch(`/api/jobs/${job_id}`, {
       method: 'DELETE',
@@ -226,6 +236,23 @@ function App() {
       .then(response => response.ok && set_jobs(jobs.filter(job => job.id !== job_id)))
       .catch(err => console.error(`Error deleting job: ${job_id}`, err));
   };
+
+  // Function to handle fetching data
+  const fetch_data = (fetch_params) => {
+    if (fetch_params.two_years) {
+      console.log('Fetching full 2 years of data...')
+      // Implement fetch logic here
+    } else {
+      const { start_date, end_date } = fetch_params;
+      console.log('Fetching data from', start_date, 'to', end_date);
+      // Implement fetch logic here
+    } 
+  };
+
+  // Add a button to open the fetch data modal
+  const add_new_job = () => {
+    set_show_fetch_data_modal(true);
+  }
 
   return (
     <div className='App'>
@@ -320,14 +347,17 @@ function App() {
               <h1>Data Fetch Job Scheduler</h1>
               <hr />
               <button onClick={add_new_job} className='add-job-button'>
-                <FaPlus /> Add New Job
+                <FaPlus /> <strong>Add New Job</strong>
               </button>
               <table className='jobs-table'>
                 <thead>
                   <tr>
                     <th>Job Name</th>
-                    <th>Schedule</th>
+                    <th>Scheduled Start Time</th>
                     <th>Status</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Run Time</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -335,11 +365,17 @@ function App() {
                   {jobs.length > 0 ? (
                     jobs.map((job, index) => (
                       <tr key={index}>
-                        <td>{job.name}</td>
-                        <td>{job.schedule}</td>
+                        <td>{job.job_name}</td>
+                        <td>{job.scheduled_start_time}</td>
                         <td>{job.status}</td>
+                        <td>{job.start_time}</td>
+                        <td>{job.end_time}</td>
+                        <td>{job.run_time}</td>
                         <td>
-                          <button onClick={() => delete_job(job.id)} title="Delete Job">
+                          <button 
+                            className='delete-job-button'
+                            onClick={() => delete_job(job.id)} 
+                            title="Delete Job">
                             <FaTrash />
                           </button>
                         </td>
@@ -347,7 +383,7 @@ function App() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4">No Jobs Found</td>
+                      <td colSpan="7">No Jobs Found</td>
                     </tr>
                   )}
                 </tbody>
@@ -417,6 +453,11 @@ function App() {
         show={show_add_modal}
         on_close={() => set_show_add_modal(false)}
         on_save={save_new_api_key}
+      />
+      <FetchDataModal
+        show={show_fetch_data_modal}
+        on_close={() => set_show_fetch_data_modal(false)}
+        on_fetch={fetch_data}
       />
     </div>
   );

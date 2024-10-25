@@ -1,9 +1,7 @@
 .modal-backdrop {
     position: fixed;
-    top: 0;
-    left: 0;
     width: 30%;
-    height: 30%;
+    height: 40%;
     color: #ccc;
     background-color: rgb(56, 56, 56);
     display: flex;
@@ -15,23 +13,39 @@
     border-radius: 20px;
 }
 
-.modal-input-block {
-    margin-bottom: 15px;
+.radio-group {
+    padding-bottom: 10px;
 }
 
-.modal-input-block input {
-    width: 400px;
+.date-picker-container {
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.date-picker-field {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.date-picker-field label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    width: 100%;
+}
+
+.date-picker-field input {
     padding: 8px;
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+    width: 100%;
 }
 
-.modal-input-block label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
+.date-picker-container {
+    padding-bottom: 10px;
 }
 
 .modal-actions button {
@@ -65,3 +79,6 @@
     background-color: #6c6d6d;
     color: white;
 }
+
+
+

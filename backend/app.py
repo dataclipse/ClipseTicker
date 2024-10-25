@@ -78,6 +78,36 @@ def add_api_key():
     db_manager.insert_api_key(service, api_key)
     return jsonify({'message': 'API key added successfully'}), 201
 
+@app.route('/api/jobs', methods=['GET'])
+def get_jobs():
+    try:
+        # Fetch all jobs from the database
+        jobs_data = db_manager.select_all_jobs()
+        return jsonify(jobs_data), 200
+    
+    except Exception as e:
+        print(f"Error retrieving jobs: {e}")
+        return jsonify({"error": "Unable to retrieve jobs"}), 500
+    
+@app.route('/api/jobs', methods=['POST'])
+def add_jobs():
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        description = data.get('description')
+
+        if not title or not description:
+            return jsonify({"error": "Job title and description are required"}), 400
+        
+        # Use the DBManager to insert the job
+        db_manager.insert_job(title, description)
+
+        return jsonify({"message": "Job added successfully"}), 201
+    
+    except Exception as e:
+        print(f"Error adding job: {e}")
+        return jsonify({"error": "Unable to add job"}), 500
+
 def load_api_key(file_path):
         try:
             with open(file_path, 'r') as file:

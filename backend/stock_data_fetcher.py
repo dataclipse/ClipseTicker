@@ -123,6 +123,15 @@ class PolygonStockFetcher:
     def fetch_data_for_date_range(self, start_date, end_date):
         # Fetch stock data for a given date range using producer-consumer threading model.
         start_time = time.time()
+        job_name = f"Fetch Data for Date Range: {start_date} to {end_date}"
+        scheduled_start_time = datetime.now()
+
+        # Check and Insert initial job entry if none exists
+        self.job_init(job_name, scheduled_start_time, 'Scheduled')
+
+        # Update job status to 'Running' and set start time
+        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Running')
+        self.database_connect.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
 
         print(f"Fetching stock data from {start_date} to {end_date}...")
 
@@ -146,9 +155,15 @@ class PolygonStockFetcher:
         # Convert total_time to hours, minutes, and seconds
         hours, remainder = divmod(total_time, 3600)
         minutes, seconds = divmod(remainder, 60)
+        formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
+
+        # Update job end time, run time, and status to 'Completed'
+        self.database_connect.update_job_end_time(job_name, scheduled_start_time, datetime.now())
+        self.database_connect.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
+        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Completed')
 
         print(f"Finished fetching data for date range {start_date} to {end_date}.")
-        print(f"Time Taken: {int(hours)} hours, {int(minutes)} minutes, and {seconds:.2f} seconds.")
+        print(f"Time Taken: {formatted_run_time}")
     
     def fetch_previous_two_years(self):
         # Start a timer for timing how long this function will take to run.
@@ -167,6 +182,16 @@ class PolygonStockFetcher:
         start_date_str = two_years_ago.strftime("%Y-%m-%d")
         end_date_str = end_date.strftime("%Y-%m-%d")
 
+        job_name = f"Fetch Previous Two Years: {start_date_str} to {end_date_str}"
+        scheduled_start_time = datetime.now()
+
+        # Check and Insert initial job entry if none exists
+        self.job_init(job_name, scheduled_start_time, 'Scheduled')
+
+        # Update job status to 'Running' and set start time
+        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Running')
+        self.database_connect.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
+    
         print(f"Fetching data from {start_date_str} to {end_date_str}...")
 
         producer = threading.Thread(target=self.producer_thread, args=(start_date_str, end_date_str))
@@ -187,5 +212,20 @@ class PolygonStockFetcher:
         # Convert total_time to hours, minutes, and seconds
         hours, remainder = divmod(total_time, 3600)
         minutes, seconds = divmod(remainder, 60)
+        formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
-        print(f"Finished fetching data. Time Taken: {int(hours)} hours, {int(minutes)} minutes, and {seconds:.2f} seconds.")
+        # Update job end time, run time, and status to 'Completed'
+        self.database_connect.update_job_end_time(job_name, scheduled_start_time, datetime.now())
+        self.database_connect.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
+        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Completed')
+
+        print(f"Finished fetching data. Time Taken: {formatted_run_time}")
+
+    def job_init(self, job_name, scheduled_start_time, status):
+        # Check if the job row already exists
+        existing_job = self.database_connect.select_job(job_name, scheduled_start_time)
+        if not existing_job:
+            # Insert initial job entry if it does not exist
+            self.database_connect.insert_job(job_name, scheduled_start_time, status)
+        else:
+            print(f"Job '{job_name}' scheduled at {scheduled_start_time} already exists.")
