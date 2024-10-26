@@ -157,7 +157,7 @@ class DBManager:
         try:
             # Prepared the values to update
             update_values = {
-                'run_times': run_time,
+                'run_time': run_time,
                 'updated_at': datetime.now()
             }
 
@@ -292,6 +292,40 @@ class DBManager:
             print(f"Error updating job status: {e}")
         
         finally:
+            session.close()
+
+    def delete_job(self, job_name, scheduled_start_time):
+        # Delete a job for a given job name and scheduled start time
+        session = self.Session()
+
+        try:
+            # Convert scheduled_start_time to datetime if it is not already
+            print(scheduled_start_time)
+            if isinstance(scheduled_start_time, str):
+                scheduled_start_time = datetime.strptime(scheduled_start_time, '%Y-%m-%d %H:%M:%S.%f')
+
+            # Prepare the delete statement
+            delete_stmt = self.jobs.delete().where(
+                self.jobs.c.job_name == job_name,
+                self.jobs.c.scheduled_start_time == scheduled_start_time
+            )
+            result = session.execute(delete_stmt)
+
+            # Commit the delete
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"Job '{job_name}' scheduled for {scheduled_start_time} deleted successfully.")
+            else:
+                print(f"No job found with the name '{job_name}' scheduled for {scheduled_start_time}.")
+
+        except Exception as e:
+            # Rollback the transaction if any error occurs
+            session.rollback()
+            print(f"Error deleting job '{job_name}': {e}")
+        
+        finally:
+            # Close the session
             session.close()
 
     def insert_job(self, job_name, scheduled_start_time, status, start_time=None, end_time = None, run_time = None):

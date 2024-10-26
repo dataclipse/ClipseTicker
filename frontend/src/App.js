@@ -1,6 +1,7 @@
 import './App.css';
 import React, { useState, useEffect} from 'react';
 import { FaHome, FaQuestionCircle, FaBars, FaSearch, FaPlus, FaTrash, FaCog } from 'react-icons/fa';
+import { IoMdRefresh } from "react-icons/io";
 import { HiMiniChartBarSquare } from 'react-icons/hi2';
 import { AiFillSchedule } from "react-icons/ai";
 import ConfigureModal from './configure_modal';
@@ -67,12 +68,17 @@ function App() {
   // Fetch the jobs list
   useEffect(() => {
     if (active_content === 'jobs') {
-      fetch('/api/jobs')
+      fetch_jobs();
+    }
+  }, [active_content]);
+
+  // Function to fetch jobs
+  const fetch_jobs = () => {
+    fetch('/api/jobs')
         .then(response => response.json())
         .then(data => set_jobs(data))
         .catch(err => console.error('Error fetching jobs:', err));
-    }
-  }, [active_content]);
+  };
 
   // Function to navigate back to the main content
   const go_to_home  = () => {
@@ -229,12 +235,23 @@ function App() {
     });
   };
 
-  const delete_job = (job_id) => {
-    fetch(`/api/jobs/${job_id}`, {
-      method: 'DELETE',
-    })
-      .then(response => response.ok && set_jobs(jobs.filter(job => job.id !== job_id)))
-      .catch(err => console.error(`Error deleting job: ${job_id}`, err));
+  const delete_job = (job_name, scheduled_start_time) => {
+    if (window.confirm(`Are you sure you want to delete job: ${job_name} scheduled for ${scheduled_start_time}?`)) {
+      fetch(`/api/jobs`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ job_name, scheduled_start_time }),
+      })
+        .then(response => {
+          if(!response.ok) {
+            throw new Error(`Error deleting job: ${job_name}`);
+          }
+          set_jobs(jobs.filter(job => !(job.job_name === job_name && job.scheduled_start_time === scheduled_start_time)));
+        })
+        .catch(err => console.error(`Error deleting job: ${job_name}`, err));
+    }
   };
 
   // Function to handle fetching data
@@ -252,7 +269,12 @@ function App() {
   // Add a button to open the fetch data modal
   const add_new_job = () => {
     set_show_fetch_data_modal(true);
-  }
+  };
+
+  // Function to refresh jobs
+  const refresh_jobs = () => {
+    fetch_jobs();
+  };
 
   return (
     <div className='App'>
@@ -346,9 +368,14 @@ function App() {
             <div className='jobs-page'>
               <h1>Data Fetch Job Scheduler</h1>
               <hr />
-              <button onClick={add_new_job} className='add-job-button'>
-                <FaPlus /> <strong>Add New Job</strong>
-              </button>
+              <div className='job-controls'>
+                <button onClick={add_new_job} className='add-job-button'>
+                  <FaPlus /> <strong>Add New Job</strong>
+                </button>
+                <button onClick={refresh_jobs} className='refresh-button'>
+                  <IoMdRefresh /> <strong>Refresh</strong>
+                </button>
+              </div>
               <table className='jobs-table'>
                 <thead>
                   <tr>
@@ -374,7 +401,7 @@ function App() {
                         <td>
                           <button 
                             className='delete-job-button'
-                            onClick={() => delete_job(job.id)} 
+                            onClick={() => delete_job(job.job_name, job.scheduled_start_time)} 
                             title="Delete Job">
                             <FaTrash />
                           </button>

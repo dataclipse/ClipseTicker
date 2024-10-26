@@ -32,9 +32,42 @@ const FetchDataModal = ({ show, on_close, on_fetch }) => {
     }, [fetch_option]);
 
     const handle_fetch = () => {
-        const fetch_data = fetch_option === 'date_range' ? { start_date, end_date } : { two_years: true };
-        on_fetch(fetch_data);
+        console.log("Fetch Data button clicked");
+        
+        // Close the modal immediately and run the batch job in the background.
         on_close();
+
+        if (fetch_option === 'two_years') {
+            console.log("Fetching two years data");
+            fetch('/api/jobs/2yr')
+                .then(response => {
+                    if (!response.ok) throw new Error("Failed to fetch two years data");
+                    return response.json();
+                })
+                .then(data => {
+                    on_fetch(data);
+                })
+                .catch(error => {
+                    console.error("Error fetching two years data:", error);
+                });
+        } else {
+            console.log("Fetching data for date range");
+            fetch('/api/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ start_date, end_date })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Failed to fetch data for date range");
+                return response.json();
+            })
+            .then(data => {
+                on_fetch(data);
+            })
+            .catch(error => {
+                console.error("Error fetching data from date range:", error);
+            });
+        }
     };
     
     if (!show) return null;
