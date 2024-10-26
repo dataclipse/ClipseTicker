@@ -124,7 +124,7 @@ class PolygonStockFetcher:
         # Fetch stock data for a given date range using producer-consumer threading model.
         start_time = time.time()
         job_name = f"Fetch Data for Date Range: {start_date} to {end_date}"
-        scheduled_start_time = datetime.now()
+        scheduled_start_time = datetime.now().replace(microsecond=0)
 
         # Check and Insert initial job entry if none exists
         self.job_init(job_name, scheduled_start_time, 'Scheduled')
@@ -183,7 +183,7 @@ class PolygonStockFetcher:
         end_date_str = end_date.strftime("%Y-%m-%d")
 
         job_name = f"Fetch Previous Two Years: {start_date_str} to {end_date_str}"
-        scheduled_start_time = datetime.now()
+        scheduled_start_time = datetime.now().replace(microsecond=0)
 
         # Check and Insert initial job entry if none exists
         self.job_init(job_name, scheduled_start_time, 'Scheduled')

@@ -23,16 +23,6 @@ function App() {
   const [sort_direction, set_sort_direction] = useState('asc');
   const [show_fetch_data_modal, set_show_fetch_data_modal] = useState(false);
 
-  // Fetch the jobs list
-  useEffect(() => {
-    if (active_content === 'jobs') {
-      fetch('/api/jobs')
-        .then(response => response.json())
-        .then(data => set_jobs(data))
-        .catch(err => console.error('Error fetching jobs:', err));
-    }
-  }, [active_content]);
-
   // Fetch API keys when settings page is opened  
   useEffect(() => {
     if (active_content === 'settings') {
@@ -69,6 +59,12 @@ function App() {
   useEffect(() => {
     if (active_content === 'jobs') {
       fetch_jobs();
+
+      const interval_id = setInterval(() => {
+        fetch_jobs();
+      }, 5000);
+
+      return () => clearInterval(interval_id);
     }
   }, [active_content]);
 
@@ -483,7 +479,12 @@ function App() {
       />
       <FetchDataModal
         show={show_fetch_data_modal}
-        on_close={() => set_show_fetch_data_modal(false)}
+        on_close={() => {
+          set_show_fetch_data_modal(false);
+          setTimeout(() => {
+            refresh_jobs();
+          }, 500);
+        }}
         on_fetch={fetch_data}
       />
     </div>

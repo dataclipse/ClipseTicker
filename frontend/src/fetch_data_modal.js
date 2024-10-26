@@ -69,7 +69,7 @@ const FetchDataModal = ({ show, on_close, on_fetch }) => {
             });
         }
     };
-    
+  
     if (!show) return null;
 
     return (

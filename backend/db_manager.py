@@ -302,7 +302,8 @@ class DBManager:
             # Convert scheduled_start_time to datetime if it is not already
             print(scheduled_start_time)
             if isinstance(scheduled_start_time, str):
-                scheduled_start_time = datetime.strptime(scheduled_start_time, '%Y-%m-%d %H:%M:%S.%f')
+                scheduled_start_time = datetime.strptime(scheduled_start_time, '%a, %d %b %Y %H:%M:%S %Z')
+                print(scheduled_start_time)
 
             # Prepare the delete statement
             delete_stmt = self.jobs.delete().where(
