@@ -49,13 +49,6 @@ class PolygonStockFetcher:
             # Batch insertion to optimize database operations
             self.database_connect.insert_stock_batch(stock_data_batch)
 
-    def fetch_data_for_date(self, date):
-        # Fetch stock data for a single date and add it to the database queue.
-        stock_data = self.get_stock_data(date)
-        if stock_data is not None:
-            # Push the data to the db_insert_queue to be inserted later in batches
-            self.db_insert_queue.put(stock_data)
-
     def producer_thread(self, start_date, end_date):
         # Producer thread that generates API calls and fetches stock data concurrently.
         current_date = datetime.strptime(start_date, "%Y-%m-%d")
@@ -86,8 +79,7 @@ class PolygonStockFetcher:
                 try:
                     future.result() # This will raise any exception that occurred in the thread
                 except Exception as e:
-                    print(f"Error in fecthing data: {e}")
-            
+                    print(f"Error in fecthing data: {e}")         
 
     def consumer_thread(self):
         # Consumer thread that batches stock data inserts into the database
@@ -119,6 +111,13 @@ class PolygonStockFetcher:
                     print(f"Inserted {len(buffer)} remaining stock entries into the database.")
                     buffer = []
                 break # Exit the thread
+
+    def fetch_data_for_date(self, date):
+        # Fetch stock data for a single date and add it to the database queue.
+        stock_data = self.get_stock_data(date)
+        if stock_data is not None:
+            # Push the data to the db_insert_queue to be inserted later in batches
+            self.db_insert_queue.put(stock_data)
 
     def fetch_data_for_date_range(self, start_date, end_date):
         # Fetch stock data for a given date range using producer-consumer threading model.

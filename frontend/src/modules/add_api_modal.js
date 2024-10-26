@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import './add_api_modal.css';
+import '../css/add_api_modal.css';
 
 function AddApiModal({ show, on_close, service, api_key, on_save }) {
     const [new_service, set_new_service] = useState(service);
@@ -12,10 +12,6 @@ function AddApiModal({ show, on_close, service, api_key, on_save }) {
         }
     }, [show, service, api_key]);
 
-    if (!show) {
-        return null;
-    }
-
     const handle_save  = () => {
         if (new_service && new_api_key) {
             on_save(new_service, new_api_key);
@@ -24,6 +20,8 @@ function AddApiModal({ show, on_close, service, api_key, on_save }) {
             alert("Please fill in both service name and API key.")
         }
     };
+
+    if (!show) return null;
 
     return (
         <div className='modal-backdrop'>

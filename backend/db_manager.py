@@ -491,6 +491,36 @@ class DBManager:
         finally:
             session.close()
 
+    def select_all_api_keys(self):
+        session = self.Session()
+        try:
+            # Query to select all api keys
+            select_stmt = select(self.api_keys.c.service, self.api_keys.c.encrypted_api_key)
+            result = session.execute(select_stmt)
+            rows = result.fetchall()
+
+            # Create a list of service and api keys
+            api_keys_list = []
+            for row in rows:
+                service = row.service
+                encrypted_api_key = row.encrypted_api_key
+                decrypted_api_key = self.decrypt_api_key(encrypted_api_key)
+                api_keys_list.append({"service": service, "api_key": decrypted_api_key})
+            
+            if not api_keys_list:
+                print("No API key found.")
+            else:
+                print(f"Retrieved {len(api_keys_list)} API keys.")
+
+            return api_keys_list
+        
+        except Exception as e:
+            print(f"Error retrieving all API keys: {e}")
+            return []
+        
+        finally:
+            session.close()
+
     def insert_stock(self, ticker, close_price, highest_price, lowest_price, open_price, timestamp_end, timestamp):
         # Insert a new stock row
         session = self.Session() # Create a new Session
@@ -556,36 +586,6 @@ class DBManager:
                 print("No stock data found.")
         finally:
             session.close() # Close the session
-
-    def select_all_api_keys(self):
-        session = self.Session()
-        try:
-            # Query to select all api keys
-            select_stmt = select(self.api_keys.c.service, self.api_keys.c.encrypted_api_key)
-            result = session.execute(select_stmt)
-            rows = result.fetchall()
-
-            # Create a list of service and api keys
-            api_keys_list = []
-            for row in rows:
-                service = row.service
-                encrypted_api_key = row.encrypted_api_key
-                decrypted_api_key = self.decrypt_api_key(encrypted_api_key)
-                api_keys_list.append({"service": service, "api_key": decrypted_api_key})
-            
-            if not api_keys_list:
-                print("No API key found.")
-            else:
-                print(f"Retrieved {len(api_keys_list)} API keys.")
-
-            return api_keys_list
-        
-        except Exception as e:
-            print(f"Error retrieving all API keys: {e}")
-            return []
-        
-        finally:
-            session.close()
 
     def insert_stock_batch(self, stock_data_batch):
         # Inserts multiple stock records into the database in a batch operation.

@@ -98,7 +98,6 @@ def delete_jobs():
     except Exception as e:
         print(f"Error deleting job '{job_name}' scheduled at '{scheduled_start_time}': {e}")
         return jsonify({"error": "Unable to delete job"}), 500
-        
 
 @app.route('/api/jobs', methods=['GET'])
 def get_jobs():
@@ -143,7 +142,6 @@ def fetch_data_job_2yr():
     except Exception as e:
         print(f"Error retrieving two-year jobs data: {e}")
         return jsonify({"error": "Unable to retrieve jobs data for the last two years"}), 500
-
 
 def load_api_key(file_path):
         try:

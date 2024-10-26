@@ -2,23 +2,14 @@
 import React, { useEffect, useState } from "react";
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import './fetch_data_modal.css';
+import '../css/fetch_data_modal.css';
 
 const FetchDataModal = ({ show, on_close, on_fetch }) => {
     const [fetch_option, set_fetch_option] = useState('date_range');
     const [start_date, set_start_date] = useState(null);
     const [end_date, set_end_date] = useState(null);
 
-    // Function to calculated the dates for 'two_years' selection
-    const calculate_two_years_dates = () => {
-        const today = new Date();
-        const two_years_ago = new Date(today.getFullYear()-2, today.getMonth(), today.getDate());
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 1);
-        return { start_date: two_years_ago, end_date: yesterday};
-    };
-    
-    // Update start and end dates when 'two_years' option is selected
+    // Update start and end dates when 'two_years' option is selected 
     useEffect(() => {
         if (fetch_option === 'two_years') {
             const { start_date, end_date } = calculate_two_years_dates();
@@ -31,6 +22,16 @@ const FetchDataModal = ({ show, on_close, on_fetch }) => {
         }
     }, [fetch_option]);
 
+    // Function to calculated the dates for 'two_years' selection
+    const calculate_two_years_dates = () => {
+        const today = new Date();
+        const two_years_ago = new Date(today.getFullYear()-2, today.getMonth(), today.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        return { start_date: two_years_ago, end_date: yesterday};
+    };
+
+    // Function for calling job fetcher
     const handle_fetch = () => {
         console.log("Fetch Data button clicked");
         

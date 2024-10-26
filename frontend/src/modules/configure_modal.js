@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import './configure_modal.css';
+import '../css/configure_modal.css';
 
 function ConfigureModal({ show, on_close, service, api_key, on_save }) {
     const [edited_service, set_edited_service] = useState(service);
@@ -12,14 +12,12 @@ function ConfigureModal({ show, on_close, service, api_key, on_save }) {
         }
     }, [show, service, api_key]);
 
-    if (!show) {
-        return null;
-    }
-
     const handle_save  = () => {
         on_save(edited_service, edited_api_key);
         on_close();
     };
+
+    if (!show) return null;
 
     return (
         <div className='modal-backdrop'>
