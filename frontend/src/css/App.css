@@ -143,56 +143,7 @@
   margin-bottom: 20px;
 } 
 
-/* Styling for the stocks content page */
-.stocks-content h1 {
-  font-size: 36px;
-}
-
-.stocks-content hr {
-  width: 100%;
-  border: 2px solid #333;
-  margin-bottom: 20px;
-}
-
-/* Styling for the api buttons */
-.add-api-button {
-  background-color: transparent;
-  border: 1px solid #333;
-  border-radius: 4px;
-  color: #333;
-  padding: 5px 10px;
-  cursor: pointer;
-  margin-left: 10px;
-  font-size: 15px;
-  transition: background-color 0.3s, color 0.3s;
-  text-align: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-api-button:hover {
-  background-color: #333;
-  color: white;
-}
-
-.configure-button{
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  color:#333;
-  margin-left: 10px;
-}
-
-.trash-button{
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  color:#333;
-  margin-left: 10px; 
-}
-
-/* Styling for the api keys table */
+/* Styling for API Keys */
 .api-keys-table {
   width: 100%;
   border-collapse: collapse;
@@ -237,7 +188,54 @@
   background-color: #e1e1e1;
 }
 
-/* Styling for the stocks table */
+.add-api-button {
+  background-color: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #333;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 15px;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-api-button:hover {
+  background-color: #333;
+  color: white;
+}
+
+.configure-button{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color:#333;
+  margin-left: 10px;
+}
+
+.trash-button{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color:#333;
+  margin-left: 10px; 
+}
+
+/* Styling for Stocks */
+.stocks-content h1 {
+  font-size: 36px;
+}
+
+.stocks-content hr {
+  width: 100%;
+  border: 2px solid #333;
+  margin-bottom: 20px;
+}
+
 .stocks-table {
   width: 100%;
   border-collapse: collapse;
@@ -280,7 +278,6 @@
   background-color: #e1e1e1;
 }
 
-/* Arrow styles */
 .stocks-table th.sortable::after {
   content: '';
   position: absolute;
@@ -292,26 +289,17 @@
   transition: border-color 0.3s; 
 }
 
-/* Ascending arrow */
 .stocks-table th.sortable.asc::after {
   border-bottom: 5px solid #fff; 
 }
 
-/* Descending arrow */
 .stocks-table th.sortable.desc::after {
   border-top: 5px solid #fff; 
 }
 
-/* Hover effects */
 .stocks-table th:hover::after {
   border-bottom-color: gray; 
   border-top-color: gray; 
-}
-
-.jobs-page hr {
-  width: 100%;
-  border: 2px solid #333;
-  margin-bottom: 20px;
 }
 
 /* Styling for the jobs table */
@@ -321,10 +309,17 @@
   margin-top: 20px;
 }
 
+.jobs-page hr {
+  width: 100%;
+  border: 2px solid #333;
+  margin-bottom: 20px;
+}
+
 .jobs-table th, .jobs-table td {
   border: 2px solid #ddd;
   padding: 10px;
   text-align: left;
+  font-size: 14px;
 }
 
 .jobs-table th {
@@ -352,7 +347,6 @@
   background-color: #e1e1e1;
 }
 
-/* Arrow styles */
 .jobs-table th.sortable::after {
   content: '';
   position: absolute;
@@ -364,17 +358,14 @@
   transition: border-color 0.3s;
 }
 
-/* Ascending arrow */
 .jobs-table th.sortable.asc::after {
   border-bottom: 5px solid #fff;
 }
 
-/* Descending arrow */
 .jobs-table th.sortable.desc::after {
   border-top: 5px solid #fff;
 }
 
-/* Hover effects */
 .jobs-table th:hover::after {
   border-bottom-color: gray;
   border-top-color: gray;

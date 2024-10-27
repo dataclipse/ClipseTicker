@@ -97,7 +97,7 @@ const FetchDataModal = ({ show, on_close, on_fetch }) => {
                                 checked={fetch_option === 'two_years'}
                                 onChange={() => set_fetch_option('two_years')}
                             />
-                            Full 2 Years
+                            Full 2 Years (Run Time: ~ 3 Hours)
                         </label>
                     </div>
                 </div>

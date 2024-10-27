@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, insert, update, PrimaryKeyConstraint, func, delete
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, DateTime, select, update, PrimaryKeyConstraint, func, Index
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
@@ -60,6 +60,9 @@ class DBManager:
             Column('insert_timestamp', DateTime),
             PrimaryKeyConstraint('ticker_symbol', 'timestamp_end')
         )
+
+        # Create an index on the stocks table for timestamp_end and ticket_symbol
+        Index('idx_stocks_timestamp_ticker', stocks.c.ticker_symbol, stocks.c.timestamp_end)
 
         # Define the api_keys table
         api_keys = Table(
@@ -365,8 +368,18 @@ class DBManager:
     def get_recent_stock_prices(self):
         session = self.Session()
         try:
-            # Use a window function to rank the entries by timestamp_end for each ticker_symbol
+            # Subquery to get the latest Timestamp for each ticker_symbol
             subquery = (
+                select(
+                    self.stocks.c.ticker_symbol,
+                    func.max(self.stocks.c.timestamp_end).label('max_timestamp')
+                )
+                .group_by(self.stocks.c.ticker_symbol)
+                .subquery()
+            ) 
+
+            # Main query to get stock detailse where timestamp_end is the latest for each ticker_symbol   
+            query = (
                 select(
                     self.stocks.c.ticker_symbol,
                     self.stocks.c.open_price,
@@ -374,33 +387,28 @@ class DBManager:
                     self.stocks.c.highest_price,
                     self.stocks.c.lowest_price,
                     self.stocks.c.timestamp_end,
-                    func.row_number().over(
-                        partition_by=self.stocks.c.ticker_symbol,
-                        order_by=self.stocks.c.timestamp_end.desc()
-                    ).label('rank')
+                    subquery.c.max_timestamp
                 )
-            ).subquery()
-            
-            # Select only the rows where rank is 1 (most recent)
-            query = (
-                select(subquery)
-                .where(subquery.c.rank == 1)
+                .join(subquery,
+                      (self.stocks.c.ticker_symbol == subquery.c.ticker_symbol) &
+                      (self.stocks.c.timestamp_end == subquery.c.max_timestamp))
             )
 
             # Execute the query
             result = session.execute(query)
 
             # Convert the result to a list of dictionaries
-            stocks_data = []
-            for row in result:
-                stocks_data.append({
+            stocks_data = [
+                {
                     'ticker_symbol': row.ticker_symbol,
                     'open_price': row.open_price,
                     'close_price': row.close_price,
                     'highest_price': row.highest_price,
                     'lowest_price': row.lowest_price,
-                    'timestamp_end': row.timestamp_end
-                })
+                    'timestamp_end': row.max_timestamp
+                }
+                for row in result
+            ]
             
             return stocks_data
         except Exception as e:
