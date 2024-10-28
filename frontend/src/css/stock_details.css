@@ -1,0 +1,91 @@
+.stocks-content h1 {
+    font-size: 36px;
+  }
+  
+  .stocks-content hr {
+    width: 100%;
+    border: 2px solid #333;
+    margin-bottom: 20px;
+  }
+  
+  .stocks-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .stocks-details-table th, .stocks-details-table td {
+    border: 2px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  .stocks-details-table th {
+    background-color: #5f5f5f;
+    color: white;
+    position: relative; 
+    cursor: pointer; 
+    padding-right: 25px; 
+    user-select: none;
+  }
+  
+  .stocks-details-table th:first-child {
+    border-top-left-radius: 10px;
+    text-align: left;
+  }
+  
+  .stocks-details-table th:not(:first-child), .stocks-details-table td:not(:first-child) {
+    text-align: right;
+  }
+  
+  .stocks-details-table th:last-child {
+    border-top-right-radius: 10px;
+  }
+  
+  .stocks-details-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  .stocks-details-table tr:hover {
+    background-color: #e1e1e1;
+  }
+  
+  .stocks-details-table th.sortable::after {
+    content: '';
+    position: absolute;
+    right: 10px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    border-left: 5px solid transparent; 
+    border-right: 5px solid transparent; 
+    transition: border-color 0.3s; 
+  }
+  
+  .stocks-details-table th.sortable.asc::after {
+    border-bottom: 5px solid #fff; 
+  }
+  
+  .stocks-details-table th.sortable.desc::after {
+    border-top: 5px solid #fff; 
+  }
+  
+  .stocks-details-table th:hover::after {
+    border-bottom-color: gray; 
+    border-top-color: gray; 
+  }
+
+  .back-button {
+    background-color: transparent;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #333;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 15px;
+    transition: background-color 0.3s, color 0.3s;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }

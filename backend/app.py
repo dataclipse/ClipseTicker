@@ -23,6 +23,21 @@ def get_stocks():
     except Exception as e:
         print(f"Error retrieving stock data: {e}")
         return jsonify({"error": "Unable to retrieve stock data"}), 500
+    
+@app.route('/api/stocks/<string:ticker_symbol>', methods=['GET'])
+def get_stock_by_ticker(ticker_symbol):
+    try:
+        # Fetch stock data for the given ticker symbol
+        stock_data = db_manager.get_stock_data_by_ticker(ticker_symbol)
+
+        if stock_data is None:
+            return jsonify({"error": f"No data found for ticker symbol '{ticker_symbol}'"}), 404
+        
+        # Return the stock data in JSON format
+        return jsonify(stock_data), 200
+    except Exception as e:
+        print(f"Error retrieving stock data for ticker symbol '{ticker_symbol}': {e}")
+        return jsonify({"error": "Unable to retrieve stock data"}), 500
 
 @app.route('/api/keys', methods=['GET'])
 def get_api_keys():

@@ -365,58 +365,6 @@ class DBManager:
             # Close the session
             session.close()
 
-    def get_recent_stock_prices(self):
-        session = self.Session()
-        try:
-            # Subquery to get the latest Timestamp for each ticker_symbol
-            subquery = (
-                select(
-                    self.stocks.c.ticker_symbol,
-                    func.max(self.stocks.c.timestamp_end).label('max_timestamp')
-                )
-                .group_by(self.stocks.c.ticker_symbol)
-                .subquery()
-            ) 
-
-            # Main query to get stock detailse where timestamp_end is the latest for each ticker_symbol   
-            query = (
-                select(
-                    self.stocks.c.ticker_symbol,
-                    self.stocks.c.open_price,
-                    self.stocks.c.close_price,
-                    self.stocks.c.highest_price,
-                    self.stocks.c.lowest_price,
-                    self.stocks.c.timestamp_end,
-                    subquery.c.max_timestamp
-                )
-                .join(subquery,
-                      (self.stocks.c.ticker_symbol == subquery.c.ticker_symbol) &
-                      (self.stocks.c.timestamp_end == subquery.c.max_timestamp))
-            )
-
-            # Execute the query
-            result = session.execute(query)
-
-            # Convert the result to a list of dictionaries
-            stocks_data = [
-                {
-                    'ticker_symbol': row.ticker_symbol,
-                    'open_price': row.open_price,
-                    'close_price': row.close_price,
-                    'highest_price': row.highest_price,
-                    'lowest_price': row.lowest_price,
-                    'timestamp_end': row.max_timestamp
-                }
-                for row in result
-            ]
-            
-            return stocks_data
-        except Exception as e:
-            print(f"Error retrieving recent stock prices: {e}")
-            return []
-        finally:
-            session.close()
-
     def delete_api_key(self, service):
         # Delete API for a given service
         session = self.Session()
@@ -630,6 +578,97 @@ class DBManager:
             session.rollback()
             print(f"Error during batch upsert: {e}.")
         
+        finally:
+            session.close()
+
+    def get_recent_stock_prices(self):
+        session = self.Session()
+        try:
+            # Subquery to get the latest Timestamp for each ticker_symbol
+            subquery = (
+                select(
+                    self.stocks.c.ticker_symbol,
+                    func.max(self.stocks.c.timestamp_end).label('max_timestamp')
+                )
+                .group_by(self.stocks.c.ticker_symbol)
+                .subquery()
+            ) 
+
+            # Main query to get stock detailse where timestamp_end is the latest for each ticker_symbol   
+            query = (
+                select(
+                    self.stocks.c.ticker_symbol,
+                    self.stocks.c.open_price,
+                    self.stocks.c.close_price,
+                    self.stocks.c.highest_price,
+                    self.stocks.c.lowest_price,
+                    self.stocks.c.timestamp_end,
+                    subquery.c.max_timestamp
+                )
+                .join(subquery,
+                      (self.stocks.c.ticker_symbol == subquery.c.ticker_symbol) &
+                      (self.stocks.c.timestamp_end == subquery.c.max_timestamp))
+            )
+
+            # Execute the query
+            result = session.execute(query)
+
+            # Convert the result to a list of dictionaries
+            stocks_data = [
+                {
+                    'ticker_symbol': row.ticker_symbol,
+                    'open_price': row.open_price,
+                    'close_price': row.close_price,
+                    'highest_price': row.highest_price,
+                    'lowest_price': row.lowest_price,
+                    'timestamp_end': row.max_timestamp
+                }
+                for row in result
+            ]
+            
+            return stocks_data
+        except Exception as e:
+            print(f"Error retrieving recent stock prices: {e}")
+            return []
+        finally:
+            session.close()
+
+    def get_stock_data_by_ticker(self, ticker_symbol):
+        session = self.Session()
+        try:
+            # Main query to get all stock details for the given ticker symbol
+            query = (
+                select(
+                    self.stocks.c.ticker_symbol,
+                    self.stocks.c.open_price,
+                    self.stocks.c.close_price,
+                    self.stocks.c.highest_price,
+                    self.stocks.c.lowest_price,
+                    self.stocks.c.timestamp_end
+                )
+                .where(self.stocks.c.ticker_symbol == ticker_symbol)
+            )
+
+            # Execute the query
+            result = session.execute(query)
+
+            # Convert the result to a list of dictionaries
+            stocks_data = [
+                {
+                    'ticker_symbol': row.ticker_symbol,
+                    'open_price': row.open_price,
+                    'close_price': row.close_price,
+                    'highest_price': row.highest_price,
+                    'lowest_price': row.lowest_price,
+                    'timestamp_end': row.timestamp_end
+                }
+                for row in result
+            ]
+
+            return stocks_data
+        except Exception as e:
+            print(f"Error retrieving stock data for ticker '{ticker_symbol}': {e}")
+            return []
         finally:
             session.close()
 
