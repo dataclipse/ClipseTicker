@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { IoMdRefresh } from "react-icons/io";
 import FetchDataModal from '../modules/fetch_data_modal';
@@ -10,19 +10,7 @@ function Jobs() {
     const [sort_column, set_sort_column] = useState('start_time'); 
     const [sort_direction, set_sort_direction] = useState('desc');
 
-    useEffect(() => {
-        fetch_jobs();
-
-        //Polling to refresh jobs every 5 seconds
-        const interval_id = setInterval(() => {
-            fetch_jobs();
-        }, 5000);
-
-        return () => clearInterval(interval_id);
-    }, []);
-
-    // Fetch jobs from API
-    const fetch_jobs = () => {
+    const fetch_jobs = useCallback(() => {
         fetch('/api/jobs')
             .then(response => response.json())
             .then(data => {
@@ -30,7 +18,15 @@ function Jobs() {
                 set_jobs(sorted_jobs);
             })
             .catch(err => console.error('Error fetching jobs:', err));
-    };
+    }, [sort_column, sort_direction]);
+    
+    useEffect(() => {
+        fetch_jobs();
+    
+        const interval_id = setInterval(fetch_jobs, 5000);
+    
+        return () => clearInterval(interval_id);
+    }, [fetch_jobs]);
 
     // Delete jobs from API
     const delete_job = (job_name, scheduled_start_time) => {
