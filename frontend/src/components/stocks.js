@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { sort_items } from "../utils/sort_items";
 import '../css/stocks.css';
 import StockDetails from "./stock_details";
+import { IoCaretBack, IoCaretForward } from "react-icons/io5";
 
 function Stocks() {
     const [stocks, set_stocks] = useState([]);
     const [loading, set_loading] = useState(false);
-    const [current_page, set_current_page] = useState(0);
-    const [rows_per_page] = useState(500);
+    const [current_page, set_current_page] = useState(1);
+    const items_per_page = 50;
     const [sort_column, set_sort_column] = useState('ticker_symbol');
     const [sort_direction, set_sort_direction] = useState('asc');
     const [selected_ticker, set_selected_ticker] = useState(null);
@@ -44,9 +45,6 @@ function Stocks() {
         return () => clearInterval(interval_id);
     }, [fetch_stocks]);
 
-    // Pagination and sorting logic
-    const handle_page_change = (pageNumber) => set_current_page(pageNumber);
-
     const handle_sort = (column) => {
         const new_direction = sort_column === column && sort_direction === 'asc' ? 'desc' : 'asc';
         set_sort_column(column);
@@ -70,9 +68,10 @@ function Stocks() {
         });
     };
 
-    const start_row = current_page * rows_per_page;
-    const end_row = start_row + rows_per_page;
-    const current_stocks = stocks.slice(start_row, end_row);
+    const index_of_first_record = current_page * items_per_page;
+    const index_of_last_record = index_of_first_record + items_per_page;
+    const current_stocks = stocks.slice(index_of_first_record, index_of_last_record);
+    const total_pages = Math.ceil(stocks.length / items_per_page);
 
     return (
         <div className='stocks-content'>
@@ -129,16 +128,22 @@ function Stocks() {
                                     )}
                                 </tbody>
                             </table>
-                            <div className='pagination'>
-                                {Array.from({ length: Math.ceil(stocks.length / rows_per_page) }, (_, index) => (
-                                    <button 
-                                        key={index} 
-                                        onClick={() => handle_page_change(index)} 
-                                        className={current_page === index ? 'active' : ''}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                ))}
+
+                            {/* Pagination */} 
+                            <div className='pagination-controls'>
+                                <button 
+                                    onClick={() => set_current_page(prev => Math.max(prev -1 , 1))}
+                                    disabled={current_page === 1}
+                                >
+                                    <IoCaretBack /> Previous
+                                </button>
+                                <span>Page {current_page} of {total_pages}</span>
+                                <button
+                                    onClick={() => set_current_page(prev => Math.min(prev + 1, total_pages))}
+                                    disabled={current_page === total_pages}
+                                >
+                                    Next <IoCaretForward />
+                                </button>
                             </div>
                         </>
                     )}
