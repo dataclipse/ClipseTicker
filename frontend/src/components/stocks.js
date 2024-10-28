@@ -131,18 +131,20 @@ function Stocks() {
 
                             {/* Pagination */} 
                             <div className='pagination-controls'>
-                                <button 
+                                <button
+                                    className='pagination-button-prev'
                                     onClick={() => set_current_page(prev => Math.max(prev -1 , 1))}
                                     disabled={current_page === 1}
                                 >
-                                    <IoCaretBack /> Previous
+                                    <IoCaretBack /> <strong>Previous</strong>
                                 </button>
-                                <span>Page {current_page} of {total_pages}</span>
+                                <span>  Page {current_page} of {total_pages}  </span>
                                 <button
+                                    className='pagination-button-next'
                                     onClick={() => set_current_page(prev => Math.min(prev + 1, total_pages))}
                                     disabled={current_page === total_pages}
                                 >
-                                    Next <IoCaretForward />
+                                    <strong>Next</strong> <IoCaretForward />
                                 </button>
                             </div>
                         </>
