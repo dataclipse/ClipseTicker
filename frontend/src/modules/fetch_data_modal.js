@@ -74,8 +74,8 @@ const FetchDataModal = ({ show, on_close, on_fetch }) => {
     if (!show) return null;
 
     return (
-        <div className='modal-backdrop'>
-            <div className='modal-content'>
+        <div className='modal-backdrop-fetch'>
+            <div className='modal-content-fetch'>
                 <h2>Fetch Data</h2>
                 <div className='radio-group'>    
                     <div className='radio-option'>

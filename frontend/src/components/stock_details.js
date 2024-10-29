@@ -33,14 +33,17 @@ function StockDetails({ ticker_symbol, on_back }) {
             });
     }, [ticker_symbol, sort_column, sort_direction]);
 
+    // Helper function to handle sorting
     const handle_sort = (column) => {
         const new_direction = (sort_column === column && sort_direction === 'asc') ? 'desc' : 'asc';
         set_sort_column(column);
         set_sort_direction(new_direction);
     };
 
+    // Helper function to format currency values
     const format_currency = (value) => `$${parseFloat(value).toFixed(2)}`;
 
+    // Helper function to format the date to be displayed in a more readable format
     const format_date = (unix_timestamp) => {
         const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
         const date = new Date(timestamp);
@@ -54,6 +57,7 @@ function StockDetails({ ticker_symbol, on_back }) {
         });
     };
     
+    // Format the timestamp for the chart
     const format_date_for_chart = (unix_timestamp) => {
         const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
         return new Date(timestamp);
@@ -67,6 +71,7 @@ function StockDetails({ ticker_symbol, on_back }) {
     // Calculate total pages
     const total_pages = Math.ceil(stock_details.length / items_per_page);
 
+    // Create an array for stock data
     const chart_data = stock_details
     .map(stock => ({
         timestamp_end: format_date_for_chart(stock.timestamp_end),
@@ -78,20 +83,29 @@ function StockDetails({ ticker_symbol, on_back }) {
     .filter(stock => stock.timestamp_end)
     .sort((a, b) => b.timestamp_end - a.timestamp_end);
     
+    // Set up echarts options
     const get_option = () => {
         return {
             title: {
                 text: `Candlestick Chart for ${ticker_symbol}`,
                 left: 'center',
                 textStyle: {
-                    color: '#ffffff' // White title color
+                    color: '#ffffff' 
                 }
             },
             tooltip: {
                 trigger: 'axis',
                 axisPointer: {
                     type: 'cross',
-                }
+                    backgroundColor: '#333333',
+                    color: '#ffffff' 
+                },
+                backgroundColor: '#333333', 
+                textStyle: {
+                    color: '#ffffff' 
+                },
+                borderColor: '#555555', 
+                borderWidth: 1
             },
             grid: {
                 left: '3%',
@@ -104,35 +118,71 @@ function StockDetails({ ticker_symbol, on_back }) {
                 data: chart_data.map(stock => stock.timestamp_end.toLocaleString()),
                 axisLine: {
                     lineStyle: {
-                        color: '#ffffff' // White line
+                        color: '#ffffff' 
                     }
                 },
                 splitLine: { show: false },
                 scale: true,
                 boundaryGap: false,
                 inverse: true,
+                axisPointer: {
+                    label: {
+                        backgroundColor: '#333333', 
+                        color: '#ffffff',
+                        borderColor: '#555555', 
+                        borderWidth: 1            
+                    }
+                }
             },
             yAxis: {
                 type: 'value',
                 axisLine: {
                     lineStyle: {
-                        color: '#ffffff' // White line
-                    }
+                        color: '#ffffff' 
+                    },
                 },
                 splitLine: {
                     lineStyle: {
-                        color: '#555555' // Dark gray for split lines
+                        color: '#555555' 
                     }
                 },
                 scale: true,
+                axisPointer: {
+                    label: {
+                        backgroundColor: '#333333', 
+                        color: '#ffffff',
+                        borderColor: '#555555', 
+                        borderWidth: 1            
+                    }
+                }
             },
+            dataZoom: [
+                {
+                    type: 'slider',    
+                    xAxisIndex: 0,     
+                    start: 0,          
+                    end: 100,          
+                    handleSize: '80%', 
+                    height: 20,        
+                    bottom: 10,        
+                    textStyle: {
+                        color: '#ffffff' 
+                    }
+                },
+                {
+                    type: 'inside',    
+                    xAxisIndex: 0,
+                    start: 0,
+                    end: 100
+                }
+            ],
             series: [{
                 type: 'candlestick',
                 name: ticker_symbol,
                 data: chart_data.map(stock => [stock.open, stock.close, stock.low, stock.high]),
                 itemStyle: {
-                    color: '#ff0000', // Red for down days
-                    color0: '#00ff00', // Green for up days
+                    color: '#ff0000', 
+                    color0: '#00ff00', 
                     borderColor: '#00ff00',
                     borderColor0: '#ff0000',
                 },
@@ -143,7 +193,7 @@ function StockDetails({ ticker_symbol, on_back }) {
                     }
                 }
             }],
-            backgroundColor: '#333333' // Dark background
+            backgroundColor: '#333333' 
         };
     };
 

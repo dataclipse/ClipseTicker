@@ -24,8 +24,8 @@ function AddApiModal({ show, on_close, service, api_key, on_save }) {
     if (!show) return null;
 
     return (
-        <div className='modal-backdrop'>
-            <div className='modal-content'>
+        <div className='modal-backdrop-api'>
+            <div className='modal-content-api'>
                 <h2>Add API Key</h2>
                 <div className='modal-input-block'>
                     <label>Service Name:</label>
