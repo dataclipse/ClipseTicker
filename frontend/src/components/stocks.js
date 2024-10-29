@@ -14,7 +14,7 @@ function Stocks() {
     const [selected_ticker, set_selected_ticker] = useState(null);
 
     const fetch_stocks = useCallback(() => {
-        set_loading(true);
+        set_loading(stocks.length === 0);
         fetch('/api/stocks')
             .then(response => {
                 if (!response.ok) {
@@ -31,7 +31,7 @@ function Stocks() {
                 console.error('Error fetching stocks data:', err);
                 set_loading(false);
             });
-    }, [sort_column, sort_direction]);
+    }, [sort_column, sort_direction, stocks.length]);
 
     // Fetch stocks on component mount or when sort changes
     useEffect(() => {
@@ -53,7 +53,6 @@ function Stocks() {
     };
     
     const format_currency = (value) => `$${parseFloat(value).toFixed(2)}`;
-
 
     const format_date = (unix_timestamp) => {
         const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;

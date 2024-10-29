@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import'../css/stock_details.css';
 import { sort_items } from "../utils/sort_items";
 import { IoCaretBack, IoCaretForward } from "react-icons/io5";
+import ReactECharts from 'echarts-for-react';
 
 function StockDetails({ ticker_symbol, on_back }) {
     const [stock_details, set_stock_details] = useState([]);
@@ -10,7 +11,6 @@ function StockDetails({ ticker_symbol, on_back }) {
     const [sort_direction, set_sort_direction] = useState('desc');
     const [current_page, set_current_page] = useState(1);
     const items_per_page = 10;
-    
 
     useEffect(() => {
         set_loading(true);
@@ -53,14 +53,99 @@ function StockDetails({ ticker_symbol, on_back }) {
             hour12: true    
         });
     };
+    
+    const format_date_for_chart = (unix_timestamp) => {
+        const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
+        return new Date(timestamp);
+    };
 
     // Calculate the current records to display based on the current page
     const index_of_last_record = current_page * items_per_page;
     const index_of_first_record = index_of_last_record - items_per_page;
-    const current_records = stock_details.slice(index_of_first_record, index_of_last_record)
+    const current_records = stock_details.slice(index_of_first_record, index_of_last_record);
 
     // Calculate total pages
     const total_pages = Math.ceil(stock_details.length / items_per_page);
+
+    const chart_data = stock_details
+    .map(stock => ({
+        timestamp_end: format_date_for_chart(stock.timestamp_end),
+        open: stock.open_price,
+        high: stock.highest_price, 
+        low: stock.lowest_price,
+        close: stock.close_price
+    }))
+    .filter(stock => stock.timestamp_end)
+    .sort((a, b) => b.timestamp_end - a.timestamp_end);
+    
+    const get_option = () => {
+        return {
+            title: {
+                text: `Candlestick Chart for ${ticker_symbol}`,
+                left: 'center',
+                textStyle: {
+                    color: '#ffffff' // White title color
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: chart_data.map(stock => stock.timestamp_end.toLocaleString()),
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff' // White line
+                    }
+                },
+                splitLine: { show: false },
+                scale: true,
+                boundaryGap: false,
+                inverse: true,
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: {
+                    lineStyle: {
+                        color: '#ffffff' // White line
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#555555' // Dark gray for split lines
+                    }
+                },
+                scale: true,
+            },
+            series: [{
+                type: 'candlestick',
+                name: ticker_symbol,
+                data: chart_data.map(stock => [stock.open, stock.close, stock.low, stock.high]),
+                itemStyle: {
+                    color: '#ff0000', // Red for down days
+                    color0: '#00ff00', // Green for up days
+                    borderColor: '#00ff00',
+                    borderColor0: '#ff0000',
+                },
+                emphasis: {
+                    itemStyle: {
+                        color: '#ff0000',
+                        color0: '#00ff00',
+                    }
+                }
+            }],
+            backgroundColor: '#333333' // Dark background
+        };
+    };
 
     return (
         <div className='stock-details-content'>
@@ -73,6 +158,10 @@ function StockDetails({ ticker_symbol, on_back }) {
                 <>
                     <button onClick={on_back} className='back-button'><IoCaretBack /><strong> Back to all Stocks</strong></button>
                     <h2>Details for {ticker_symbol}</h2>
+                    {/* ECharts Candlestick Chart */}
+                    <ReactECharts option={get_option()} style={{ height: '500px', width: '100%' }} />
+                    
+                    {/* Stock Details Table */}
                     <table className='stocks-details-table'>
                         <thead>
                             <tr>
