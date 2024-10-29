@@ -1,4 +1,19 @@
-/* General styling*/
+/* Inits */
+:root{
+  --color-background: #f0f0f0;
+  --color-table-header-bg: #5f5f5f;
+  --color-table-header-text: white;
+  --color-table-hover-bg: #e1e1e1;
+  --color-sidebar-bg: #f0f0f0;
+  --color-border: #ddd;
+  --color-text: #333;
+  --color-nav-button: white;
+  --color-nav-button-hover: grey;
+  --color-content-bg: #f0f0f0;
+  --color-disabled: #aaa;
+}
+
+/* General styling  var(--color-content-bg)*/
 .App {
   display: flex;
   height: 100vh;
@@ -6,37 +21,73 @@
   font-family: 'Roboto', sans-serif;
 }
 
-/* Navbar styling */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: black;
-  padding: 10px 20px;
-  color: white;
-  height: 60px;
-}
-
-.navbar-right {
-  display: flex;
-  font-size: 24px;
-}
-
-.icon-button {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.icon-button:hover {
-  color: gray;
-}
-
-.navbar-left h1 {
+/* Header Styling */
+h1 {
   margin: 0;
+  font-size: 36px;
+}
+
+h2 {
   font-size: 24px;
+}
+
+hr {
+  width: 100%;
+  border: 2px solid var(--color-text);
+  margin-bottom: 20px;
+}
+
+/* Table styling */
+th, td {
+  border: 2px solid var(--color-border);
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: var(--color-table-header-bg);
+  color: var(--color-table-header-text);
+  position: relative; 
+  cursor: pointer; 
+  padding-right: 25px; 
+  user-select: none;
+}
+
+tr:hover {
+  background-color: var(--color-table-hover-bg);
+}
+
+th.sortable.asc::after {
+  border-bottom: 5px solid var(--color-border); 
+}
+
+th.sortable.desc::after {
+  border-top: 5px solid var(--color-border); 
+}
+
+th:hover::after {
+  border-bottom-color: var(--color-border); 
+  border-top-color: var(--color-border); 
+}
+
+th.sortable::after {
+  content: '';
+  position: absolute;
+  right: 10px; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  border-left: 5px solid transparent; 
+  border-right: 5px solid transparent; 
+  transition: border-color 0.3s; 
+}
+
+th:first-child {
+  border-top-left-radius: 10px;
+  text-align: left;
+}
+
+th:last-child {
+  border-top-right-radius: 10px;
 }
 
 /* Layout for sidebar and content */
@@ -48,10 +99,11 @@
 /* Sidebar styling*/
 .sidebar {
   width: 200px;
-  background-color: white;
-  color: black;
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-text);
   padding: 20px;
   font-size: 24px;
+  border: 2px solid var(--color-border);
 }
 
 .sidebar nav ul {
@@ -78,29 +130,16 @@
 .content{
   padding: 20px;
   flex-grow: 1;
-  background-color: #f0f0f0;
-}
-
-/* Styling for the main content page */
-.main-content h1 {
-  font-size: 36px;
+  background-color: var(--color-content-bg);
 }
 
 /* Styling for the settings page */
 .settings-page {
   padding: 40px;
-  background-color:#f0f0f0;
+  background-color:var(--color-content-bg);
   flex-grow: 1;
   margin-left: 300px;
   margin-right: 300px;
-}
-
-.settings-page h1 {
-  font-size: 36px;
-}
-
-.settings-page h2 {
-  font-size: 24px;
 }
 
 .settings-page ul {
@@ -111,7 +150,7 @@
 
 .settings-page hr {
   width: 100%;
-  border: 2px solid #333;
+  border: 2px solid var(--color-border);
   margin-bottom: 20px;
 } 
 
@@ -120,29 +159,6 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
-}
-
-.api-keys-table th, .api-keys-table td {
-  border: 2px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-.api-keys-table th {
-  background-color: #5f5f5f;
-  color: white;
-}
-
-.api-keys-table th:first-child {
-  border-top-left-radius: 10px;
-}
-
-.api-keys-table th:last-child {
-  border-top-right-radius: 10px;
-}
-
-.api-keys-table tr:nth-child(even) {
-  background-color: #f2f2f2;
 }
 
 .api-keys-table td:last-child {
@@ -156,15 +172,11 @@
   font-size: 18px;
 }
 
-.api-keys-table tr:hover {
-  background-color: #e1e1e1;
-}
-
 .add-api-button {
   background-color: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  color: #333;
+  color: var(--color-text);
   padding: 5px 10px;
   cursor: pointer;
   margin-left: 10px;
@@ -177,15 +189,15 @@
 }
 
 .add-api-button:hover {
-  background-color: #333;
-  color: white;
+  background-color: var(--color-text);
+  color: var(--color-content-bg);
 }
 
 .configure-button{
   background-color: transparent;
   border: none;
   cursor: pointer;
-  color:#333;
+  color:var(--color-text);
   margin-left: 10px;
 }
 
@@ -193,85 +205,19 @@
   background-color: transparent;
   border: none;
   cursor: pointer;
-  color:#333;
+  color:var(--color-text);
   margin-left: 10px; 
 }
 
 /* Styling for Stocks */
-.stocks-content h1 {
-  font-size: 36px;
-}
-
-.stocks-content hr {
-  width: 100%;
-  border: 2px solid #333;
-  margin-bottom: 20px;
-}
-
 .stocks-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
 }
 
-.stocks-table th, .stocks-table td {
-  border: 2px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-.stocks-table th {
-  background-color: #5f5f5f;
-  color: white;
-  position: relative; 
-  cursor: pointer; 
-  padding-right: 25px; 
-  user-select: none;
-}
-
-.stocks-table th:first-child {
-  border-top-left-radius: 10px;
-  text-align: left;
-}
-
 .stocks-table th:not(:first-child), .stocks-table td:not(:first-child) {
   text-align: right;
-}
-
-.stocks-table th:last-child {
-  border-top-right-radius: 10px;
-}
-
-.stocks-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.stocks-table tr:hover {
-  background-color: #e1e1e1;
-}
-
-.stocks-table th.sortable::after {
-  content: '';
-  position: absolute;
-  right: 10px; 
-  top: 50%; 
-  transform: translateY(-50%); 
-  border-left: 5px solid transparent; 
-  border-right: 5px solid transparent; 
-  transition: border-color 0.3s; 
-}
-
-.stocks-table th.sortable.asc::after {
-  border-bottom: 5px solid #fff; 
-}
-
-.stocks-table th.sortable.desc::after {
-  border-top: 5px solid #fff; 
-}
-
-.stocks-table th:hover::after {
-  border-bottom-color: gray; 
-  border-top-color: gray; 
 }
 
 .pagination-controls {
@@ -288,9 +234,9 @@
 .pagination-button-prev,
 .pagination-button-next {
   background-color: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  color: #333;
+  color: var(--color-text);
   padding: 5px 10px;
   cursor: pointer;
   margin-left: 10px;
@@ -305,14 +251,14 @@
 
 .pagination-button-prev:hover,
 .pagination-button-next:hover {
-    background-color: #333;
-    color: white;
+    background-color: var(--color-text);
+    color: var(--color-content-bg);
 }
 
 .pagination-button-prev:disabled,
 .pagination-button-next:disabled {
-    color: #aaa; 
-    border-color: #aaa;
+    color: var(--color-disabled); 
+    border-color: var(--color-border);
     cursor: not-allowed; 
     pointer-events: none; 
 }
@@ -324,73 +270,11 @@
   margin-top: 20px;
 }
 
-.jobs-page hr {
-  width: 100%;
-  border: 2px solid #333;
-  margin-bottom: 20px;
-}
-
-.jobs-table th, .jobs-table td {
-  border: 2px solid #ddd;
-  padding: 10px;
-  text-align: left;
-  font-size: 14px;
-}
-
-.jobs-table th {
-  background-color: #5f5f5f;
-  color: white;
-  position: relative;
-  cursor: pointer;
-  padding-right: 25px;
-  user-select: none;
-}
-
-.jobs-table th:first-child {
-  border-top-left-radius: 10px;
-}
-
-.jobs-table th:last-child {
-  border-top-right-radius: 10px;
-}
-
-.jobs-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.jobs-table tr:hover {
-  background-color: #e1e1e1;
-}
-
-.jobs-table th.sortable::after {
-  content: '';
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  transition: border-color 0.3s;
-}
-
-.jobs-table th.sortable.asc::after {
-  border-bottom: 5px solid #fff;
-}
-
-.jobs-table th.sortable.desc::after {
-  border-top: 5px solid #fff;
-}
-
-.jobs-table th:hover::after {
-  border-bottom-color: gray;
-  border-top-color: gray;
-}
-
 .add-job-button {
   background-color: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  color: #333;
+  color: var(--color-text);
   padding: 5px 10px;
   cursor: pointer;
   margin-left: 10px;
@@ -406,7 +290,7 @@
   background-color: transparent;
   border: none;
   cursor: pointer;
-  color:#333;
+  color:var(--color-text);
   margin-left: 10px; 
 }
 
@@ -420,9 +304,9 @@
 .refresh-button {
   margin-left: auto;
   background-color: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  color: #333;
+  color: var(--color-text);
   padding: 5px 10px;
   cursor: pointer;
   margin-left: 10px;

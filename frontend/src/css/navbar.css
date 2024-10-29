@@ -1,59 +1,91 @@
-.search_bar {
-    position: relative;
+:root {
+    --color-nav-background:black;
+    --color-nav-text:white;
+    --color-nav-button: white;
+    --color-nav-button-hover: grey;
+}
+
+/* Navbar styling */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-nav-background);
+    padding: 10px 20px;
+    color: var(--color-nav-text);
+    height: 60px;
+}
+  
+.navbar-right {
+    display: flex;
+    font-size: 24px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: var(--color-nav-button);
+    font-size: 24px;
+    cursor: pointer;
+}
+  
+.icon-button:hover {
+    color: var(--color-nav-button-hover);
+}
+
+.search-input {
+    position: absolute;
+    border-radius: 4px;
+    background: rgb(116, 116, 116);
+    font-size: 18px;
+    color: var(--color-nav-text);
+    width: 390px;
+    padding: 2px 5px;            
+    margin: 0;
+    left: 40%;
+    line-height: 1;
+    display: block;
+    text-transform: uppercase;
 }
 
 .suggestions-list {
     position: absolute;
-    background-color: grey;
-    color: white;
+    background: rgb(116, 116, 116);
     border: 1px solid #ccc;
-    z-index: 1000;
+    border-radius: 4px;
+    max-height: 200px;
     overflow-y: auto;
     width: 400px;
-    margin-top: 80px;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    border-radius: 5px;
-    text-align: center;
+    z-index: 1000;
+    list-style-type: none; 
+    padding: 0;            
+    margin: 8px;  
+    margin-left: 2px;
+    left: 40%;           
+}
+
+::placeholder {
+    font-style: italic;
+    padding: 2px 5px;
+    color: rgb(78, 78, 78);
+    display: block;
+    text-transform: none;
+}
+
+.search-icon {
+    font-size: 20px;
+}
+
+.suggestions-list.show {
+    opacity: 1; 
+    visibility: visible; 
 }
 
 .suggestions-list li {
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
-    color: white;
 }
 
 .suggestions-list li:hover {
-    background-color: #555;
+    background-color: #7a7a7a;
 }
-
-/* Search bar styling */
-.search-bar {
-    display: flex;
-    align-items: center;
-    background-color: grey;
-    border-radius: 5px;
-    padding: 5px 10px;
-    width: 400px;
-  }
-  
-  .search-icon {
-    font-size: 20px;
-    color: black;
-    margin-right: 8px;
-  }
-  
-  .search-input {
-    border: none;
-    outline: none;
-    font-size: 16px;
-    background-color: grey;
-    color:white;
-    width: 100%;
-  }
-  
-  .search-input::placeholder {
-    color:white;
-  }
