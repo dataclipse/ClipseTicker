@@ -1,127 +1,87 @@
-import { useState } from 'react';
-import { ProSidebar, Menu, MenuItem} from 'react-pro-sidebar';
-import 'react-pro-sidebar/dist/css/styles.css'
-import { Box, IconButton, Typography, useTheme } from '@mui/material'
-import { Link } from 'react-router-dom'
-import { tokens } from '../../theme'
+import { Box, Typography, useTheme, Drawer, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { tokens } from '../../theme';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import WorkIcon from '@mui/icons-material/Work';
 import KeyIcon from '@mui/icons-material/Key';
-// import ContactslinedIcon from '@mui/icons-material/HomeOutlined'
-// import RecieptlinedIcon from '@mui/icons-material/HomeOutlined'
-// import PersonlinedIcon from '@mui/icons-material/HomeOutlined'
-// import CalendarTodayOutlinedIcon from '@mui/icons-material/HomeOutlined'
+import { useState } from 'react';
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     return (
-        <MenuItem
-           active={selected === title}
-           style={{ color: colors.grey[100] }}
-           onClick={() => setSelected(title)}
-           icon={icon}
-        >
-            <Typography>{title}</Typography>
-            <Link to={to} />
-        </MenuItem>
+        <ListItem button component={Link} to={to} onClick={() => setSelected(title)}>
+            <ListItemIcon style={{ color: selected === title ? colors.blueAccent[700] : colors.grey[100] }}>
+                {icon}
+            </ListItemIcon>
+            <ListItemText primary={title} style={{ color: colors.grey[100] }} />
+        </ListItem>
     );
 };
 
 const Sidebar = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const [isCollapsed, setIsCollapsed] = useState(false);
     const [selected, setSelected] = useState("Dashboard");
 
     return (
-        <Box 
-            sx={{
-                    "& .pro-sidebar-inner": {
+        <Box sx={{ display: 'flex' }}>
+            <Drawer
+                variant="permanent"
+                sx={{
+                    "& .MuiDrawer-paper": {
                         background: `${colors.primary[400]} !important`,
-                    },
-                    "& .pro-icon-wrapper": {
-                        backgroundColor: "transparent !important",
-                    },
-                    "& .pro-inner-item": {
-                        padding: "5px 35px 5px 20px !important",
-                    },
-                    "& .pro-inner-item:hover": {
-                        color: "#868dfb !important",
-                    },
-                    "& .pro-menu-item.active": {
-                        color: "#6870fa !important",
-                    },
-                    "& .pro-sidebar": {
-                        height: "100%"
+                        width: 250,
+                        height: '100%',
                     },
                 }}
-            
-        >
-            <ProSidebar collapsed={isCollapsed} >
-                <Menu iconShape="square" >
-                {/* LOGO AND MENU ICON */}
-                    <MenuItem 
-                        onClick={() => setIsCollapsed(!isCollapsed)} 
-                        icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
-                        style={{ 
-                            margin: "10px 0 20px 0", 
-                            color: colors.grey[100] 
-                        }}
-                    >
-                        {!isCollapsed && (
-                            <Box 
-                                display="flex" 
-                                justifyContent="space-between" 
-                                alignItems="center" 
-                                ml="15px" 
-                            >
-                                <Typography variant="h3" color={colors.grey[100]}>
-                                    ClipseTicker
-                                </Typography>
-                                <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
-                                    <MenuOutlinedIcon />    
-                                </IconButton>   
-                            </Box>
-                        )}
-                    </MenuItem>
-                    {/* User */}
-                    {!isCollapsed && (
-                        <Box mb="25px">
-                            <Box display={"flex"} justifyContent={"center"} alignItems={"center"}>
-                                <img 
-                                    alt="profile-user"
-                                    width="50px"
-                                    height="50px"
-                                    src={'../../assets/user.png'}
-                                    style={{cursor: "pointer", borderRadius: "50%"}} 
-                                />
-                            </Box>
-                            <Box textAlign={"center"} >
-                                <Typography variant="h3" color={colors.grey[100]} fontWeight="bold" sx={{ m: "10px 0 0 0"}}>Dataclipse</Typography>
-                                <Typography variant="h5" color={colors.greenAccent[500]}>Admin</Typography>
-                            </Box>
-                        </Box>
-                    )}
-
-                    <Box paddingLeft={isCollapsed ? undefined : "10%"}>
-                        <Item
-                           title="Dashboard"
-                           to="/"
-                           icon={<HomeOutlinedIcon />}
-                           selected={selected}
-                           setSelected={setSelected}
-                        />
-
-                        <Typography 
-                            variant="h6" 
-                            color={colors.grey[300]} 
-                            sx={{ m: "15px 0 5px 20px"}}
-                        >
-                            Markets
+            >
+                <Box
+                    sx={{
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                    }}
+                >
+                    <Box mb="25px">
+                        <Typography variant="h2" color={colors.grey[100]} align='center' fontWeight='bold'>
+                            ClipseTicker
                         </Typography>
+                    </Box>
+                    <Box mb="10px" display="flex" justifyContent="center" alignItems="center">
+                        <img
+                            alt="profile-user"
+                            width="50px"
+                            height="50px"
+                            src={'../../assets/user.png'}
+                            style={{ cursor: "pointer", borderRadius: "50%" }}
+                        />
+                    </Box>
+                    <Box textAlign="center">
+                        <Typography variant="h4" color={colors.grey[100]} fontWeight="bold" sx={{ m: "1px 0 0 0" }}>Dataclipse</Typography>
+                        <Typography variant="h5" color={colors.greenAccent[500]}>Admin</Typography>
+                    </Box>
+
+                    <List sx={{ marginTop: '20px' }}>
+                        <Item
+                            title="Dashboard"
+                            to="/"
+                            icon={<HomeOutlinedIcon />}
+                            selected={selected}
+                            setSelected={setSelected}
+                        />
+                    </List>
+                    <Typography 
+                        variant="h6" 
+                        fontWeight={'bold'}
+                        color={colors.grey[300]} 
+                        sx={{ m: "15px 0 5px 20px"}}
+                    >
+                        Markets
+                    </Typography>
+                    <List>
                         <Item
                             title="Stocks"
                             to="/stocks"
@@ -129,14 +89,16 @@ const Sidebar = () => {
                             selected={selected}
                             setSelected={setSelected}
                         />
-                        
-                        <Typography
-                            variant="h6"
-                            color={colors.grey[300]}
-                            sx={{ m: "15px 0 5px 20px"}}
-                        >
-                            Data
-                        </Typography>
+                    </List>
+                    <Typography 
+                        variant="h6" 
+                        color={colors.grey[300]}
+                        fontWeight={'bold'} 
+                        sx={{ m: "15px 0 5px 20px"}}
+                    >
+                        Data
+                    </Typography>
+                    <List>
                         <Item
                             title="Jobs"
                             to="/jobs"
@@ -144,13 +106,16 @@ const Sidebar = () => {
                             selected={selected}
                             setSelected={setSelected}
                         />
-                        <Typography
-                            variant="h6"
-                            color={colors.grey[300]}
-                            sx={{ m: "15px 0 5px 20px"}}
-                        >
-                            Settings
-                        </Typography>
+                    </List>
+                    <Typography 
+                        variant="h6" 
+                        color={colors.grey[300]}
+                        fontWeight={'bold'}
+                        sx={{ m: "15px 0 5px 20px"}}
+                    >
+                        Settings
+                    </Typography>
+                    <List>
                         <Item
                             title="API Keys"
                             to="/api_keys"
@@ -158,11 +123,11 @@ const Sidebar = () => {
                             selected={selected}
                             setSelected={setSelected}
                         />
-                    </Box>
-                </Menu>
-            </ProSidebar>
+                    </List>
+                </Box>
+            </Drawer>
         </Box>
-    )
+    );
 }
 
 export default Sidebar;

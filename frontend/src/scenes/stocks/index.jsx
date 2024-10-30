@@ -99,7 +99,7 @@ const Stocks = () => {
             <Header title="NYSE" subtitle="Most Recent OHLC Data" />
             <Box
                 m="40px 0 0 0"
-                height="75vh"
+                display="flex"
                 sx={{
                     "& .MuiDataGrid-root": {
                         border: "none",
@@ -124,7 +124,7 @@ const Stocks = () => {
                 <DataGrid 
                     rows={stocksData} 
                     columns={columns}
-                    loading={loading} 
+                    loading={loading}
                 />
             </Box>
         </Box>

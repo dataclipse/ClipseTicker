@@ -1,7 +1,7 @@
 import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 
 const Jobs = () => {
@@ -98,7 +98,7 @@ const Jobs = () => {
             <Header title="Data Fetch" subtitle="Status of Jobs to Fetch Stock Data" />
             <Box
                 m="40px 0 0 0"
-                height="75vh"
+                display="flex"
                 sx={{
                     "& .MuiDataGrid-root": {
                         border: "none",

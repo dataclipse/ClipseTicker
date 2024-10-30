@@ -1,8 +1,8 @@
 import { ColorModeContext, useMode } from "./theme";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { Routes, Route } from "react-router-dom";
 import Topbar from "./scenes/global/topbar";
-import Sidebar from "./scenes/global/sidebar";
+import Sidebar from "./scenes/global/sidebar.jsx";
 import Dashboard from "./scenes/dashboard";
 import Jobs from "./scenes/jobs";
 import Stocks from "./scenes/stocks";
@@ -17,10 +17,11 @@ function App(){
         <ColorModeContext.Provider value={colorMode}>
             <ThemeProvider theme={theme}>
                 <CssBaseline />
-                <div className="app">
+                <Box className="app" display={"flex"}>
                     <Sidebar />
-                    <main className="content">
+                    <Box className="content" component="main" sx={{ flexGrow: 1, padding: '20px', marginLeft: '250px' }}>
                         <Topbar />
+                        
                         <Routes>
                             <Route path="/" element={<Dashboard />} />
                             <Route path="/jobs" element={<Jobs />} />
@@ -29,8 +30,8 @@ function App(){
                             {/* <Route path="/stocks/:stockId" element={<StockDetails />} /> */}
                             {/* <Route path="/faq" element={<FAQ />} /> */}
                         </Routes>
-                    </main>
-                </div>
+                    </Box>
+                </Box>
             </ThemeProvider>
         </ColorModeContext.Provider>
     )

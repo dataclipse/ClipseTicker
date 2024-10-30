@@ -1,7 +1,7 @@
 import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 
 const ApiKeys = () => {
@@ -62,7 +62,7 @@ const ApiKeys = () => {
             <Header title="API Keys" subtitle="API Keys for Data Providers" />
             <Box
                 m="40px 0 0 0"s
-                height="75vh"
+                display="flex"
                 sx={{
                     "& .MuiDataGrid-root": {
                         border: "none",
