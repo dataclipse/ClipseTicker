@@ -451,7 +451,7 @@ class DBManager:
         session = self.Session()
         try:
             # Query to select all api keys
-            select_stmt = select(self.api_keys.c.service, self.api_keys.c.encrypted_api_key)
+            select_stmt = select(self.api_keys.c.service, self.api_keys.c.encrypted_api_key, self.api_keys.c.created_at, self.api_keys.c.updated_at)
             result = session.execute(select_stmt)
             rows = result.fetchall()
 
@@ -461,7 +461,9 @@ class DBManager:
                 service = row.service
                 encrypted_api_key = row.encrypted_api_key
                 decrypted_api_key = self.decrypt_api_key(encrypted_api_key)
-                api_keys_list.append({"service": service, "api_key": decrypted_api_key})
+                created_at = row.created_at
+                updated_at = row.updated_at
+                api_keys_list.append({"service": service, "api_key": decrypted_api_key, "created_at": created_at, "updated_at": updated_at})
             
             if not api_keys_list:
                 print("No API key found.")

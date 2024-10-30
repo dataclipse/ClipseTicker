@@ -4,9 +4,9 @@ import { FaHome, FaQuestionCircle, FaBars, FaSearch, FaPlus, FaTrash, FaCog } fr
 import { IoMdRefresh } from "react-icons/io";
 import { HiMiniChartBarSquare } from 'react-icons/hi2';
 import { AiFillSchedule } from "react-icons/ai";
-import ConfigureModal from './modules/configure_modal';
-import AddApiModal from './modules/add_api_modal';
-import FetchDataModal from './modules/fetch_data_modal';
+import ConfigureModal from '../modules/configure_modal';
+import AddApiModal from '../modules/add_api_modal';
+import FetchDataModal from '../modules/fetch_data_modal';
 
 function App() {
   const [api_keys, set_api_keys] = useState([]);

@@ -1,57 +1,39 @@
-import React, { useState } from 'react';
-import './css/App.css';
-import Navbar from './components/navbar.js';
-import Sidebar from './components/sidebar.js';
-import Home from './components/home.js';
-import Stocks from './components/stocks.js';
-import Jobs from './components/jobs.js';
-import Settings from './components/settings.js';
-import StockDetails from './components/stock_details.js';
+import { ColorModeContext, useMode } from "./theme";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { Routes, Route } from "react-router-dom";
+import Topbar from "./scenes/global/topbar";
+import Sidebar from "./scenes/global/sidebar";
+import Dashboard from "./scenes/dashboard";
+import Jobs from "./scenes/jobs";
+import Stocks from "./scenes/stocks";
+import ApiKeys from "./scenes/api_keys";
+// import StockDetails from "./scenes/stock_details";
+// import FAQ from "./scenes/faq";
 
-function App() {
-    const [active_content, set_active_content] = useState('home');
-    const [selected_ticker, set_selected_ticker] = useState(null);
+function App(){
+    const [theme, colorMode] = useMode();
 
-    const handle_navigation = (content, ticker_symbol) => {
-        if (content === 'stocks' && ticker_symbol) {
-            set_active_content('stock_details'); // You may need to adjust this if you're using a different method for routing
-            set_selected_ticker(ticker_symbol); // Pass the selected ticker symbol to stock details
-        } else {
-            set_active_content(content);
-        }
-    };
-
-    const handle_ticker_selection = (ticker) => {
-        set_selected_ticker(ticker);
-        set_active_content('stocks');
-    };
-
-    return(
-        <div className='App'>
-            <Navbar 
-                onNavigate={handle_navigation}
-                set_selected_ticker={handle_ticker_selection}
-            />
-            <div className='content-container'>
-                <Sidebar onNavigate={handle_navigation} />
-                <main className='content'>
-                    {active_content === 'home' && <Home />}
-                    {active_content === 'stocks' && <Stocks />}
-                    {active_content === 'stock_details' && selected_ticker && (
-                        <StockDetails 
-                            ticker_symbol={selected_ticker} 
-                            on_back={() => {
-                                set_selected_ticker(null); // Reset selected ticker
-                                set_active_content('stocks'); // Navigate back to stocks
-                            }} 
-                        />
-                    )}
-                    {active_content === 'jobs' && <Jobs />}
-                    {active_content === 'settings' && <Settings />}
-                </main>
-            </div>
-        </div>
-    );
+    return (
+        <ColorModeContext.Provider value={colorMode}>
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <div className="app">
+                    <Sidebar />
+                    <main className="content">
+                        <Topbar />
+                        <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/jobs" element={<Jobs />} />
+                            <Route path="/stocks" element={<Stocks />} />
+                            <Route path="/api_keys" element={<ApiKeys />} />
+                            {/* <Route path="/stocks/:stockId" element={<StockDetails />} /> */}
+                            {/* <Route path="/faq" element={<FAQ />} /> */}
+                        </Routes>
+                    </main>
+                </div>
+            </ThemeProvider>
+        </ColorModeContext.Provider>
+    )
 }
 
 export default App;
