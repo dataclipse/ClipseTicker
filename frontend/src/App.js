@@ -7,7 +7,7 @@ import Dashboard from "./scenes/dashboard";
 import Jobs from "./scenes/jobs";
 import Stocks from "./scenes/stocks";
 import ApiKeys from "./scenes/api_keys";
-// import StockDetails from "./scenes/stock_details";
+import StockDetails from "./scenes/stock_details";
 // import FAQ from "./scenes/faq";
 
 function App(){
@@ -27,7 +27,7 @@ function App(){
                             <Route path="/jobs" element={<Jobs />} />
                             <Route path="/stocks" element={<Stocks />} />
                             <Route path="/api_keys" element={<ApiKeys />} />
-                            {/* <Route path="/stocks/:stockId" element={<StockDetails />} /> */}
+                            <Route path="/stocks/:ticker" element={<StockDetails />} />
                             {/* <Route path="/faq" element={<FAQ />} /> */}
                         </Routes>
                     </Box>

@@ -1,8 +1,9 @@
-import { Box, useTheme, Typography } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import { Box, useTheme, Typography, Stack } from "@mui/material";
+import { DataGrid, GridToolbarQuickFilter  } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
+import { Link } from "react-router-dom";
 
 const Stocks = () => {
     const theme = useTheme();
@@ -28,6 +29,13 @@ const Stocks = () => {
         { 
             field: "ticker_symbol", 
             renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Ticker'}</Typography>,
+            renderCell: (params) => (
+                <Stack direction="row" spacing={1} alignItems={'center'} height={'100%'}>
+                    <Link to={`/stocks/${params.value}`} style={{ textDecoration: 'none', color: colors.greenAccent[500], mx: '0.5' }}>
+                        <Typography sx={{ fontWeight: 'bold',  mx: '0.5'}}>{params.value}</Typography>
+                    </Link>
+                </Stack>
+            ),
         },
         {
             field: "open_price", 
@@ -93,6 +101,18 @@ const Stocks = () => {
         fetchData();
     }, []);
 
+    function QuickSearchToolbar() {
+        return (
+            <Box
+                sx={{
+                p: 0.5,
+                pb: 0,
+                }}
+            >
+                <GridToolbarQuickFilter />
+            </Box>
+        );
+    }
 
     return (
         <Box m="20px">
@@ -100,6 +120,7 @@ const Stocks = () => {
             <Box
                 m="40px 0 0 0"
                 display="flex"
+                height={'75vh'}
                 sx={{
                     "& .MuiDataGrid-root": {
                         border: "none",
@@ -115,13 +136,21 @@ const Stocks = () => {
                     "& .MuiDataGrid-virtualScroller": {
                         backgroundColor: colors.primary[400],
                     },
+                    "& .MuiCircularProgress-root": {
+                        color: colors.greenAccent[500], 
+                    },
                     "& .MuiPaginationItem-root": {
                         borderTop: "none",
                         backgroundColor: `${colors.blueAccent[700]} !important`,
                     },
                 }}
             >
+                
                 <DataGrid 
+                    localeText={{
+                        toolbarQuickFilterPlaceholder: "Search for Ticker...",
+                    }}
+                    slots={{ toolbar: QuickSearchToolbar }}
                     rows={stocksData} 
                     columns={columns}
                     loading={loading}

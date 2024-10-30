@@ -1,5 +1,5 @@
 import { Box, useTheme, Typography } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
@@ -37,7 +37,7 @@ const Jobs = () => {
     const columns = [
         { 
             field: "job_name", 
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Ticker'}</Typography>,
+            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Job Name'}</Typography>,
             flex: 1.5,
         },
         {
@@ -92,6 +92,18 @@ const Jobs = () => {
         fetchData();
     }, []);
 
+    function QuickSearchToolbar() {
+        return (
+            <Box
+                sx={{
+                p: 0.5,
+                pb: 0,
+                }}
+            >
+                <GridToolbarQuickFilter />
+            </Box>
+        );
+    }
 
     return (
         <Box m="20px">
@@ -121,6 +133,7 @@ const Jobs = () => {
                 }}
             >
                 <DataGrid 
+                    slots={{ toolbar: QuickSearchToolbar }}
                     rows={Jobs} 
                     columns={columns}
                     loading={loading} 
