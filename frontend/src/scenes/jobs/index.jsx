@@ -1,70 +1,26 @@
-import { Box, useTheme, Typography } from "@mui/material";
+import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
+import AddJobModal from "../../components/add_job_modal"
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
 
 const Jobs = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [Jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    const formatRunTime = (run_time) => {
-        const parts = run_time.split(" ").filter(part => part); 
-        let formatted = [];
-
-        parts.forEach(part => {
-            if (part.includes("h")) {
-                if (part[0] !== '0') {
-                    formatted.push(part.replace("h", "h")); // Keep hours if not 0
-                }
-            } else if (part.includes("m")) {
-                if (part[0] !== '0') {
-                    formatted.push(part.replace("m", "m")); // Keep minutes if not 0
-                } else {
-                    formatted.push("0"); // Include 0 minutes as "0"
-                }
-            } else if (part.includes("s")) {
-                formatted.push(part.replace(/(\.\d+)?s/, "s")); // Remove decimals
-            }
-        });
-
-        // Join the formatted parts and return
-        return formatted.join(" ");
-    };
+    const [openJobModal, setOpenJobModal] = useState(false);
 
     const columns = [
-        { 
-            field: "job_name", 
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Job Name'}</Typography>,
-            flex: 1.5,
-        },
-        {
-            field: "scheduled_start_time", 
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Scheduled Start Time'}</Typography>,
-            flex: 1,
-        },
-        {
-            field: "status",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Status'}</Typography>,
-            flex: 1,
-        },
-        { 
-            field: "start_time",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Start Time'}</Typography>,
-            flex: 1,
-        },
-        {
-            field: "end_time",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'End Time'}</Typography>,
-            flex: 1,
-        },
-        {
-            field: "run_time",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Run Time'}</Typography>,
-            flex: 1,
-        },
+        { field: "job_name", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Job Name'}</Typography>, flex: 1.5, },
+        { field: "scheduled_start_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Scheduled Start Time'}</Typography>, flex: 1, },
+        { field: "status", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Status'}</Typography>, flex: 1, },
+        { field: "start_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Start Time'}</Typography>, flex: 1, },
+        { field: "end_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'End Time'}</Typography>, flex: 1, },
+        { field: "run_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Run Time'}</Typography>, flex: 1, },
     ];
 
     useEffect(() => {
@@ -88,26 +44,30 @@ const Jobs = () => {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
-    function QuickSearchToolbar() {
-        return (
-            <Box
-                sx={{
-                p: 0.5,
-                pb: 0,
-                }}
-            >
-                <GridToolbarQuickFilter />
-            </Box>
-        );
-    }
+    const handleOpenJobModal = () => setOpenJobModal(true);
+    const handleCloseJobModal = () => setOpenJobModal(false);
+    const handleSubmitJobModal = () => {handleCloseJobModal();};
 
     return (
         <Box m="20px">
             <Header title="Data Fetch" subtitle="Status of Jobs to Fetch Stock Data" />
+            {/* Button to open the modal */}
+            <Box mb={2}>
+                <Button variant="contained" color="secondary" onClick={handleOpenJobModal} startIcon={<AddCircleOutlineIcon />}>
+                    Add Job
+                </Button>
+            </Box>
+
+            {/* Modal Component */}
+            <AddJobModal
+                open={openJobModal}
+                onClose={handleCloseJobModal}
+                onSubmit={handleSubmitJobModal}
+            />
+
             <Box
                 m="40px 0 0 0"
                 display="flex"

@@ -8,7 +8,7 @@ import Jobs from "./scenes/jobs";
 import Stocks from "./scenes/stocks";
 import ApiKeys from "./scenes/api_keys";
 import StockDetails from "./scenes/stock_details";
-// import FAQ from "./scenes/faq";
+
 
 function App(){
     const [theme, colorMode] = useMode();
@@ -21,14 +21,12 @@ function App(){
                     <Sidebar />
                     <Box className="content" component="main" sx={{ flexGrow: 1, padding: '20px', marginLeft: '250px' }}>
                         <Topbar />
-                        
                         <Routes>
                             <Route path="/" element={<Dashboard />} />
                             <Route path="/jobs" element={<Jobs />} />
                             <Route path="/stocks" element={<Stocks />} />
                             <Route path="/api_keys" element={<ApiKeys />} />
                             <Route path="/stocks/:ticker" element={<StockDetails />} />
-                            {/* <Route path="/faq" element={<FAQ />} /> */}
                         </Routes>
                     </Box>
                 </Box>

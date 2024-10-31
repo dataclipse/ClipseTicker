@@ -130,10 +130,12 @@ def fetch_data_job():
     try:
         # Get start_date and end_date from the request body
         data = request.get_json()
-        start_date = data.get('start_date')
-        start_date = start_date.split("T")[0]
-        end_date = data.get('end_date')
-        end_date = end_date.split("T")[0]
+        start_date = data.get('startDate')
+        print(start_date)
+        #start_date = start_date.split("T")[0]
+        end_date = data.get('endDate')
+        print(end_date)
+        #end_date = end_date.split("T")[0]
 
         if not start_date or not end_date:
             return jsonify({"error": "Both start_date and end_date are required"}), 400
