@@ -1,6 +1,7 @@
 from sqlalchemy import select, update
 from datetime import datetime
 
+
 class JobManager:
     def __init__(self, session_factory, jobs_table):
         self.Session = session_factory
@@ -15,7 +16,9 @@ class JobManager:
             column_names = [column.name for column in self.jobs.columns]
             jobs_list = [dict(zip(column_names, row)) for row in jobs]
 
-            print(f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found.")
+            print(
+                f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found."
+            )
             return jobs_list
         except Exception as e:
             print(f"Error selecting all jobs: {e}")
@@ -28,7 +31,7 @@ class JobManager:
         try:
             select_stmt = select(self.jobs).where(
                 self.jobs.c.job_name == job_name,
-                self.jobs.c.scheduled_start_time == scheduled_start_time
+                self.jobs.c.scheduled_start_time == scheduled_start_time,
             )
             result = session.execute(select_stmt)
             job = result.fetchone()
@@ -43,11 +46,15 @@ class JobManager:
     def update_job(self, job_name, scheduled_start_time, **update_values):
         session = self.Session()
         try:
-            update_values['updated_at'] = datetime.now()
-            update_stmt = update(self.jobs).where(
-                self.jobs.c.job_name == job_name,
-                self.jobs.c.scheduled_start_time == scheduled_start_time
-            ).values(**update_values)
+            update_values["updated_at"] = datetime.now()
+            update_stmt = (
+                update(self.jobs)
+                .where(
+                    self.jobs.c.job_name == job_name,
+                    self.jobs.c.scheduled_start_time == scheduled_start_time,
+                )
+                .values(**update_values)
+            )
             result = session.execute(update_stmt)
             session.commit()
             print(f"Job {job_name} updated." if result.rowcount else "Job not found.")
@@ -62,31 +69,43 @@ class JobManager:
         try:
             # Convert scheduled_start_time to datetime if it is not already
             if isinstance(scheduled_start_time, str):
-                scheduled_start_time = datetime.strptime(scheduled_start_time, '%a, %d %b %Y %H:%M:%S %Z')
+                scheduled_start_time = datetime.strptime(
+                    scheduled_start_time, "%a, %d %b %Y %H:%M:%S %Z"
+                )
 
             # Prepare the delete statement
             delete_stmt = self.jobs.delete().where(
                 self.jobs.c.job_name == job_name,
-                self.jobs.c.scheduled_start_time == scheduled_start_time
+                self.jobs.c.scheduled_start_time == scheduled_start_time,
             )
-            
-            result = session.execute(delete_stmt) 
-            
+
+            result = session.execute(delete_stmt)
+
             # Commit the Delete
             session.commit()
-            
+
             if result.rowcount > 0:
                 print(f"Job {job_name} deleted successfully.")
             else:
-                print(f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted.")
-            
+                print(
+                    f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted."
+                )
+
         except Exception as e:
             session.rollback()
             print(f"Error deleting job: {e}")
         finally:
             session.close()
 
-    def insert_job(self, job_name, scheduled_start_time, status, start_time=None, end_time=None, run_time=None):
+    def insert_job(
+        self,
+        job_name,
+        scheduled_start_time,
+        status,
+        start_time=None,
+        end_time=None,
+        run_time=None,
+    ):
         session = self.Session()
         try:
             insert_stmt = self.jobs.insert().values(
@@ -97,9 +116,9 @@ class JobManager:
                 end_time=end_time,
                 run_time=run_time,
                 created_at=datetime.now(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
-            session.execute(insert_stmt) 
+            session.execute(insert_stmt)
             session.commit()
             print(f"Job {job_name} inserted successfully.")
         except Exception as e:
@@ -119,7 +138,7 @@ class JobManager:
                 update(self.jobs)
                 .where(
                     self.jobs.c.job_name == job_name,
-                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                    self.jobs.c.scheduled_start_time == scheduled_start_time,
                 )
                 .values(**update_values)
             )
@@ -129,9 +148,13 @@ class JobManager:
             session.commit()
 
             if result.rowcount > 0:
-                print(f"Job '{job_name}' run time updated to '{run_time}' successfully.")
+                print(
+                    f"Job '{job_name}' run time updated to '{run_time}' successfully."
+                )
             else:
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                print(
+                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
+                )
         except Exception as e:
             session.rollback()
             print(f"Error updating job run time: {e}")
@@ -149,7 +172,7 @@ class JobManager:
                 update(self.jobs)
                 .where(
                     self.jobs.c.job_name == job_name,
-                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                    self.jobs.c.scheduled_start_time == scheduled_start_time,
                 )
                 .values(**update_values)
             )
@@ -159,9 +182,13 @@ class JobManager:
             session.commit()
 
             if result.rowcount > 0:
-                print(f"Job '{job_name}' end time updated to '{end_time}' successfully.")
+                print(
+                    f"Job '{job_name}' end time updated to '{end_time}' successfully."
+                )
             else:
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                print(
+                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
+                )
         except Exception as e:
             session.rollback()
             print(f"Error updating job end time: {e}")
@@ -179,7 +206,7 @@ class JobManager:
                 update(self.jobs)
                 .where(
                     self.jobs.c.job_name == job_name,
-                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                    self.jobs.c.scheduled_start_time == scheduled_start_time,
                 )
                 .values(**update_values)
             )
@@ -189,27 +216,31 @@ class JobManager:
             session.commit()
 
             if result.rowcount > 0:
-                print(f"Job '{job_name}' start time updated to '{start_time}' successfully.")
+                print(
+                    f"Job '{job_name}' start time updated to '{start_time}' successfully."
+                )
             else:
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                print(
+                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
+                )
         except Exception as e:
             session.rollback()
             print(f"Error updating job start time: {e}")
         finally:
             session.close()
-    
+
     def update_job_status(self, job_name, scheduled_start_time, new_status):
         session = self.Session()
         try:
             # Prepare the values to update
-            update_values = { 'status': new_status, 'updated_at': datetime.now() } 
+            update_values = {"status": new_status, "updated_at": datetime.now()}
 
             # Prepare the update statement
             update_stmt = (
                 update(self.jobs)
                 .where(
                     self.jobs.c.job_name == job_name,
-                    self.jobs.c.scheduled_start_time == scheduled_start_time
+                    self.jobs.c.scheduled_start_time == scheduled_start_time,
                 )
                 .values(**update_values)
             )
@@ -219,9 +250,13 @@ class JobManager:
             session.commit()
 
             if result.rowcount > 0:
-                print(f"Job '{job_name}' status updated to '{new_status}' successfully.")
+                print(
+                    f"Job '{job_name}' status updated to '{new_status}' successfully."
+                )
             else:
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                print(
+                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
+                )
         except Exception as e:
             session.rollback()
             print(f"Error updating job status: {e}")
