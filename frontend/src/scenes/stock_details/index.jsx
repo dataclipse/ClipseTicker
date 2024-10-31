@@ -1,22 +1,30 @@
 import { Box, useTheme, Typography } from "@mui/material";
-import { DataGrid, GridToolbarQuickFilter  } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 import { useParams } from "react-router-dom";
+import ReactECharts from 'echarts-for-react';
 
-const Stocks = ({ }) => {
+const Stocks = () => {
     const { ticker } = useParams();
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [stockDetails, setStockDetails] = useState([]);
+    const [stockDetailsChartData, setStockDetailsChartData] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Formatting functions
     const formatCurrency = (value) => `$${parseFloat(value).toFixed(2)}`;
     const format_date = (unix_timestamp) => {
         const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
         const date = new Date(timestamp);
         return date
+    };
+
+    const format_date_for_chart = (unix_timestamp) => {
+        const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
+        return new Date(timestamp);
     };
 
     const columns = [
@@ -70,6 +78,18 @@ const Stocks = ({ }) => {
             try {
                 const response = await fetch(`/api/stocks/${ticker}`);
                 const data = await response.json();
+                // Create an array for stock data
+                const chart_data = data.map(stock => ({
+                    timestamp_end: format_date_for_chart(stock.timestamp_end),
+                    open: stock.open_price,
+                    high: stock.highest_price, 
+                    low: stock.lowest_price,
+                    close: stock.close_price
+                }))
+                .filter(stock => stock.timestamp_end)
+                .sort((a, b) => b.timestamp_end - a.timestamp_end);
+                
+                // Format the data for the DataGrid
                 const formattedData = data.map((stock, index) => ({
                     id: index, 
                     ticker_symbol: stock.ticker_symbol,
@@ -80,6 +100,7 @@ const Stocks = ({ }) => {
                     timestamp_end: format_date(stock.timestamp_end),
                 }));
                 setStockDetails(formattedData);
+                setStockDetailsChartData(chart_data);
             } catch (error) {
                 console.error("Error fetching Stocks data:", error);
             } finally {
@@ -90,22 +111,126 @@ const Stocks = ({ }) => {
         fetchData();
     }, [ticker]);
 
-    function QuickSearchToolbar() {
-        return (
-            <Box
-                sx={{
-                p: 0.5,
-                pb: 0,
-                }}
-            >
-                <GridToolbarQuickFilter />
-            </Box>
-        );
-    }
+
+    
+    // Set up echarts options
+    const get_option = () => {
+        return {
+            title: {
+                text: `Candlestick Chart for ${ticker}`,
+                left: 'left',
+                textStyle: { color: colors.grey[100] },
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    backgroundColor: colors.primary[500],
+                    color: colors.grey[100] 
+                },
+                backgroundColor: colors.primary[500], 
+                textStyle: {
+                    color: colors.grey[100] 
+                },
+                borderColor: colors.grey[700], 
+                borderWidth: 1
+            },
+            grid: {
+                left: '0%',
+                right: '2%',
+                bottom: '5%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: stockDetailsChartData.map(stock => stock.timestamp_end.toLocaleString()),
+                axisLine: {
+                    lineStyle: {
+                        color: colors.grey[100] 
+                    }
+                },
+                splitLine: { show: false },
+                scale: true,
+                boundaryGap: false,
+                inverse: true,
+                axisPointer: {
+                    label: {
+                        backgroundColor: colors.primary[500], 
+                        color: colors.grey[100],
+                        borderColor: colors.grey[700], 
+                        borderWidth: 1            
+                    }
+                }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: {
+                    lineStyle: {
+                        color: colors.grey[100] 
+                    },
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: colors.grey[700],
+                    }
+                },
+                scale: true,
+                axisPointer: {
+                    label: {
+                        backgroundColor: colors.primary[500], 
+                        color: colors.grey[100],
+                        borderColor: colors.grey[700], 
+                        borderWidth: 1            
+                    }
+                }
+            },
+            dataZoom: [
+                {
+                    type: 'slider',    
+                    xAxisIndex: 0,     
+                    start: 0,          
+                    end: 100,          
+                    handleSize: '80%', 
+                    height: 5,        
+                    bottom: 5,        
+                    textStyle: {
+                        color: colors.grey[100] 
+                    }
+                },
+                {
+                    type: 'inside',    
+                    xAxisIndex: 0,
+                    start: 0,
+                    end: 100
+                }
+            ],
+            series: [{
+                type: 'candlestick',
+                name: ticker,
+                data: stockDetailsChartData.map(stock => [stock.open, stock.close, stock.low, stock.high]),
+                itemStyle: {
+                    color: colors.redAccent[500], 
+                    color0: colors.greenAccent[700], 
+                    borderColor: colors.greenAccent[700],
+                    borderColor0: colors.redAccent[500],
+                },
+                emphasis: {
+                    itemStyle: {
+                        color: colors.redAccent[500],
+                        color0: colors.greenAccent[700],
+                    }
+                }
+            }],
+            backgroundColor: colors.primary[500],
+        };
+    };
+
 
     return (
         <Box m="20px">
             <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
+            {/* ECharts Candlestick Chart */}
+            <ReactECharts option={get_option()} style={{ height: '500px', width: '100%' }} />
             <Box
                 m="40px 0 0 0"
                 display="flex"
@@ -134,12 +259,8 @@ const Stocks = ({ }) => {
                     },
                 }}
             >
-                
+                {/* DataGrid */}   
                 <DataGrid 
-                    localeText={{
-                        toolbarQuickFilterPlaceholder: "Search...",
-                    }}
-                    slots={{ toolbar: QuickSearchToolbar }}
                     rows={stockDetails} 
                     columns={columns}
                     loading={loading}

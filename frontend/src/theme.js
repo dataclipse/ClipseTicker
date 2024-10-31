@@ -38,7 +38,7 @@ export const tokens = (mode) => ({
                 800: "#1e5245",
                 900: "#0f2922"
             }, 
-            blueAccent: {
+            redAccent: {
                 100: "#f8dcdb",
                 200: "#f1b9b7",
                 300: "#e99592",
@@ -49,7 +49,7 @@ export const tokens = (mode) => ({
                 800: "#58201e",
                 900: "#2c100f"
             }, 
-            indigo: {
+            blueAccent: {
                 100: "#e1e2fe",
                 200: "#c3c6fd",
                 300: "#a4a9fc",
@@ -94,7 +94,7 @@ export const tokens = (mode) => ({
                 800: "#b7ebde",
                 900: "#dbf5ee"
             }, 
-            blueAccent: {
+            redAccent: {
                 100: "#2c100f",
                 200: "#58201e",
                 300: "#832f2c",
@@ -105,7 +105,7 @@ export const tokens = (mode) => ({
                 800: "#f1b9b7",
                 900: "#f8dcdb"
             }, 
-            indigo: {
+            blueAccent: {
                 100: "#151632",
                 200: "#2a2d64",
                 300: "#3e4396",
