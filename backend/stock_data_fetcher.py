@@ -1,10 +1,11 @@
 import requests, db_manager as db, threading, queue, time
+from db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class PolygonStockFetcher:
     def __init__(self):
-        self.database_connect = db.DBManager()
+        self.database_connect = DBManager()
         self.polygon_api_key = self.database_connect.select_api_key('Polygon.io')
         self.base_url = "https://api.polygon.io"
         self.max_requests_per_minute = 5
@@ -61,7 +62,9 @@ class PolygonStockFetcher:
                 formatted_date = current_date.strftime("%Y-%m-%d")
                 if len(request_times) >= self.max_requests_per_minute:
                     time_since_first_request = time.time() - request_times[0]
-                    if time_since_first_request < 60:
+                    is_last_date = (current_date == end_date)
+
+                    if not is_last_date and time_since_first_request < 60:
                         wait_time = 60 - time_since_first_request
                         print(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
                         time.sleep(wait_time)
@@ -79,7 +82,7 @@ class PolygonStockFetcher:
                 try:
                     future.result() # This will raise any exception that occurred in the thread
                 except Exception as e:
-                    print(f"Error in fecthing data: {e}")         
+                    print(f"Error in fetching data: {e}")         
 
     def consumer_thread(self):
         # Consumer thread that batches stock data inserts into the database
@@ -129,8 +132,8 @@ class PolygonStockFetcher:
         self.job_init(job_name, scheduled_start_time, 'Scheduled')
 
         # Update job status to 'Running' and set start time
-        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Running')
-        self.database_connect.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
+        self.database_connect.job_manager.update_job_status(job_name, scheduled_start_time, 'Running')
+        self.database_connect.job_manager.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
 
         print(f"Fetching stock data from {start_date} to {end_date}...")
 
@@ -157,9 +160,9 @@ class PolygonStockFetcher:
         formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
         # Update job end time, run time, and status to 'Completed'
-        self.database_connect.update_job_end_time(job_name, scheduled_start_time, datetime.now())
-        self.database_connect.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
-        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Completed')
+        self.database_connect.job_manager.update_job_end_time(job_name, scheduled_start_time, datetime.now())
+        self.database_connect.job_manager.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
+        self.database_connect.job_manager.update_job_status(job_name, scheduled_start_time, 'Completed')
 
         print(f"Finished fetching data for date range {start_date} to {end_date}.")
         print(f"Time Taken: {formatted_run_time}")
@@ -188,8 +191,8 @@ class PolygonStockFetcher:
         self.job_init(job_name, scheduled_start_time, 'Scheduled')
 
         # Update job status to 'Running' and set start time
-        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Running')
-        self.database_connect.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
+        self.database_connect.job_manager.update_job_status(job_name, scheduled_start_time, 'Running')
+        self.database_connect.job_manager.update_job_start_time(job_name, scheduled_start_time, scheduled_start_time)
     
         print(f"Fetching data from {start_date_str} to {end_date_str}...")
 
@@ -214,17 +217,17 @@ class PolygonStockFetcher:
         formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
         # Update job end time, run time, and status to 'Completed'
-        self.database_connect.update_job_end_time(job_name, scheduled_start_time, datetime.now())
-        self.database_connect.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
-        self.database_connect.update_job_status(job_name, scheduled_start_time, 'Completed')
+        self.database_connect.job_manager.update_job_end_time(job_name, scheduled_start_time, datetime.now())
+        self.database_connect.job_manager.update_job_run_time(job_name, scheduled_start_time, formatted_run_time)
+        self.database_connect.job_manager.update_job_status(job_name, scheduled_start_time, 'Completed')
 
         print(f"Finished fetching data. Time Taken: {formatted_run_time}")
 
     def job_init(self, job_name, scheduled_start_time, status):
         # Check if the job row already exists
-        existing_job = self.database_connect.select_job(job_name, scheduled_start_time)
+        existing_job = self.database_connect.job_manager.select_job(job_name, scheduled_start_time)
         if not existing_job:
             # Insert initial job entry if it does not exist
-            self.database_connect.insert_job(job_name, scheduled_start_time, status)
+            self.database_connect.job_manager.insert_job(job_name, scheduled_start_time, status)
         else:
             print(f"Job '{job_name}' scheduled at {scheduled_start_time} already exists.")

@@ -4,36 +4,30 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
 from cryptography.fernet import Fernet 
+from db_schema_manager import DBSchemaManager
+from job_manager import JobManager
 
 class DBManager:
     def __init__(self):
-        # Initialize the database connection
-        self.db_file_path = self._initialize_database()
-        self.engine = create_engine(f'sqlite:///{self.db_file_path}')
-        self.metadata = MetaData()
+        # Use DBSchemaManager for database and table setup
+        self.schema_manager = DBSchemaManager()
+        self.db_file_path = self.schema_manager.db_file_path
+        self.engine = create_engine(f'sqlite:///{self.db_file_path}') 
 
         # Load or generate encryption key
         self.cipher, self.encryption_key = self._initialize_encryption()
 
         # Define the stocks and api_keys tables
-        self.stocks, self.api_keys, self.jobs = self._define_tables()
+        self.stocks, self.api_keys, self.jobs = self.schema_manager.define_tables()
 
         # Create the tables if they do no exist
-        self.metadata.create_all(self.engine)
+        self.schema_manager.metadata.create_all(self.engine)
         print("Tables created successfully, if they didn't exist.")
 
         # Create a session
         self.Session = sessionmaker(bind=self.engine)
-
-    def _initialize_database(self):
-        # Create a folder for the Database if it does not exist
-        if not os.path.exists('db'):
-            os.makedirs('db')
-        
-        db_file_path = os.path.join('db', 'nyse_data.db')
-        print("Database created and/or connected successfully at:", db_file_path)
-        return db_file_path
-    
+        self.job_manager = JobManager(self.Session, self.jobs)
+   
     def _initialize_encryption(self):
         key_file_path = 'encrypt_key.txt'
         if os.path.exists(key_file_path):
@@ -46,56 +40,8 @@ class DBManager:
 
         cipher = Fernet(encryption_key)
         return cipher, encryption_key
-    
-    def _define_tables(self):
-        # Define the stocks table
-        stocks = Table(
-            'stocks', self.metadata,
-            Column('ticker_symbol', String),
-            Column('close_price', Float),
-            Column('highest_price', Float),
-            Column('lowest_price', Float),
-            Column('open_price', Float),
-            Column('timestamp_end', Integer),
-            Column('insert_timestamp', DateTime),
-            PrimaryKeyConstraint('ticker_symbol', 'timestamp_end')
-        )
-
-        # Create an index on the stocks table for timestamp_end and ticket_symbol
-        Index('idx_stocks_timestamp_ticker', stocks.c.ticker_symbol, stocks.c.timestamp_end)
-
-        # Define the api_keys table
-        api_keys = Table(
-            'api_keys', self.metadata,
-            Column('id', Integer, primary_key=True, autoincrement=True),
-            Column('service', String, unique=True, nullable=False),
-            Column('encrypted_api_key', String, nullable=False),
-            Column('created_at', DateTime, default=func.now()),
-            Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
-        )
-
-        # Define the jobs table
-        jobs = Table(
-            'jobs', self.metadata,
-            Column('job_name', String, nullable=False),
-            Column('scheduled_start_time', DateTime, nullable=False),
-            Column('status', String, nullable=False), # e.g., "pending", "running", "completed", "scheduled"
-            Column('start_time', DateTime),
-            Column('end_time', DateTime),
-            Column('run_time', String), # Duration in Hours Minutes and Seconds
-            Column('created_at', DateTime, default=func.now()),
-            Column('updated_at', DateTime, default=func.now(), onupdate=func.now()),
-            PrimaryKeyConstraint('job_name', 'scheduled_start_time') # Composite primary key
-        )
-
-        return stocks, api_keys, jobs
-    
-    def encrypt_api_key(self, api_key):
-        return self.cipher.encrypt(api_key.encode()).decode()
-    
-    def decrypt_api_key(self, encrypted_api_key):
-        return self.cipher.decrypt(encrypted_api_key.encode()).decode()
-    
+          
+   
     def select_all_jobs(self):
         session = self.Session()
         try:
@@ -364,6 +310,12 @@ class DBManager:
         finally:
             # Close the session
             session.close()
+
+    def encrypt_api_key(self, api_key):
+        return self.cipher.encrypt(api_key.encode()).decode()
+    
+    def decrypt_api_key(self, encrypted_api_key):
+        return self.cipher.decrypt(encrypted_api_key.encode()).decode()
 
     def delete_api_key(self, service):
         # Delete API for a given service

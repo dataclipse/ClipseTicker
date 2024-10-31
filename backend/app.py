@@ -3,6 +3,7 @@ from flask_cors import CORS
 from sqlalchemy import create_engine, MetaData, Table, select
 from sqlalchemy.orm import sessionmaker
 from db_manager import DBManager
+from job_manager import JobManager
 from stock_data_fetcher import PolygonStockFetcher
 from datetime import datetime
 
@@ -107,7 +108,7 @@ def delete_jobs():
             return jsonify({"error": "Both job_name and scheduled_start_time are required"}), 400
         
         # Use the DBmanager instance to delete the job by name and start time
-        db_manager.delete_job(job_name, scheduled_start_time)
+        db_manager.job_manager.delete_job(job_name, scheduled_start_time)
         return jsonify({"message": f"Job '{job_name}' scheduled to start at '{scheduled_start_time}' deleted successfully."}), 200
 
     except Exception as e:
@@ -118,7 +119,7 @@ def delete_jobs():
 def get_jobs():
     try:
         # Fetch all jobs from the database
-        jobs_data = db_manager.select_all_jobs()
+        jobs_data = db_manager.job_manager.select_all_jobs()
         return jsonify(jobs_data), 200
     
     except Exception as e:
@@ -131,10 +132,8 @@ def fetch_data_job():
         # Get start_date and end_date from the request body
         data = request.get_json()
         start_date = data.get('startDate')
-        print(start_date)
         #start_date = start_date.split("T")[0]
         end_date = data.get('endDate')
-        print(end_date)
         #end_date = end_date.split("T")[0]
 
         if not start_date or not end_date:
@@ -174,14 +173,3 @@ def load_api_key(file_path):
 
 if __name__ == '__main__':
     app.run(debug=True)
-    #database_connect = DBManager()
-    #api_key_file = 'api_key.txt'
-    #api_key = load_api_key(api_key_file)
-    #database_connect.insert_api_key('Polygon.io', api_key)
-    #db_api_key = database_connect.select_api_key('Polygon.io')
-
-    #start_date = '2023-10-10'
-    #end_date = '2023-10-12'
-
-    #polygon_fetcher = PolygonStockFetcher()
-    #polygon_fetcher.fetch_data_for_date_range(start_date, end_date)

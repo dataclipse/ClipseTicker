@@ -3,6 +3,10 @@ import { Box } from "@mui/material";
 import { GridToolbarQuickFilter } from "@mui/x-data-grid";
 
 export const formatRunTime = (run_time) => {
+    if (run_time == null) {
+        return run_time
+    }
+    
     const parts = run_time.split(" ").filter(part => part); 
     let formatted = [];
 
