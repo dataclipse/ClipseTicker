@@ -25,7 +25,7 @@ const Jobs = () => {
         { field: "end_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'End Time'}</Typography>, flex: 1, },
         { field: "run_time", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Run Time'}</Typography>, flex: .5, },
         {
-            field: "action",
+            field: "actions",
             renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Actions'}</Typography>,
             renderCell: (params) => (
                 <Stack direction="row" spacing={1} alignItems={'center'} height={'100%'}>
@@ -51,7 +51,6 @@ const Jobs = () => {
                 });
 
                 if (response.ok) {
-                    // Refresh job data after deletion
                     fetchData();
                 } else {
                     console.error("Error deleting job:", response.statusText);
@@ -85,9 +84,9 @@ const Jobs = () => {
 
     useEffect(() => {
         fetchData();
+        const intervalId = setInterval(fetchData, 10000);
+        return () => clearInterval(intervalId);
     }, []);
-
-
 
     return (
         <Box m="20px">

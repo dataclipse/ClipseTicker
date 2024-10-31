@@ -4,6 +4,7 @@ import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 import { Link } from "react-router-dom";
+import { formatCurrency, formatDate } from "../../components/helper";
 
 const Stocks = () => {
     const theme = useTheme();
@@ -11,95 +12,48 @@ const Stocks = () => {
     const [stocksData, setStocksData] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const formatCurrency = (value) => `$${parseFloat(value).toFixed(2)}`;
-    const format_date = (unix_timestamp) => {
-        const timestamp = unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
-        const date = new Date(timestamp);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true    
-        });
-    };
-
     const columns = [
-        { 
-            field: "ticker_symbol", 
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Ticker'}</Typography>,
-            renderCell: (params) => (
-                <Stack direction="row" spacing={1} alignItems={'center'} height={'100%'}>
-                    <Link to={`/stocks/${params.value}`} style={{ textDecoration: 'none', color: colors.greenAccent[500], mx: '0.5' }}>
-                        <Typography sx={{ fontWeight: 'bold',  mx: '0.5'}}>{params.value}</Typography>
-                    </Link>
-                </Stack>
-            ),
-        },
-        {
-            field: "open_price", 
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Open Price'}</Typography>,
-            align: "right",
-            headerAlign: "right",
-            flex: 1,
-        },
-        {
-            field: "highest_price",
-            headerName: "Highest Price",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Highest Price'}</Typography>,
-            align: "right",
-            headerAlign: "right",
-            flex: 1,
-        },
-        { 
-            field: "lowest_price",
-            headerName: "Lowest Price",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Lowest Price'}</Typography>,
-            align: "right",
-            headerAlign: "right",
-            flex: 1,
-        },
-        {
-            field: "close_price",
-            headerName: "Close Price",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Close Price'}</Typography>,
-            align: "right",
-            headerAlign: "right",
-            flex: 1,
-        },
-        {
-            field: "timestamp_end",
-            headerName: "Date",
-            renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Date'}</Typography>,
-            flex: 1,
-        },
+        { field: "ticker_symbol", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Ticker'}</Typography>, renderCell: (params) => (
+            <Stack direction="row" spacing={1} alignItems={'center'} height={'100%'}>
+                <Link to={`/stocks/${params.value}`} style={{ textDecoration: 'none', color: colors.greenAccent[500], mx: '0.5' }}>
+                    <Typography sx={{ fontWeight: 'bold', mx: '0.5'}}>{params.value}</Typography>
+                </Link>
+            </Stack>
+        )},
+        { field: "open_price", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Open Price'}</Typography>, align: "right", headerAlign: "right", flex: 1 },
+        { field: "highest_price", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Highest Price'}</Typography>, align: "right", headerAlign: "right", flex: 1 },
+        { field: "lowest_price", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Lowest Price'}</Typography>, align: "right", headerAlign: "right", flex: 1 },
+        { field: "close_price", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Close Price'}</Typography>, align: "right", headerAlign: "right", flex: 1 },
+        { field: "timestamp_end", renderHeader: () => <Typography sx={{ fontWeight: 'bold' }}>{'Date'}</Typography>, flex: 1 }
     ];
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch("/api/stocks");
-                const data = await response.json();
-                const formattedData = data.map((stock, index) => ({
-                    id: index, 
-                    ticker_symbol: stock.ticker_symbol,
-                    open_price: formatCurrency(stock.open_price),
-                    close_price: formatCurrency(stock.close_price),
-                    highest_price: formatCurrency(stock.highest_price),
-                    lowest_price: formatCurrency(stock.lowest_price),
-                    timestamp_end: format_date(stock.timestamp_end),
-                }));
-                setStocksData(formattedData);
-            } catch (error) {
-                console.error("Error fetching Stocks data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchData = async () => {
+        try {
+            const response = await fetch("/api/stocks");
+            const data = await response.json();
+            const formattedData = data.map((stock, index) => ({
+                id: index, 
+                ticker_symbol: stock.ticker_symbol,
+                open_price: formatCurrency(stock.open_price),
+                close_price: formatCurrency(stock.close_price),
+                highest_price: formatCurrency(stock.highest_price),
+                lowest_price: formatCurrency(stock.lowest_price),
+                timestamp_end: formatDate(stock.timestamp_end),
+            }));
+            setStocksData(formattedData);
+        } catch (error) {
+            console.error("Error fetching Stocks data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchData();
+        const intervalId = setInterval(fetchData, 10000);
+        return () => clearInterval(intervalId);
     }, []);
+
 
     function QuickSearchToolbar() {
         return (

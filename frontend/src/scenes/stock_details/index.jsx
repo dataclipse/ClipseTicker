@@ -28,42 +28,42 @@ const Stocks = () => {
     ];
     
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch(`/api/stocks/${ticker}`);
-                const data = await response.json();
-                // Create an array for stock data
-                const chart_data = data.map(stock => ({
-                    timestamp_end: formatDateChart(stock.timestamp_end),
-                    open: formatCurrencyChart(stock.open_price),
-                    high: formatCurrencyChart(stock.highest_price), 
-                    low: formatCurrencyChart(stock.lowest_price),
-                    close: formatCurrencyChart(stock.close_price)
-                }))
-                .filter(stock => stock.timestamp_end)
-                .sort((a, b) => b.timestamp_end - a.timestamp_end);
-                
-                // Format the data for the DataGrid
-                const formattedData = data.map((stock, index) => ({
-                    id: index, 
-                    ticker_symbol: stock.ticker_symbol,
-                    open_price: formatCurrency(stock.open_price),
-                    close_price: formatCurrency(stock.close_price),
-                    highest_price: formatCurrency(stock.highest_price),
-                    lowest_price: formatCurrency(stock.lowest_price),
-                    timestamp_end: formatDate(stock.timestamp_end),
-                }));
-                setStockDetails(formattedData);
-                setStockDetailsChartData(chart_data);
-            } catch (error) {
-                console.error("Error fetching Stocks data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchData = async () => {
+        try {
+            const response = await fetch(`/api/stocks/${ticker}`);
+            const data = await response.json();
+            const chart_data = data.map(stock => ({
+                timestamp_end: formatDateChart(stock.timestamp_end),
+                open: formatCurrencyChart(stock.open_price),
+                high: formatCurrencyChart(stock.highest_price), 
+                low: formatCurrencyChart(stock.lowest_price),
+                close: formatCurrencyChart(stock.close_price)
+            }))
+            .filter(stock => stock.timestamp_end)
+            .sort((a, b) => b.timestamp_end - a.timestamp_end);
+            
+            const formattedData = data.map((stock, index) => ({
+                id: index, 
+                ticker_symbol: stock.ticker_symbol,
+                open_price: formatCurrency(stock.open_price),
+                close_price: formatCurrency(stock.close_price),
+                highest_price: formatCurrency(stock.highest_price),
+                lowest_price: formatCurrency(stock.lowest_price),
+                timestamp_end: formatDate(stock.timestamp_end),
+            }));
+            setStockDetails(formattedData);
+            setStockDetailsChartData(chart_data);
+        } catch (error) {
+            console.error("Error fetching Stocks data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchData();
+    useEffect(() => {
+        fetchData(); 
+        const intervalId = setInterval(fetchData, 30000); 
+        return () => clearInterval(intervalId); 
     }, [ticker]);
 
     return (

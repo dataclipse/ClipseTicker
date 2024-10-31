@@ -11,7 +11,6 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
     const [fetchOption, setFetchOption] = useState("date_range");
     
     const handleFetch = () => {        
-        // Close the modal immediately and run the batch job in the background.
         onClose();
         if (fetchOption === 'two_years') {
             fetch('/api/jobs/2yr')
@@ -70,7 +69,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
+                            slotProps={{ inputLabel: { shrink: true, }, }}
                             sx={{ mb: 2 }}
                         />
                         <TextField
@@ -78,7 +77,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
+                            slotProps={{ inputLabel: { shrink: true, }, }}
                         />
                     </Box>
                 )}
