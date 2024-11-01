@@ -1,3 +1,4 @@
+// src/components/echart_options.jsx
 export const getCandlestickChartOptions = (
   ticker,
   stockDetailsChartData,

@@ -1,3 +1,4 @@
+// src/App.js
 import { ColorModeContext, useMode } from "./theme";
 import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { Routes, Route } from "react-router-dom";

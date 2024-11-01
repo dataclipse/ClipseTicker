@@ -1,7 +1,8 @@
+// src/scenes/stock_details/index.jsx
 import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
 import { useParams } from "react-router-dom";
 import ReactECharts from "echarts-for-react";
@@ -80,7 +81,7 @@ const Stocks = () => {
     },
   ];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetch(`/api/stocks/${ticker}`);
       const data = await response.json();
@@ -111,13 +112,13 @@ const Stocks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [ticker]);
 
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 30000);
     return () => clearInterval(intervalId);
-  }, [ticker]);
+  }, [fetchData]);
 
   return (
     <Box m="20px">

@@ -1,3 +1,4 @@
+// src/scenes/global/sidbar.jsx
 import {
   Box,
   Typography,

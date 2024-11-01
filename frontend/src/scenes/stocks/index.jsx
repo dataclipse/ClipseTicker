@@ -1,10 +1,11 @@
+// src/scenes/stocks/index.jsx
 import { Box, useTheme, Typography, Stack } from "@mui/material";
-import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 import { Link } from "react-router-dom";
-import { formatCurrency, formatDate } from "../../components/helper";
+import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components/helper";
 
 const Stocks = () => {
   const theme = useTheme();
@@ -111,19 +112,6 @@ const Stocks = () => {
     const intervalId = setInterval(fetchData, 10000);
     return () => clearInterval(intervalId);
   }, []);
-
-  function QuickSearchToolbar() {
-    return (
-      <Box
-        sx={{
-          p: 0.5,
-          pb: 0,
-        }}
-      >
-        <GridToolbarQuickFilter />
-      </Box>
-    );
-  }
 
   return (
     <Box m="20px">

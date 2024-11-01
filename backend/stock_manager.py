@@ -1,3 +1,4 @@
+# stock_manager.py
 from sqlalchemy import select, update, func
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
