@@ -17,7 +17,7 @@ polygon_fetcher = PolygonStockFetcher()
 def get_stocks():
     try:
         # Fetch unique ticker symbol with their most recent open and close prices and timestamp
-        stocks_data = db_manager.get_recent_stock_prices()
+        stocks_data = db_manager.stock_manager.get_recent_stock_prices()
 
         # Return the stocks data in JSON format
         return jsonify(stocks_data), 200
@@ -30,7 +30,7 @@ def get_stocks():
 def get_stock_by_ticker(ticker_symbol):
     try:
         # Fetch stock data for the given ticker symbol
-        stock_data = db_manager.get_stock_data_by_ticker(ticker_symbol)
+        stock_data = db_manager.stock_manager.get_stock_data_by_ticker(ticker_symbol)
 
         if stock_data is None:
             return (

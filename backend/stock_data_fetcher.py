@@ -46,7 +46,7 @@ class PolygonStockFetcher:
     def load_stock_data(self, stock_data_batch):
         if stock_data_batch:
             # Batch insertion to optimize database operations
-            self.database_connect.insert_stock_batch(stock_data_batch)
+            self.database_connect.stock_manager.insert_stock_batch(stock_data_batch)
 
     def producer_thread(self, start_date, end_date):
         # Producer thread that generates API calls and fetches stock data concurrently.
