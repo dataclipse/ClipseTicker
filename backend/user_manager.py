@@ -46,7 +46,7 @@ class UserManager:
             select_stmt = select(self.users).where(self.users.c.username == username)
             result = session.execute(select_stmt).first()
             if result:
-                print(f"Retrieved user data for '{username}':", result._asdict())
+                print(f"Retrieved user data for '{username}'")
                 return result._asdict()
             else:
                 print(f"No user found with username '{username}'.")
@@ -108,11 +108,16 @@ class UserManager:
         try:
             select_stmt = select(self.users).where(self.users.c.username == username)
             result = session.execute(select_stmt).first()
-            if result and self._verify_password(password, result["password_hash"]):
-                print(f"Authentication successful for user '{username}'.")
-                return True
+            if result:
+                user_data = result._mapping
+                if self._verify_password(password, user_data["password_hash"]):
+                    print(f"Authentication successful for user '{username}'.")
+                    return True
+                else:
+                    print(f"Authentication failed for user '{username}'.")
+                    return False
             else:
-                print(f"Authentication failed for user '{username}'.")
+                print(f"No user found with username '{username}'.")
                 return False
         except Exception as e:
             print(f"Error authenticating user '{username}': {e}")

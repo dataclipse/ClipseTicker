@@ -42,6 +42,9 @@ class DBManager:
         self.api_key_manager = ApiKeyManager(self.Session, self.api_keys, self.cipher)
         self.stock_manager = StockManager(self.Session, self.stocks)
         self.user_manager = UserManager(self.Session, self.users)
+        
+        # Initialize default users
+        self.initialize_default_users()
 
     def _initialize_encryption(self):
         key_file_path = "encrypt_key.txt"
@@ -56,6 +59,22 @@ class DBManager:
         cipher = Fernet(encryption_key)
         return cipher, encryption_key
 
+    def initialize_default_users(self):
+        default_users = [
+            {"username": "admin", "password": "admin", "role": "admin"},
+            {"username": "guest", "password": "guest", "role": "guest"},
+        ]
+        
+        for user in default_users:
+            if not self.user_manager.get_user_by_username(user["username"]):
+                self.user_manager.create_user(
+                    username=user["username"],
+                    password=user["password"],
+                    role=user["role"]
+                )
+                print(f"Default {user['role']} user '{user['username']}' created.")
+            else:
+                print(f"User '{user['username']}' already exists.")
                 
 
 if __name__ == "__main__":
