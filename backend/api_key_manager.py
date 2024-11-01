@@ -4,8 +4,8 @@ from cryptography.fernet import Fernet
 
 
 class ApiKeyManager:
-    def __init__(self, session_factory, api_keys_table, cipher):
-        self.Session = session_factory
+    def __init__(self, session, api_keys_table, cipher):
+        self.Session = session
         self.api_keys = api_keys_table
         self.cipher = cipher
 

@@ -3,8 +3,8 @@ from datetime import datetime
 
 
 class JobManager:
-    def __init__(self, session_factory, jobs_table):
-        self.Session = session_factory
+    def __init__(self, session, jobs_table):
+        self.Session = session
         self.jobs = jobs_table
 
     def select_all_jobs(self):
