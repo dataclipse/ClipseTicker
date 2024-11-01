@@ -1,17 +1,80 @@
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from db_manager import DBManager
 from stock_data_fetcher import PolygonStockFetcher
 import jwt
-import datetime
-
+from functools import wraps
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
+
+# Create a jwt secret key if one is not present
+jwt_secret_key_file = "jwt_key.txt"
+if os.path.exists(jwt_secret_key_file):
+    with open(jwt_secret_key_file, "rb") as file:
+        app.config['SECRET_KEY'] = file.read()
+else:
+    jwt_secret_key = os.urandom(24)
+    app.config['SECRET_KEY'] = jwt_secret_key
+    with open(jwt_secret_key_file, "wb") as file:
+        file.write(jwt_secret_key)
+
+# Login route
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+    
+    try:
+        # Authenticate user
+        if db_manager.user_manager.authenticate_user(username, password):
+            # Define the token expiration
+            expiration = datetime.now() + timedelta(hours=1)
+            
+            # Generate JWT payload
+            payload = {
+                "username": username,
+                "exp": expiration,
+                "iat": datetime.now()
+            }
+            
+            # Encode JWT with secret key
+            token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm="HS256")
+            
+            return jsonify({"token": token}), 200
+        else:
+            return jsonify({"error": "Invalid credentials"}), 401
+    except Exception as e:
+        print(f"Error during authentication for user '{username}': {e}")
+        return jsonify({"error": "Authentication error"}), 500
+    
+# Token protection (apply to route by adding @token_required)
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get("Authorization")
+        
+        if not token:
+            return jsonify({"error": "Token is missing"}), 403
+        
+        try:
+            # Decode token
+            jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid Token"}), 403
+        
+        return f(*args, **kwargs)
+    return decorated
 
 # Stocks routes
 @app.route("/api/stocks", methods=["GET"])
