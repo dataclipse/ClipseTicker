@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 class PolygonStockFetcher:
     def __init__(self):
         self.database_connect = DBManager()
-        self.polygon_api_key = self.database_connect.select_api_key("Polygon.io")
+        self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")
         self.base_url = "https://api.polygon.io"
         self.max_requests_per_minute = 5
         self.retry_limit = 3

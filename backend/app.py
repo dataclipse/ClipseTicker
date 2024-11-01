@@ -3,7 +3,6 @@ from flask_cors import CORS
 from sqlalchemy import create_engine, MetaData, Table, select
 from sqlalchemy.orm import sessionmaker
 from db_manager import DBManager
-from job_manager import JobManager
 from stock_data_fetcher import PolygonStockFetcher
 from datetime import datetime
 
@@ -52,7 +51,7 @@ def get_stock_by_ticker(ticker_symbol):
 def get_api_keys():
     try:
         # Use the DBManager instance to retrieve all API keys
-        api_keys_list = db_manager.select_all_api_keys()
+        api_keys_list = db_manager.api_key_manager.select_all_api_keys()
 
         # Return the API keys in JSON Format
         return jsonify(api_keys_list)
@@ -74,7 +73,7 @@ def update_api_key(service):
             return jsonify({"error": "API key is required"}), 400
 
         # Use the DBmanager instance to update the API key
-        db_manager.insert_api_key(updated_service, updated_api_key)
+        db_manager.api_key_manager.insert_api_key(updated_service, updated_api_key)
 
         # Return a success message
         return jsonify({"message": "API Key updated successfully"}), 200
@@ -87,7 +86,7 @@ def update_api_key(service):
 @app.route("/api/keys/<string:service>", methods=["DELETE"])
 def delete_api_key(service):
     try:
-        db_manager.delete_api_key(service)
+        db_manager.api_key_manager.delete_api_key(service)
         return (
             jsonify({"message": f"API key for {service} deleted succcessfully."}),
             200,
@@ -107,7 +106,7 @@ def add_api_key():
         return jsonify({"error": "Service and API key are required"}), 400
 
     # Insert the API key into the database
-    db_manager.insert_api_key(service, api_key)
+    db_manager.api_key_manager.insert_api_key(service, api_key)
     return jsonify({"message": "API key added successfully"}), 201
 
 
