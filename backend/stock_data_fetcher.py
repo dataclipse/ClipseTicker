@@ -1,4 +1,4 @@
-import requests, db_manager as db, threading, queue, time
+import requests, threading, queue, time
 from db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed

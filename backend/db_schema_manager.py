@@ -78,5 +78,16 @@ class DBSchemaManager:
                 "job_name", "scheduled_start_time"
             ),  # Composite primary key
         )
+        
+        users = Table(
+            "users",
+            self.metadata,
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("username", String, unique=True, nullable=False),
+            Column("password_hash", String, nullable=False),
+            Column("role", String, nullable=False), # Possible roles: admin, user and guest
+            Column("created_at", DateTime, default=func.now()),
+            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+        )
 
-        return stocks, api_keys, jobs
+        return stocks, api_keys, jobs, users

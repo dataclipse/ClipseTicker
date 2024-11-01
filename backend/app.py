@@ -1,18 +1,19 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from sqlalchemy import create_engine, MetaData, Table, select
-from sqlalchemy.orm import sessionmaker
 from db_manager import DBManager
 from stock_data_fetcher import PolygonStockFetcher
-from datetime import datetime
+import jwt
+import datetime
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
 
-
+# Stocks routes
 @app.route("/api/stocks", methods=["GET"])
 def get_stocks():
     try:
@@ -24,7 +25,6 @@ def get_stocks():
     except Exception as e:
         print(f"Error retrieving stock data: {e}")
         return jsonify({"error": "Unable to retrieve stock data"}), 500
-
 
 @app.route("/api/stocks/<string:ticker_symbol>", methods=["GET"])
 def get_stock_by_ticker(ticker_symbol):
@@ -46,7 +46,7 @@ def get_stock_by_ticker(ticker_symbol):
         print(f"Error retrieving stock data for ticker symbol '{ticker_symbol}': {e}")
         return jsonify({"error": "Unable to retrieve stock data"}), 500
 
-
+# Api Keys Routes
 @app.route("/api/keys", methods=["GET"])
 def get_api_keys():
     try:
@@ -59,7 +59,6 @@ def get_api_keys():
         print(f"Error retrieving API keys: {e}")
 
         return jsonify({"error": "Unable to retrieve API keys"}), 500
-
 
 @app.route("/api/keys/<string:service>", methods=["PUT"])
 def update_api_key(service):
@@ -82,7 +81,6 @@ def update_api_key(service):
         print(f"Error updating API key: {e}")
         return jsonify({"error": "Unable to update API key"}), 500
 
-
 @app.route("/api/keys/<string:service>", methods=["DELETE"])
 def delete_api_key(service):
     try:
@@ -94,7 +92,6 @@ def delete_api_key(service):
     except Exception as e:
         print(f"Error deleting API key for service {service}: {e}")
         return jsonify({"error": "Unable to delete API key"}), 500
-
 
 @app.route("/api/keys", methods=["POST"])
 def add_api_key():
@@ -109,7 +106,7 @@ def add_api_key():
     db_manager.api_key_manager.insert_api_key(service, api_key)
     return jsonify({"message": "API key added successfully"}), 201
 
-
+# Jobs related routes
 @app.route("/api/jobs", methods=["DELETE"])
 def delete_jobs():
     try:
@@ -143,7 +140,6 @@ def delete_jobs():
         )
         return jsonify({"error": "Unable to delete job"}), 500
 
-
 @app.route("/api/jobs", methods=["GET"])
 def get_jobs():
     try:
@@ -154,7 +150,6 @@ def get_jobs():
     except Exception as e:
         print(f"Error retrieving jobs: {e}")
         return jsonify({"error": "Unable to retrieve jobs"}), 500
-
 
 @app.route("/api/jobs", methods=["POST"])
 def fetch_data_job():
@@ -186,7 +181,6 @@ def fetch_data_job():
             500,
         )
 
-
 @app.route("/api/jobs/2yr", methods=["GET"])
 def fetch_data_job_2yr():
     try:
@@ -200,20 +194,6 @@ def fetch_data_job_2yr():
             jsonify({"error": "Unable to retrieve jobs data for the last two years"}),
             500,
         )
-
-
-def load_api_key(file_path):
-    try:
-        with open(file_path, "r") as file:
-            api_key = file.read().strip()
-            return api_key
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} was not found.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while reading the API key: {e}")
-        return None
-
 
 if __name__ == "__main__":
     app.run(debug=True)
