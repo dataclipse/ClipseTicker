@@ -39,7 +39,7 @@ const Item = ({ title, to, icon, selected, setSelected }) => {
   );
 };
 
-const Sidebar = () => {
+const Sidebar = ({ userRole }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [selected, setSelected] = useState("Dashboard");
@@ -98,7 +98,7 @@ const Sidebar = () => {
               Dataclipse
             </Typography>
             <Typography variant="h5" color={colors.greenAccent[500]}>
-              Admin
+              {userRole}
             </Typography>
           </Box>
 
@@ -145,23 +145,27 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
           </List>
-          <Typography
-            variant="h6"
-            color={colors.grey[300]}
-            fontWeight={"bold"}
-            sx={{ m: "15px 0 5px 20px" }}
-          >
-            Settings
-          </Typography>
-          <List>
-            <Item
-              title="API Keys"
-              to="/api_keys"
-              icon={<KeyIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-          </List>
+          {userRole === "admin" && (
+            <>
+              <Typography
+                variant="h6"
+                color={colors.grey[300]}
+                fontWeight={"bold"}
+                sx={{ m: "15px 0 5px 20px" }}
+              >
+                Settings
+              </Typography>
+              <List>
+                <Item
+                  title="API Keys"
+                  to="/api_keys"
+                  icon={<KeyIcon />}
+                  selected={selected}
+                  setSelected={setSelected}
+                />
+              </List>
+            </>
+          )}
         </Box>
       </Drawer>
     </Box>

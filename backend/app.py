@@ -39,19 +39,26 @@ def login():
         # Authenticate user
         if db_manager.user_manager.authenticate_user(username, password):
             # Define the token expiration
+            user = db_manager.user_manager.get_user_by_username(username)
             expiration = datetime.now() + timedelta(hours=1)
+            
+            if user is None:
+                return jsonify({"error": "User not found"}), 404
+            
+            user_role = user['role']
             
             # Generate JWT payload
             payload = {
                 "username": username,
                 "exp": expiration,
-                "iat": datetime.now()
+                "iat": datetime.now(),
+                "role": user_role
             }
             
             # Encode JWT with secret key
             token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm="HS256")
             
-            return jsonify({"token": token}), 200
+            return jsonify({"token": token, "role": user_role}), 200
         else:
             return jsonify({"error": "Invalid credentials"}), 401
     except Exception as e:
