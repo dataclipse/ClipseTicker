@@ -11,13 +11,11 @@ import ApiKeys from "./scenes/api_keys";
 import StockDetails from "./scenes/stock_details";
 import Login from "./scenes/login";
 import ProtectedRoute from "./components/protected_route.jsx";
-import { useUserContext } from "./context/user_context";
 
 
 function App() {
   const [theme, colorMode] = useMode();
   const location = useLocation();
-  const { userRole } = useUserContext();
 
   // Check if the current path is the login page
   const isLoginPage = location.pathname === "/login";
@@ -28,7 +26,7 @@ function App() {
         <CssBaseline />
         <Box className="app" display={"flex"}>
           {/* Conditionally render the Sidebar */}
-          {!isLoginPage && <Sidebar userRole={userRole} />}
+          {!isLoginPage && <Sidebar />}
           <Box className="content" component="main" sx={{ flexGrow: 1, padding: "20px", marginLeft: isLoginPage ? 0 : "250px" }}> 
             <Topbar />
             <Routes>
@@ -36,7 +34,7 @@ function App() {
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
               <Route path="/stocks" element={<ProtectedRoute><Stocks /></ProtectedRoute>} />
-              <Route path="/api_keys" element={<ProtectedRoute required_role="admin"><ApiKeys /></ProtectedRoute>} />
+              <Route path="/api_keys" element={<ProtectedRoute required_role="Admin"><ApiKeys /></ProtectedRoute>} />
               <Route path="/stocks/:ticker" element={<ProtectedRoute><StockDetails /></ProtectedRoute>} />
             </Routes>
           </Box>

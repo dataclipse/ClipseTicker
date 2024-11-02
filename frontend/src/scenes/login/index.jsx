@@ -28,8 +28,8 @@ function Login() {
             });
             const data = await response.json();
 
-            if (response.ok && data.token && data.role) {
-                login(data.token, data.role); // Set auth token
+            if (response.ok && data.token && data.role && username) {
+                login(data.token, data.role, username); // Set auth token
                 navigate("/"); // redirect to dashboard
             } else {
                 alert("Login failed: " + data.error);

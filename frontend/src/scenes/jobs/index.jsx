@@ -8,6 +8,7 @@ import AddJobModal from "../../components/add_job_modal";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
+import { useAuth } from "../../context/auth_context";
 
 const Jobs = () => {
   const theme = useTheme();
@@ -17,6 +18,7 @@ const Jobs = () => {
   const [openJobModal, setOpenJobModal] = useState(false);
   const handleOpenJobModal = () => setOpenJobModal(true);
   const handleCloseJobModal = () => setOpenJobModal(false);
+  const { user } = useAuth();
 
   const columns = [
     {
@@ -76,15 +78,17 @@ const Jobs = () => {
           height={"100%"}
         >
           <DeleteIcon
-            onClick={() =>
-              handleDeleteJob(
-                params.row.job_name,
-                params.row.scheduled_start_time
-              )
-            }
+            onClick={() => {
+              if (user.role === "Admin") {
+                handleDeleteJob(
+                  params.row.job_name,
+                  params.row.scheduled_start_time
+                )
+              }
+            }}
             sx={{
-              cursor: "pointer",
-              color: colors.redAccent[500],
+              cursor: user.role === "Admin" ? "pointer" : "default",
+              color: user.role === "Admin" ? colors.redAccent[500] : colors.grey[400],
               alignItems: "center",
             }}
           />
@@ -158,6 +162,7 @@ const Jobs = () => {
           color="secondary"
           onClick={handleOpenJobModal}
           startIcon={<AddCircleOutlineIcon />}
+          disabled={user.role !== "Admin"}
         >
           Add Job
         </Button>

@@ -9,17 +9,18 @@ import TrafficIcon from "@mui/icons-material/Traffic";
 import Header from "../../components/header";
 import StatBox from "../../components/stat_box";
 import ProgressCircle from "../../components/progress_circle";
+import { useAuth } from "../../context/auth_context";
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const { user } = useAuth();
 
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-
+        <Header title="DASHBOARD" subtitle={`Welcome to your dashboard, ${user?.username}`} />
         <Box>
           <Button
             sx={{

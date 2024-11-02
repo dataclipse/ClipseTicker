@@ -16,6 +16,7 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import WorkIcon from "@mui/icons-material/Work";
 import KeyIcon from "@mui/icons-material/Key";
 import { useState } from "react";
+import { useAuth } from "../../context/auth_context";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -39,10 +40,11 @@ const Item = ({ title, to, icon, selected, setSelected }) => {
   );
 };
 
-const Sidebar = ({ userRole }) => {
+const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [selected, setSelected] = useState("Dashboard");
+  const { user } = useAuth();
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -95,10 +97,10 @@ const Sidebar = ({ userRole }) => {
               fontWeight="bold"
               sx={{ m: "1px 0 0 0" }}
             >
-              Dataclipse
+              {user?.username}
             </Typography>
             <Typography variant="h5" color={colors.greenAccent[500]}>
-              {userRole}
+              {user?.role}
             </Typography>
           </Box>
 
@@ -145,7 +147,7 @@ const Sidebar = ({ userRole }) => {
               setSelected={setSelected}
             />
           </List>
-          {userRole === "admin" && (
+          {user?.role === "Admin" && (
             <>
               <Typography
                 variant="h6"

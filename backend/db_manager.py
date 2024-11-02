@@ -61,8 +61,8 @@ class DBManager:
 
     def initialize_default_users(self):
         default_users = [
-            {"username": "admin", "password": "admin", "role": "admin"},
-            {"username": "guest", "password": "guest", "role": "guest"},
+            {"username": "Admin", "password": "admin", "role": "Admin"},
+            {"username": "Guest", "password": "guest", "role": "Guest"},
         ]
         
         for user in default_users:
