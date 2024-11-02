@@ -6,14 +6,12 @@ __pycache__/
 # sqlite db
 db/
 
-# api key secret
-encrypt_key.txt
-
 # C extensions
 *.so
 
-# api_key_file
-api_key.txt
+# key files
+*_key.txt
+
 
 # Distribution / packaging
 .Python
