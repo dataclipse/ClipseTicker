@@ -10,7 +10,9 @@ db/
 *.so
 
 # key files
-*_key.txt
+api_key.txt
+encrypt_key.txt
+jwt_key.txt
 
 
 # Distribution / packaging
