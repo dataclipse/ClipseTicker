@@ -26,7 +26,14 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
   const handleFetch = () => {
     onClose();
     if (fetchOption === "two_years") {
-      fetch("/api/jobs/2yr")
+      const token = localStorage.getItem("auth_token");
+      fetch("/api/jobs/2yr", {
+        method: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json" 
+        },
+      })
         .then((response) => {
           if (!response.ok) throw new Error("Failed to fetch two years data");
           return response.json();
@@ -38,9 +45,13 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
           console.error("Error fetching two years data:", error);
         });
     } else {
+      const token = localStorage.getItem("auth_token");
       fetch("/api/jobs", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json" 
+        },
         body: JSON.stringify({ startDate, endDate }),
       })
         .then((response) => {
