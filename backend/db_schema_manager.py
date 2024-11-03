@@ -87,6 +87,9 @@ class DBSchemaManager:
             Column("username", String, unique=True, nullable=False),
             Column("password_hash", String, nullable=False),
             Column("role", String, nullable=False), # Possible roles: admin, user and guest
+            Column("email", String),
+            Column("theme_preference", String, default="Dark"), # Possible themes: Light, Dark
+            Column("currency_preference", String, default="USD"), # Possible currencies: USD, EUR, GBP, etc
             Column("created_at", DateTime, default=func.now()),
             Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
         )

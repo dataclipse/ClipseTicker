@@ -10,6 +10,7 @@ import Stocks from "./scenes/stocks";
 import ApiKeys from "./scenes/api_keys";
 import StockDetails from "./scenes/stock_details";
 import Login from "./scenes/login";
+import Profile from "./scenes/profile";
 import ProtectedRoute from "./components/protected_route.jsx";
 
 
@@ -33,6 +34,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/stocks" element={<ProtectedRoute><Stocks /></ProtectedRoute>} />
               <Route path="/api_keys" element={<ProtectedRoute required_role="Admin"><ApiKeys /></ProtectedRoute>} />
               <Route path="/stocks/:ticker" element={<ProtectedRoute><StockDetails /></ProtectedRoute>} />

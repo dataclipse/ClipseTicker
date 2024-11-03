@@ -9,7 +9,7 @@ import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 import { useAuth} from "../../context/auth_context";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Topbar = () => {
   const theme = useTheme();
@@ -18,6 +18,7 @@ const Topbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const { logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -31,6 +32,11 @@ const Topbar = () => {
     logout();
     handleClose();
   };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+    handleClose();
+  }
 
   const isLoginPage = location.pathname === "/login";
 
@@ -75,7 +81,7 @@ const Topbar = () => {
           open={Boolean(anchorEl)}
           onClose={handleClose}
           >
-            <MenuItem onClick={handleClose}>Profile</MenuItem>
+            <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Box>

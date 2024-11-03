@@ -59,8 +59,18 @@ function Login() {
         >
             <form onSubmit={handleSubmit}>
                 <CardContent className="login">
-                    <Typography variant="h2" sx={{ mb: '20px' }}>
-                        Login
+                    <Typography variant="h1" sx={{ fontWeight: 'bold', mb: '40px', justifyContent: 'center', display: 'flex' }} >
+                        <img
+                            alt=""
+                            width="45px"
+                            height="45px"
+                            src={"../../assets/logo.png"}
+                            style={{ borderRadius: "40%", marginRight: "10px" }}
+                        />
+                    ClipseTicker
+                    </Typography>
+                    <Typography variant="h3" sx={{ mb: '20px', fontWeight: 'bold' }}>
+                    Login
                     </Typography>
                         <TextField 
                             sx= {{ mb: '10px '}}

@@ -86,8 +86,8 @@ const Sidebar = () => {
               alt="profile-user"
               width="50px"
               height="50px"
-              src={"../../assets/user.png"}
-              style={{ cursor: "pointer", borderRadius: "50%" }}
+              src={"../../assets/logo.png"}
+              style={{ cursor: "pointer", borderRadius: "20%" }}
             />
           </Box>
           <Box textAlign="center">

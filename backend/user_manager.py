@@ -26,6 +26,9 @@ class UserManager:
                 "username": username,
                 "password_hash": hashed_password,
                 "role": role,
+                "email": "",
+                "theme_preference": "Dark",
+                "currency_preference": "USD",
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
             }
