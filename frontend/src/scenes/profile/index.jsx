@@ -11,7 +11,7 @@ const Profile = () => {
     const { user } = useAuth();
 
     const [currency, setCurrency] = useState("USD");
-    const [themePreference, setThemePreference] = useState("dark");
+    const [themePreference, setThemePreference] = useState("");
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -37,7 +37,7 @@ const Profile = () => {
                 setUsername(userData.username);
                 setEmail(userData.email);
                 setCurrency(userData.currency_preference);
-                setThemePreference(userData.theme_preference || theme.palette.mode);
+                setThemePreference(userData.theme_preference);
             } else {
                 console.error("Failed to fetch user profile:", response.statusText);
             }
@@ -51,14 +51,20 @@ const Profile = () => {
     }, [theme.palette.mode]);
 
     const handleCurrencyChange = (event) => {
+        setFieldToEdit("Currency")
         setCurrency(event.target.value);
-        handleSave();
     };
 
     const handleThemeChange = (event) => {
+        setFieldToEdit("Theme")
         setThemePreference(event.target.value);
-        handleSave();
     };
+
+    useEffect(() => {
+        if (fieldToEdit === "Currency" || fieldToEdit === "Theme" ) {
+            handleSave();
+        }
+    }, [currency, themePreference]);
 
     const handleOpenDialog = (field) => {
         setFieldToEdit(field);
@@ -83,8 +89,6 @@ const Profile = () => {
         const payload = {
             username,
         };
-
-        // Add the new value based on the field being edited
         if (fieldToEdit === "Username") {
             payload.new_username = newValue;
         } else if (fieldToEdit === "Password") {
@@ -157,6 +161,7 @@ const Profile = () => {
                         variant="outlined"
                         margin="dense"
                         sx={{ mb: 1 }}
+                        color={colors.redAccent[500]}
                     />
                     <Box textAlign="right">
                         <Link color="secondary" component="button" variant="body2" onClick={() => handleOpenDialog("Username")}>
@@ -171,6 +176,7 @@ const Profile = () => {
                         variant="outlined"
                         margin="dense"
                         sx={{ mb: 1 }}
+                        color={colors.redAccent[500]}
                     />
                     <Box textAlign="right">
                         <Link color="secondary" component="button" variant="body2" onClick={() => handleOpenDialog("Password")}>
@@ -185,6 +191,7 @@ const Profile = () => {
                         variant="outlined"
                         margin="dense"
                         sx={{ mb: 1 }}
+                        color={colors.redAccent[500]}
                     />
                     <Box textAlign="right">
                         <Link color="secondary" component="button" variant="body2" onClick={() => handleOpenDialog("Email")}>
@@ -199,6 +206,7 @@ const Profile = () => {
                         onChange={handleCurrencyChange}
                         variant="outlined"
                         margin="dense"
+                        color={colors.redAccent[500]}
                     >
                         <MenuItem value="USD">USD</MenuItem>
                         <MenuItem value="EUR">EUR</MenuItem>
@@ -213,6 +221,7 @@ const Profile = () => {
                         onChange={handleThemeChange}
                         variant="outlined"
                         margin="dense"
+                        color={colors.redAccent[500]}
                     >
                         <MenuItem value="light">Light</MenuItem>
                         <MenuItem value="dark">Dark</MenuItem>

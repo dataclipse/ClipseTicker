@@ -46,9 +46,6 @@ def login():
                 return jsonify({"error": "User not found"}), 404
             
             user_role = user['role']
-            email = user['email']
-            currency = user['currency_preference']
-            theme = user['theme_preference']
             
             # Generate JWT payload
             payload = {
@@ -56,9 +53,6 @@ def login():
                 "exp": expiration,
                 "iat": datetime.now(),
                 "role": user_role,
-                "email": email,
-                "currency_preference": currency,
-                "theme_preference": theme
             }
             
             # Encode JWT with secret key
@@ -66,10 +60,7 @@ def login():
             return jsonify({
                 "token": token, 
                 "role": user_role, 
-                "username": username, 
-                "email": email,
-                "currency_preference": currency,
-                "theme_preference": theme
+                "username": username
             }), 200
         else:
             return jsonify({"error": "Invalid credentials"}), 401
@@ -106,6 +97,7 @@ def token_required(f):
 @token_required
 def update_user():
     data = request.get_json()
+    print(data)
     username = data.get("username")
     new_username = data.get("new_username")
     new_password = data.get("new_password")

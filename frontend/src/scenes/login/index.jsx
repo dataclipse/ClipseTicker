@@ -29,7 +29,7 @@ function Login() {
             const data = await response.json();
 
             if (response.ok && data.token) {
-                login(data.token, data.role, data.username, data.email, data.currency_preference, data.theme_preference ); // Set auth token
+                login(data.token, data.role, data.username ); // Set auth token
                 localStorage.setItem("auth_token", data.token);
                 navigate("/"); // redirect to dashboard
             } else {
