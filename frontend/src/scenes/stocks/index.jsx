@@ -88,7 +88,14 @@ const Stocks = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("/api/stocks");
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/stocks", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
       const formattedData = data.map((stock, index) => ({
         id: index,

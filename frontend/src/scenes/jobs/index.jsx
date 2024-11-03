@@ -103,9 +103,11 @@ const Jobs = () => {
       window.confirm(`Are you sure you want to delete the job: ${job_name}?`)
     ) {
       try {
+        const token = localStorage.getItem("auth_token");
         const response = await fetch(`/api/jobs`, {
           method: "DELETE",
           headers: {
+            "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ job_name, scheduled_start_time }),
@@ -124,7 +126,14 @@ const Jobs = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("/api/jobs");
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/jobs", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
       const formattedData = data.map((jobs, index) => ({
         id: index,

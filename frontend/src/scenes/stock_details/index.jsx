@@ -83,7 +83,14 @@ const Stocks = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(`/api/stocks/${ticker}`);
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/stocks/${ticker}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
       const chart_data = data
         .map((stock) => ({

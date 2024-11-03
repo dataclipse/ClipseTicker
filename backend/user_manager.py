@@ -27,7 +27,7 @@ class UserManager:
                 "password_hash": hashed_password,
                 "role": role,
                 "email": "",
-                "theme_preference": "Dark",
+                "theme_preference": "dark",
                 "currency_preference": "USD",
                 "created_at": datetime.now(),
                 "updated_at": datetime.now(),
@@ -61,14 +61,27 @@ class UserManager:
             session.close()
             
     # Update a user's role or password
-    def update_user(self, username, new_role=None, new_password=None):
+    def update_user(self, username, new_username=None, new_role=None, new_password=None, new_email=None, new_currency=None, new_theme=None):
         session = self.Session()
         try:
+            if new_username:
+                existing_user = self.get_user_by_username(new_username)
+                if existing_user:
+                    return f"Error: Username '{new_username}' already exists."
+            
             update_data = {"updated_at": datetime.now()}
+            if new_username:
+                update_data["username"] = new_username
             if new_password:
                 update_data["password_hash"] = self._hash_password(new_password)
             if new_role:
                 update_data["role"] = new_role
+            if new_email:
+                update_data["email"] = new_email
+            if new_currency:
+                update_data["currency_preference"] = new_currency
+            if new_theme:
+                update_data["theme_preference"] = new_theme
                 
             update_stmt = (
                 update(self.users)

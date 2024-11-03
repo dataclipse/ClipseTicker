@@ -88,7 +88,14 @@ const ApiKeys = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("/api/keys");
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/keys", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
       const formattedData = data.map((api, index) => ({
         id: index,
@@ -107,9 +114,11 @@ const ApiKeys = () => {
 
   const handleAddApiKey = async (service, api_key) => {
     try {
+      const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/keys", {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ service, api_key }),
@@ -128,9 +137,11 @@ const ApiKeys = () => {
 
   const handleUpdateApiKey = async (service, api_key) => {
     try {
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/keys/${service}`, {
         method: "PUT",
         headers: {
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ api_key }),
@@ -149,8 +160,13 @@ const ApiKeys = () => {
 
   const handleDeleteApiKey = async (service) => {
     try {
+      const token = localStorage.getItem("auth_token");
       const response = await fetch(`/api/keys/${service}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.ok) {

@@ -28,11 +28,13 @@ function Login() {
             });
             const data = await response.json();
 
-            if (response.ok && data.token && data.role && username) {
-                login(data.token, data.role, username); // Set auth token
+            if (response.ok && data.token) {
+                login(data.token, data.role, data.username, data.email, data.currency_preference, data.theme_preference ); // Set auth token
+                localStorage.setItem("auth_token", data.token);
                 navigate("/"); // redirect to dashboard
             } else {
                 alert("Login failed: " + data.error);
+                console.error(data.error);
             }
         } catch (error) {
             console.error("Error: ", error);
