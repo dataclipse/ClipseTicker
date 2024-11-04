@@ -1,4 +1,4 @@
-# user_routes.py
+# routes/user_routes.py
 from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt

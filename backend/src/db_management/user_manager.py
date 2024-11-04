@@ -1,4 +1,4 @@
-# user_manager.py
+# db_management/user_manager.py
 import bcrypt
 from datetime import datetime
 from sqlalchemy import select, update, delete

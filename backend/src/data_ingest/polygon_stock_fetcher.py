@@ -1,4 +1,4 @@
-# stocks_data_fetcher.py
+# data_ingest/stocks_data_fetcher.py
 import requests, threading, queue, time
 from ..db_manager import DBManager
 from datetime import datetime, timedelta

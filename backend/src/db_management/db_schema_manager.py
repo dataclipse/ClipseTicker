@@ -1,4 +1,4 @@
-# db_schema_manager.py
+# db_management/db_schema_manager.py
 import os
 from sqlalchemy import (
     MetaData,
