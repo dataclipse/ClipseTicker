@@ -14,4 +14,24 @@ node -v # should print `v20.18.0`
 # verifies the right npm version is in the environment
 npm -v # should print `10.8.2`
 
-npm install react-datepicker
+# Navigate to the frontend folder
+cd frontend
+
+# Start frontend server
+npm start
+
+# Setup for Python
+# Create Virtual Environment if not already created
+python -m venv venv
+
+# Activate the Python environment
+venv\Scripts\activate
+
+# Install required packages if not already done
+pip install -r requirements.txt
+
+# Navigate to the backend folder
+cd backend
+
+# Start backend server
+python -m src

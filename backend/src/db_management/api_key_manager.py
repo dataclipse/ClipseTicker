@@ -1,7 +1,5 @@
 # api_key_manager.py
-import os
 from sqlalchemy import select, update, func
-from cryptography.fernet import Fernet
 
 
 class ApiKeyManager:

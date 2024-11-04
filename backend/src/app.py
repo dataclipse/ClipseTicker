@@ -2,10 +2,11 @@
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from db_manager import DBManager
-from stock_data_fetcher import PolygonStockFetcher
+from .db_manager import DBManager
+from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
+from .routes.user_routes import user_bp
 import jwt
-from functools import wraps
+from  functools import wraps
 from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
@@ -68,90 +69,31 @@ def login():
         print(f"Error during authentication for user '{username}': {e}")
         return jsonify({"error": "Authentication error"}), 500
     
-# Token protection (apply to route by adding @token_required)
+# Token protection decorator
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get("Authorization")
+        token = request.headers.get('Authorization')
         if not token:
-            return jsonify({"error": "Token is missing"}), 403
+            return jsonify({'error': 'Token is missing!'}), 403
         
         try:
-            # Remove 'Bearer ' prefix if it exits
-            if token.startswith("Bearer"):
+            # Remove 'Bearer ' prefix if it exists
+            if token.startswith('Bearer '):
                 token = token.split(" ")[1]
             # Decode token
             decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            # You can also add user info to the request context if needed
             request.user = decoded_token
         except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expired"}), 401
+            return jsonify({'error': 'Token is expired'}), 401
         except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid Token"}), 403
+            return jsonify({'error': 'Invalid Token'}), 403
         
         return f(*args, **kwargs)
     return decorated
 
-# User routes
-@app.route("/api/user", methods=["PUT"])
-@token_required
-def update_user():
-    data = request.get_json()
-    print(data)
-    username = data.get("username")
-    new_username = data.get("new_username")
-    new_password = data.get("new_password")
-    new_email = data.get("new_email")
-    new_currency = data.get("new_currency")
-    new_theme = data.get("new_theme")
-    
-    if not username:
-        return jsonify({"error": "Username is required"}), 400
-    
-    try:
-        # Call the update_user method with provided parameters
-        result = db_manager.user_manager.update_user(
-            username,
-            new_username=new_username, 
-            new_password=new_password, 
-            new_email=new_email, 
-            new_currency=new_currency, 
-            new_theme=new_theme
-        )
-        
-        # Check if the result contains an error message
-        if isinstance(result, str):
-            return jsonify({"error": result}), 400
-        
-        return jsonify({"message": "User updated successfully"}), 200
-    except Exception as e:
-        print(f"Error updating user '{username}': {e}")
-        return jsonify({"error": "Unable to update user"}), 500
-
-@app.route("/api/user/<string:username>", methods=["GET"])
-@token_required
-def get_user_by_username(username):
-    try:
-        # Query the user profile by username
-        user = db_manager.user_manager.get_user_by_username(username)
-        
-        # Check if the user exists
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        
-        # Return the user's profile data
-        return jsonify({
-            "username": user["username"],
-            "role": user["role"],
-            "email": user["email"],
-            "currency_preference": user["currency_preference"],
-            "theme_preference": user["theme_preference"],
-            "created_at": user["created_at"],
-            "updated_at": user["updated_at"]
-        }), 200
-    except Exception as e:
-        print(f"Error retrieving user '{username}': {e}")
-        return jsonify({"error": "Unable to retrieve user"}), 500
+# Register Blueprints
+app.register_blueprint(user_bp)
 
 # Stocks routes
 @app.route("/api/stocks", methods=["GET"])

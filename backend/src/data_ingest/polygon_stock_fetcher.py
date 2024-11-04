@@ -1,6 +1,6 @@
 # stocks_data_fetcher.py
 import requests, threading, queue, time
-from db_manager import DBManager
+from ..db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -16,11 +16,14 @@ class PolygonStockFetcher:
         self.db_insert_queue = queue.Queue()
 
     def get_stock_data(self, date):
+        # Make sure to get the most updated API key from the database
+        self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")
+        
         # Define the parameters for the API request
         endpoint = f"/v2/aggs/grouped/locale/us/market/stocks/{date}"
         url = self.base_url + endpoint
         params = {"adjusted": "true", "apikey": self.polygon_api_key}
-
+        
         # Make the API request
         response = requests.get(url, params=params)
         data = response.json()

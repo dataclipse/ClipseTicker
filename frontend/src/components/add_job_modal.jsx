@@ -99,6 +99,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
               onChange={(e) => setStartDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
               sx={{ mb: 2 }}
+              color={colors.redAccent[500]}
             />
             <TextField
               label="End Date"
@@ -106,6 +107,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
+              color={colors.redAccent[500]}
             />
           </Box>
         )}
