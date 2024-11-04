@@ -3,7 +3,7 @@ import { ColorModeContext, useMode } from "./theme";
 import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Topbar from "./scenes/global/topbar";
-import Sidebar from "./scenes/global/sidebar.jsx";
+import Sidebar from "./scenes/global/sidebar";
 import Dashboard from "./scenes/dashboard";
 import Jobs from "./scenes/jobs";
 import Stocks from "./scenes/stocks";
@@ -11,7 +11,7 @@ import ApiKeys from "./scenes/api_keys";
 import StockDetails from "./scenes/stock_details";
 import Login from "./scenes/login";
 import Profile from "./scenes/profile";
-import ProtectedRoute from "./components/protected_route.jsx";
+import ProtectedRoute from "./components/protected_route";
 
 
 function App() {
