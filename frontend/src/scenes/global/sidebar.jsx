@@ -140,7 +140,7 @@ const Sidebar = () => {
           </Typography>
           <List>
             <Item
-              title="Jobs"
+              title="Job Scheduler"
               to="/jobs"
               icon={<WorkIcon />}
               selected={selected}

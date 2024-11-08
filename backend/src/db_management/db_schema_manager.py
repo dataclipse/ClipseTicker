@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Float,
     DateTime,
+    Boolean,
     PrimaryKeyConstraint,
     Index,
     func,
@@ -93,5 +94,19 @@ class DBSchemaManager:
             Column("created_at", DateTime, default=func.now()),
             Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
         )
+        
+        stocks_scrape = Table(
+            "stocks_scrape",
+            self.metadata,
+            Column("ticker_symbol", String, nullable=False),
+            Column("company_name", String),
+            Column("price", Float),
+            Column("change", Float),
+            Column("industry", String),
+            Column("volume", Float),
+            Column("pe_ratio", Float),
+            Column("timestamp", DateTime, nullable=False),  # New timestamp column
+            PrimaryKeyConstraint("ticker_symbol", "timestamp"),  # Composite primary key
+        )
 
-        return stocks, api_keys, jobs, users
+        return stocks, api_keys, jobs, users, stocks_scrape

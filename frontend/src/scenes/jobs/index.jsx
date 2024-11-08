@@ -5,6 +5,7 @@ import { tokens } from "../../theme";
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header";
 import AddJobModal from "../../components/add_job_modal";
+import ScheduleJobDialog from "../../components/schedule_job_dialog";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
@@ -16,8 +17,11 @@ const Jobs = () => {
   const [Jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openJobModal, setOpenJobModal] = useState(false);
+  const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
   const handleOpenJobModal = () => setOpenJobModal(true);
   const handleCloseJobModal = () => setOpenJobModal(false);
+  const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
+  const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
 
   const columns = [
@@ -172,18 +176,32 @@ const Jobs = () => {
           onClick={handleOpenJobModal}
           startIcon={<AddCircleOutlineIcon />}
           disabled={user.role !== "Admin"}
+          style={{ marginRight: "10px" }}
         >
           Add Job
         </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={handleOpenScheduleJobDialog}
+          startIcon={<AddCircleOutlineIcon />}
+          disabled={user.role !== "Admin"}
+
+        >
+          Schedule a New Job
+        </Button>
       </Box>
 
-      {/* Modal Component */}
+      {/* Modal Components */}
       <AddJobModal
         open={openJobModal}
         onClose={handleCloseJobModal}
         onSubmit={handleCloseJobModal}
       />
-
+      <ScheduleJobDialog
+        open={openScheduleJobDialog}
+        onClose={handleCloseScheduleJobDialog}
+      />
       <Box
         m="40px 0 0 0"
         display="flex"

@@ -3,7 +3,7 @@ import { Box, Typography, TextField, useTheme, MenuItem, Link, Dialog, DialogTit
 import { tokens } from "../../theme";
 import Header from "../../components/header";
 import { useAuth } from "../../context/auth_context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const Profile = () => {
     const theme = useTheme();
@@ -20,7 +20,7 @@ const Profile = () => {
     const [newPassword, setNewPassword] = useState("");
     const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
 
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = useCallback(async () => {
         try {
             const token = localStorage.getItem("auth_token");
             const response = await fetch(`/api/user/${user.username}`, {
@@ -44,11 +44,7 @@ const Profile = () => {
         } catch (error) {
             console.error("Error fetching user profile:", error)
         }
-    };
-
-    useEffect(() => {
-        fetchUserProfile();
-    }, [theme.palette.mode]);
+    }, [user.username]);
 
     const handleCurrencyChange = (event) => {
         setFieldToEdit("Currency")
@@ -59,12 +55,6 @@ const Profile = () => {
         setFieldToEdit("Theme")
         setThemePreference(event.target.value);
     };
-
-    useEffect(() => {
-        if (fieldToEdit === "Currency" || fieldToEdit === "Theme" ) {
-            handleSave();
-        }
-    }, [currency, themePreference]);
 
     const handleOpenDialog = (field) => {
         setFieldToEdit(field);
@@ -85,7 +75,7 @@ const Profile = () => {
         setFieldToEdit("");
     };
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         const payload = {
             username,
         };
@@ -133,7 +123,17 @@ const Profile = () => {
             alert("Failed to update user data. Please try again.");
         }
         fetchUserProfile();
-    };
+    }, [username, fieldToEdit, newValue, newPassword, newPasswordConfirm, currency, themePreference, fetchUserProfile]);
+
+    useEffect(() => {
+        if (fieldToEdit === "Currency" || fieldToEdit === "Theme" ) {
+            handleSave();
+        }
+    }, [currency, themePreference, fieldToEdit, handleSave]);
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, [fetchUserProfile, theme.palette.mode]);
 
     return (
         <Box m="20px">

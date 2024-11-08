@@ -29,9 +29,9 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
       const token = localStorage.getItem("auth_token");
       fetch("/api/jobs/2yr", {
         method: "GET",
-        headers: { 
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json" 
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
         .then((response) => {
@@ -48,9 +48,9 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
       const token = localStorage.getItem("auth_token");
       fetch("/api/jobs", {
         method: "POST",
-        headers: { 
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json" 
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ startDate, endDate }),
       })
@@ -69,7 +69,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Job</DialogTitle>
       <DialogContent>
         <FormControl component="fieldset">
