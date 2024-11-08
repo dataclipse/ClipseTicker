@@ -54,17 +54,17 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
         },
         body: JSON.stringify({ startDate, endDate }),
       })
-        .then((response) => {
-          if (!response.ok)
-            throw new Error("Failed to fetch data for date range");
-          return response.json();
-        })
-        .then((data) => {
-          onSubmit(data);
-        })
-        .catch((error) => {
-          console.error("Error fetching data from date range:", error);
-        });
+      .then((response) => {
+        if (!response.ok)
+          throw new Error("Failed to fetch data for date range");
+        return response.json();
+      })
+      .then((data) => {
+        onSubmit(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data from date range:", error);
+      });
     }
   };
 

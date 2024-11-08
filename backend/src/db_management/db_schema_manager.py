@@ -108,5 +108,25 @@ class DBSchemaManager:
             Column("timestamp", DateTime, nullable=False),  # New timestamp column
             PrimaryKeyConstraint("ticker_symbol", "timestamp"),  # Composite primary key
         )
+        
+        jobs_schedule = Table(
+            "jobs_schedule",
+            self.metadata,
+            Column("job_type", String, nullable=False),
+            Column("service", String, nullable=False),
+            Column("status", String, nullable=False),
+            Column("owner", String, nullable=False),
+            Column("frequency", String, nullable=False),
+            Column("data_fetch_start_date", DateTime),
+            Column("data_fetch_end_date", DateTime),
+            Column("scheduled_start_date", DateTime, nullable=False),
+            Column("scheduled_end_date", DateTime), 
+            Column("interval_days", Integer),
+            Column("weekdays", String),
+            Column("run_time", String), 
+            Column("created_at", DateTime, default=func.now()),
+            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+            PrimaryKeyConstraint("job_type","service","frequency","scheduled_start_date"),
+        )
 
-        return stocks, api_keys, jobs, users, stocks_scrape
+        return stocks, api_keys, jobs, users, stocks_scrape, jobs_schedule

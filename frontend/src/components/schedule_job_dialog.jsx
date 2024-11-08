@@ -20,20 +20,38 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 
-const ScheduleJobDialog = ({ open, onClose }) => {
+const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const [jobType, setJobType] = useState('');
+    const [job_type, setJobType] = useState('');
     const [service, setService] = useState('');
+    const [owner, setOwner] = useState('');
+    const [data_fetch_start_date, setDataFetchStartDate] = useState('');
+    const [data_fetch_end_date, setDataFetchEndDate] = useState('');
+    const [scheduled_start_date, setScheduledStartDate] = useState('');
+    const [scheduled_end_date, setScheduledEndDate] = useState('');
+    const [scheduled_start_time, setScheduledStartTime] = useState('');
+    const [scheduled_end_time, setScheduledEndTime] = useState('');
+    const [interval, setInterval] = useState('');
     const [frequency, setFrequency] = useState('');
     const [customInterval, setCustomInterval] = useState('');
     const [dataFetchType, setDataFetchType] = useState('');
+    const [selectedDays, setSelectedDays] = useState([]);
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    const handleCheckboxChange = (day) => {
+        setSelectedDays((prevDays) =>
+            prevDays.includes(day)
+                ? prevDays.filter((d) => d !== day) 
+                : [...prevDays, day]               
+        );
+    };
 
     const handleJobTypeChange = (event) => {
-        const selectedJobType = event.target.value
+        const selected_job_type = event.target.value
         setJobType(event.target.value);
 
-        if (!selectedJobType) {
+        if (!selected_job_type) {
             setService('');
         }
     };
@@ -54,6 +72,44 @@ const ScheduleJobDialog = ({ open, onClose }) => {
         setDataFetchType(event.target.value)
     };
 
+    const handleFetch = () => {
+        onClose();
+        const token = localStorage.getItem("auth_token");
+        const selectedDaysJSON = JSON.stringify(selectedDays);
+        fetch("/api/jobs_schedule", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ 
+                job_type, 
+                service, 
+                owner, 
+                frequency,
+                data_fetch_start_date, 
+                data_fetch_end_date, 
+                scheduled_start_date, 
+                scheduled_end_date, 
+                scheduled_start_time,
+                scheduled_end_time,
+                interval,
+                selectedDaysJSON
+            }),
+        })
+        .then((response) => {
+            if (!response.ok)
+                throw new Error("Failed to schedule a job");
+            return response.json();
+        })
+        .then((data) => {
+            onSubmit(data);
+        })
+        .catch((error) => {
+            console.error("Error scheduling a job:", error);
+        });
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle>Schedule a Job</DialogTitle>
@@ -61,20 +117,20 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 {/* Job Type Dropdown */}
                 <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Job Type</InputLabel>
-                        <Select label="Job Type" value={jobType} onChange={handleJobTypeChange}>
+                        <Select label="Job Type" value={job_type} onChange={handleJobTypeChange}>
                             <MenuItem value="api_fetch">API Fetch</MenuItem>
                             <MenuItem value="data_scrape">Data Scrape</MenuItem>
                         </Select>
                 </FormControl>
                 {/* Conditionally Render Service Dropdown */}
-                {jobType && (
-                    <FormControl fullWidth margin="normal" color={colors.redAccent[500]} disabled={!jobType}>
+                {job_type && (
+                    <FormControl fullWidth margin="normal" color={colors.redAccent[500]} disabled={!job_type}>
                             <InputLabel>Service</InputLabel>
                             <Select label="Service" value={service} onChange={handleServiceChange}>
-                                {jobType === "api_fetch" && (
+                                {job_type === "api_fetch" && (
                                     <MenuItem value="polygon_io">Polygon.io</MenuItem>
                                 )}
-                                {jobType === "data_scrape" && (
+                                {job_type === "data_scrape" && (
                                     <MenuItem value="stock_analysis">StockAnalysis</MenuItem>
                                 )}
                             </Select>
@@ -83,7 +139,9 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 
                 <TextField 
                     label="Owner" 
-                    fullWidth 
+                    fullWidth
+                    value={owner}
+                    onChange={(e) => setOwner(e.target.value)}
                     margin="normal" 
                     color={colors.redAccent[500]}
                 />
@@ -94,13 +152,13 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                         <Select value={frequency} onChange={handleFrequencyChange} label='Frequency'>
                             <MenuItem value="once">Once</MenuItem>
                             <MenuItem value="recurring_daily">Recurring Daily</MenuItem>
-                            {jobType !== "api_fetch" && (
+                            {job_type !== "api_fetch" && (
                                 <MenuItem value="custom_schedule">Custom Schedule</MenuItem>
                             )}
                         </Select>
                 </FormControl>
                 
-                {frequency === "once" && jobType === "api_fetch" &&(
+                {frequency === "once" && job_type === "api_fetch" &&(
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Data Fetch Type</InputLabel>
                             <Select value={dataFetchType} onChange={handleDataFetchTypeChange} label='Data Fetch Type'>
@@ -111,11 +169,13 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 )}
 
                 {/* Data Fetch Start Date */}
-                {jobType === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
+                {job_type === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
                     <TextField 
                         label="Data Fetch Start Date" 
                         type="date" 
-                        fullWidth 
+                        fullWidth
+                        value={data_fetch_start_date}
+                        onChange={(e) => setDataFetchStartDate(e.target.value)} 
                         margin="normal" 
                         slotProps={{ 
                             inputLabel: { shrink: true }, 
@@ -124,11 +184,13 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                     />
                 )}
                 {/* Data Fetch  End Date */}
-                {jobType === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
+                {job_type === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
                 <TextField 
                     label="Data Fetch End Date" 
                     type="date" 
-                    fullWidth 
+                    fullWidth
+                    value={data_fetch_end_date}
+                    onChange={(e) => setDataFetchEndDate(e.target.value)} 
                     margin="normal" 
                     slotProps={{ 
                         inputLabel: { shrink: true }, 
@@ -139,18 +201,22 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 <TextField 
                     label="First Job Schedule Start Date" 
                     type="date" 
-                    fullWidth 
+                    fullWidth
+                    value={scheduled_start_date}
+                    onChange={(e) => setScheduledStartDate(e.target.value)} 
                     margin="normal" 
                     slotProps={{ 
                         inputLabel: { shrink: true }, 
                     }}
                     color={colors.redAccent[500]}
                 />
-                {jobType === 'data_scrape' && (
+                {job_type === 'data_scrape' && (
                     <TextField 
                         label="First Job Schedule End Date" 
                         type="date" 
-                        fullWidth 
+                        fullWidth
+                        value={scheduled_end_date} 
+                        onChange={(e) => setScheduledEndDate(e.target.value)} 
                         margin="normal" 
                         slotProps={{ 
                             inputLabel: { shrink: true }, 
@@ -163,18 +229,22 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 <TextField 
                     label="First Job Schedule Start Time" 
                     type="time" 
-                    fullWidth 
+                    fullWidth
+                    value={scheduled_start_time} 
+                    onChange={(e) => setScheduledStartTime(e.target.value)} 
                     margin="normal" 
                     slotProps={{ inputLabel: { shrink: true } }} 
                     color={colors.redAccent[500]}
                 />
                 
                 {/* Conditionally Render End Time */}
-                {jobType !== "api_fetch" && (
+                {job_type !== "api_fetch" && (
                     <TextField 
                         label="First Job Schedule End Time" 
                         type="time" 
-                        fullWidth 
+                        fullWidth
+                        value={scheduled_end_time}  
+                        onChange={(e) => setScheduledEndTime(e.target.value)} 
                         margin="normal" 
                         slotProps={{ inputLabel: { shrink: true } }}  
                         color={colors.redAccent[500]}  
@@ -194,7 +264,9 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                     <TextField 
                         label="Interval" 
                         type="number" 
-                        fullWidth 
+                        fullWidth
+                        value={interval} 
+                        onChange={(e) => setInterval(e.target.value)} 
                         margin="normal" 
                         color={colors.redAccent[500]}
                     />
@@ -202,11 +274,13 @@ const ScheduleJobDialog = ({ open, onClose }) => {
                 {frequency === "custom_schedule" && customInterval === "weekdays" && (
                     <Box display='flex' justifyContent='center' sx={{ mt: 2 }}>
                         <FormGroup row>
-                            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                            {daysOfWeek.map(day => (
                                 <FormControlLabel
                                     key={day}
                                     control={
                                         <Checkbox
+                                            checked={selectedDays.includes(day)}
+                                            onChange={() => handleCheckboxChange(day)}
                                             sx={{
                                                 color: colors.primary[100], // Unselected color
                                                 '&.Mui-checked': {
@@ -224,7 +298,7 @@ const ScheduleJobDialog = ({ open, onClose }) => {
             </DialogContent>
             <DialogActions>
                 <Button variant="contained" onClick={onClose} sx={{ backgroundColor: colors.grey[500] }}>Cancel</Button>
-                <Button onClick={() => { /* Handle submission logic here */ }} variant="contained" color="primary">Schedule</Button>
+                <Button onClick={handleFetch} variant="contained" color="primary">Schedule</Button>
             </DialogActions>
         </Dialog>
     );

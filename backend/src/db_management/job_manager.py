@@ -4,9 +4,10 @@ from datetime import datetime
 
 
 class JobManager:
-    def __init__(self, session, jobs_table):
+    def __init__(self, session, jobs_table, jobs_schedule_table):
         self.Session = session
         self.jobs = jobs_table
+        self.jobs_schedule = jobs_schedule_table
 
     def select_all_jobs(self):
         session = self.Session()
@@ -261,5 +262,118 @@ class JobManager:
         except Exception as e:
             session.rollback()
             print(f"Error updating job status: {e}")
+        finally:
+            session.close()
+
+    def insert_job_schedule(
+        self, 
+        job_type, 
+        service, 
+        status, 
+        owner, 
+        frequency, 
+        scheduled_start_date, 
+        scheduled_end_date=None, 
+        data_fetch_start_date=None, 
+        data_fetch_end_date=None, 
+        interval_days=None, 
+        weekdays=None, 
+        run_time=None
+    ):
+        
+        session = self.Session()
+        try:
+            insert_stmt = self.jobs_schedule.insert().values(
+                job_type=job_type,
+                service=service,
+                status='SCHEDULED',
+                owner=owner,
+                frequency=frequency,
+                scheduled_start_date=scheduled_start_date,
+                scheduled_end_date=scheduled_end_date,
+                data_fetch_start_date=data_fetch_start_date,
+                data_fetch_end_date=data_fetch_end_date,
+                interval_days=interval_days,
+                weekdays=weekdays,
+                run_time=run_time,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
+            session.execute(insert_stmt)
+            session.commit()
+            print(f"The {job_type} for {service} scheduled successfully.")
+        except Exception as e:
+            session.rollback()
+            print(f"Error inserting job '{job_type} for {service}': {e}")
+        finally:
+            session.close()
+            
+    def select_job_schedule(self, job_type, service, frequency, scheduled_start_date):
+        session = self.Session()
+        try:
+            select_stmt = select(self.jobs_schedule).where(
+                self.jobs_schedule.c.job_type == job_type,
+                self.jobs_schedule.c.service == service,
+                self.jobs_schedule.c.frequency == frequency,
+                self.jobs_schedule.c.scheduled_start_date == scheduled_start_date,
+            )
+            result = session.execute(select_stmt)
+            job = result.fetchone()
+            print(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists." if job else "Job not found.")
+            return dict(job) if job else None
+        except Exception as e:
+            print(f"Error selecting job: {e}")
+            return None
+        finally:
+            session.close()
+
+    def delete_job_schedule(self, job_type, service, frequency, scheduled_start_date):
+        session = self.Session()
+        try:
+            # Convert scheduled_start_time to datetime if it is not already
+            if isinstance(scheduled_start_date, str):
+                scheduled_start_date = datetime.strptime(
+                    scheduled_start_date, "%a, %d %b %Y %H:%M:%S %Z"
+                )
+
+            # Prepare the delete statement
+            delete_stmt = self.jobs_schedule.delete().where(
+                self.jobs_schedule.c.job_type == job_type,
+                self.jobs_schedule.c.service == service,
+                self.jobs_schedule.c.frequency == frequency,
+                self.jobs_schedule.c.scheduled_start_date == scheduled_start_date,
+            )
+
+            result = session.execute(delete_stmt)
+
+            # Commit the Delete
+            session.commit()
+
+            if result.rowcount > 0:
+                print(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists.")
+            else:
+                print(f"No {job_type} {service} Job found with a frequency of '{frequency}' starting {scheduled_start_date} exists. Nothing deleted.")
+        except Exception as e:
+            session.rollback()
+            print(f"Error deleting job: {e}")
+        finally:
+            session.close()
+            
+    def select_all_job_schedules(self):
+        session = self.Session()
+        try:
+            select_stmt = select(self.jobs_schedule)
+            result = session.execute(select_stmt)
+            jobs = result.fetchall()
+            column_names = [column.name for column in self.jobs.columns]
+            jobs_list = [dict(zip(column_names, row)) for row in jobs]
+
+            print(
+                f"Retrieved {len(jobs_list)} job schedules." if jobs_list else "No job schedules found."
+            )
+            return jobs_list
+        except Exception as e:
+            print(f"Error selecting all job schedules: {e}")
+            return []
         finally:
             session.close()

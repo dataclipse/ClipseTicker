@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 from ..data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 import jwt
+from datetime import datetime
 from  functools import wraps
 
 # Initialize blueprint
@@ -11,6 +12,13 @@ jobs_bp = Blueprint("jobs", __name__)
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
 
+def validate_datetime(date_str):
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        # Return None if parsing fails
+        return None
+    
 # Token protection decorator
 def token_required(f):
     @wraps(f)
@@ -80,6 +88,75 @@ def fetch_data_job():
     except Exception as e:
         print(f"Error fetching data for date range {start_date} - {end_date}: {e}")
         return jsonify({"error": "Unable to fetch data for the specified date range"}), 500
+
+@jobs_bp.route("/api/jobs_schedule", methods=["POST"])
+@token_required
+def schedule_job():
+    try:
+        data = request.get_json()
+        job_type = data.get("job_type")
+        service = data.get("service")
+        owner = data.get("owner")
+        frequency = data.get("frequency")
+        data_fetch_start_date = data.get("data_fetch_start_date")
+        data_fetch_end_date = data.get("data_fetch_end_date")
+        scheduled_start_date = data.get("scheduled_start_date")
+        scheduled_end_date = data.get("scheduled_end_date")
+        scheduled_start_time = data.get("scheduled_start_time")
+        scheduled_end_time = data.get("scheduled_end_time")
+        interval_days = data.get("interval")
+        weekdays = data.get("weekdays")
+        
+        # Parse and combine into a datetime object
+        scheduled_start_datetime = None
+        scheduled_end_datetime = None
+        if scheduled_start_date and scheduled_start_time:
+            scheduled_start_datetime = datetime.strptime(f"{scheduled_start_date} {scheduled_start_time}", "%Y-%m-%d %H:%M" )
+        
+        if scheduled_end_date and scheduled_end_time:
+            scheduled_end_datetime = datetime.strptime(f"{scheduled_end_date} {scheduled_end_time}", "%Y-%m-%d %H:%M" )
+        
+        # Convert datetime objects to string for storage
+        scheduled_start_str = None
+        scheduled_end_str = None
+        
+        if scheduled_start_datetime:
+            scheduled_start_str = scheduled_start_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        if scheduled_end_datetime:
+            scheduled_end_str = scheduled_end_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        if (interval_days == ''):
+            interval_days = None
+        
+        data_fetch_start_date = validate_datetime(data_fetch_start_date)
+        data_fetch_end_date = validate_datetime(data_fetch_end_date)
+        
+        print(f'Data Fetch Start: {data_fetch_start_date}')
+        print(f'Data Fetch End: {data_fetch_end_date}')
+        
+        print(f'Scheduled Start: {scheduled_start_str}')
+        print(f'Scheduled End: {scheduled_end_str}')
+        
+        print(f'Interval: {interval_days}')
+        print(f'Weekdays: {weekdays}')
+        
+        
+        jobs_schedule_data = db_manager.job_manager.insert_job_schedule(
+            job_type,
+            service,
+            owner,
+            frequency,
+            scheduled_start_str,
+            scheduled_end_str,
+            data_fetch_start_date,
+            data_fetch_end_date,
+            interval_days,
+            weekdays
+        )
+        
+        return jsonify(jobs_schedule_data), 200
+    except Exception as e:
+        print(f"Error inserting Job Schedules: {e}")
+        return jsonify({"error": "Unable to retrieve Job Schedules"}), 500
 
 @jobs_bp.route("/api/jobs/2yr", methods=["GET"])
 @token_required

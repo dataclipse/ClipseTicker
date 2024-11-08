@@ -22,7 +22,7 @@ class DBManager:
         self.cipher, self.encryption_key = self._initialize_encryption()
 
         # Define the stocks and api_keys tables
-        self.stocks, self.api_keys, self.jobs, self.users, self.stocks_scrape = self.schema_manager.define_tables()
+        self.stocks, self.api_keys, self.jobs, self.users, self.stocks_scrape, self.jobs_schedule = self.schema_manager.define_tables()
 
         # Create the tables if they do no exist
         self.schema_manager.metadata.create_all(self.engine)
@@ -30,7 +30,7 @@ class DBManager:
 
         # Create a session
         self.Session = sessionmaker(bind=self.engine)
-        self.job_manager = JobManager(self.Session, self.jobs)
+        self.job_manager = JobManager(self.Session, self.jobs, self.jobs_schedule)
         self.api_key_manager = ApiKeyManager(self.Session, self.api_keys, self.cipher)
         self.stock_manager = StockManager(self.Session, self.stocks)
         self.user_manager = UserManager(self.Session, self.users)
