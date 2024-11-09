@@ -4,12 +4,16 @@ export const getCandlestickChartOptions = (
   stockDetailsChartData,
   colors
 ) => {
+  // Return the configuration object for the candlestick chart
   return {
+    // Title configuration
     title: {
       text: `Candlestick Chart for ${ticker}`,
       left: "left",
       textStyle: { color: colors.grey[100] },
     },
+
+    // Tooltip configuration for displaying data on hover
     tooltip: {
       trigger: "axis",
       axisPointer: {
@@ -24,12 +28,16 @@ export const getCandlestickChartOptions = (
       borderColor: colors.grey[700],
       borderWidth: 1,
     },
+
+    // Grid layout configuration
     grid: {
       left: "0%",
       right: "2%",
       bottom: "5%",
       containLabel: true,
     },
+
+    // X-axis configuration for time or category data
     xAxis: {
       type: "category",
       data: stockDetailsChartData.map((stock) =>
@@ -53,6 +61,8 @@ export const getCandlestickChartOptions = (
         },
       },
     },
+
+    // Y-axis configuration for price values
     yAxis: {
       type: "value",
       axisLine: {
@@ -75,6 +85,8 @@ export const getCandlestickChartOptions = (
         },
       },
     },
+
+    // Data zoom configuration for horizontal scrolling and zooming
     dataZoom: [
       {
         type: "slider",
@@ -95,6 +107,8 @@ export const getCandlestickChartOptions = (
         end: 100,
       },
     ],
+
+    // Series data for the candlestick chart
     series: [
       {
         type: "candlestick",
@@ -119,6 +133,8 @@ export const getCandlestickChartOptions = (
         },
       },
     ],
+
+    // Background color for the chart
     backgroundColor: colors.primary[500],
   };
 };

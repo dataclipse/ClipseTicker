@@ -9,6 +9,8 @@ import CardContent from '@mui/material/CardContent';
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme.js";
 
+// Login Component - Provides a user login form with username and password fields,
+// submits login data to the API, and handles successful or failed login attempts.
 function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -18,6 +20,9 @@ function Login() {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
 
+    // Handles form submission, sends login request, and processes response.
+    // - On success: calls login function, stores token, and redirects to dashboard.
+    // - On failure: displays error and clears password field.
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -34,11 +39,13 @@ function Login() {
                 navigate("/"); // redirect to dashboard
             } else {
                 alert("Login failed: " + data.error);
+                setPassword('');
                 console.error(data.error);
             }
         } catch (error) {
             console.error("Error: ", error);
             alert("Login failed due to network issues.");
+            setPassword('');
         }
     };
 

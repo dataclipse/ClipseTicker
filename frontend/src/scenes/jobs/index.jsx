@@ -11,6 +11,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
 import { useAuth } from "../../context/auth_context";
 
+// Jobs Component - Displays a list of jobs with actions for managing them.
+// Includes options for adding and scheduling jobs, with permissions based on user role.
 const Jobs = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -18,12 +20,15 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true);
   const [openJobModal, setOpenJobModal] = useState(false);
   const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
+
+  // Opens and closes the modals for adding or scheduling jobs
   const handleOpenJobModal = () => setOpenJobModal(true);
   const handleCloseJobModal = () => setOpenJobModal(false);
   const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
   const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
 
+  // Columns configuration for the DataGrid, including Actions for admin role
   const columns = [
     {
       field: "job_name",
@@ -102,6 +107,7 @@ const Jobs = () => {
     },
   ];
 
+  // Deletes a job based on job name and scheduled start time if confirmed
   const handleDeleteJob = async (job_name, scheduled_start_time) => {
     if (
       window.confirm(`Are you sure you want to delete the job: ${job_name}?`)
@@ -128,6 +134,7 @@ const Jobs = () => {
     }
   };
 
+  // Fetches job data from the server, formats it, and updates the state
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -156,6 +163,7 @@ const Jobs = () => {
     }
   };
 
+  // Initialize data fetching and set up interval to refresh data every 10 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 10000);
@@ -168,7 +176,7 @@ const Jobs = () => {
         title="Data Fetch"
         subtitle="Status of Jobs to Fetch Stock Data"
       />
-      {/* Button to open the modal */}
+      {/* Add and Schedule Job Buttons */}
       <Box mb={2}>
         <Button
           variant="contained"
@@ -192,7 +200,7 @@ const Jobs = () => {
         </Button>
       </Box>
 
-      {/* Modal Components */}
+      {/* Modals for Adding and Scheduling Jobs */}
       <AddJobModal
         open={openJobModal}
         onClose={handleCloseJobModal}
@@ -202,6 +210,8 @@ const Jobs = () => {
         open={openScheduleJobDialog}
         onClose={handleCloseScheduleJobDialog}
       />
+
+      {/* DataGrid for displaying jobs */}
       <Box
         m="40px 0 0 0"
         display="flex"

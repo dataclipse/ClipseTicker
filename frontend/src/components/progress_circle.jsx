@@ -3,8 +3,11 @@ import { Box, useTheme } from "@mui/material";
 import { tokens } from "../theme";
 
 const ProgressCircle = ({ progress = "0.75", size = "40" }) => {
+  // Access the theme to apply dynamic colors based on the mode (light or dark)
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  // Calculate the angle of the filled portion of the circle based on progress
   const angle = progress * 360;
   return (
     <Box

@@ -18,7 +18,7 @@ const Dashboard = () => {
 
   return (
     <Box m="20px">
-      {/* HEADER */}
+      {/* Header section with a title, welcome message, and a download button */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle={`Welcome to your dashboard, ${user?.username}`} />
         <Box>
@@ -37,14 +37,14 @@ const Dashboard = () => {
         </Box>
       </Box>
 
-      {/* GRID & CHARTS */}
+      {/* Main grid section containing statistic boxes and placeholders for charts */}
       <Box
         display="grid"
         gridTemplateColumns="repeat(12, 1fr)"
         gridAutoRows="140px"
         gap="20px"
       >
-        {/* ROW 1 */}
+        {/* Row 1 - Stat boxes with placeholders */}
         <Box
           gridColumn="span 3"
           backgroundColor={colors.primary[400]}
@@ -122,7 +122,7 @@ const Dashboard = () => {
           />
         </Box>
 
-        {/* ROW 2 */}
+        {/* Row 2 - Placeholder for a line chart and recent transactions */}
         <Box
           gridColumn="span 8"
           gridRow="span 2"
@@ -160,7 +160,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="-20px 0 0 0">
-            {/* <LineChart isDashboard={true} /> */}
+            {/* Placeholder for a Line Chart */}
           </Box>
         </Box>
         <Box
@@ -181,10 +181,9 @@ const Dashboard = () => {
               Placeholder
             </Typography>
           </Box>
-          {/* {mockTransactions.map((transaction, i) => ( */}
+          {/* Placeholder for transactions or data entries */}
           <Box
             key={"placeholder"}
-            //key={`${transaction.txId}-${i}`}
             display="flex"
             justifyContent="space-between"
             alignItems="center"
@@ -197,26 +196,24 @@ const Dashboard = () => {
                 variant="h5"
                 fontWeight="600"
               >
-                {/* {transaction.txId} */}
+                {/* Placeholder text for user name */}
               </Typography>
               <Typography color={colors.grey[100]}>
-                {/* {transaction.user} */}
+                {/* Placeholder text for user name */}
               </Typography>
             </Box>
             <Box color={colors.grey[100]}>12/25/2023</Box>
-            {/* <Box color={colors.grey[100]}>{transaction.date}</Box> */}
             <Box
               backgroundColor={colors.greenAccent[500]}
               p="5px 10px"
               borderRadius="4px"
             >
               placeholder
-              {/*${transaction.cost}*/}
             </Box>
           </Box>
         </Box>
 
-        {/* ROW 3 */}
+        {/* Row 3 - Additional stat boxes and placeholders for bar charts */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -256,7 +253,7 @@ const Dashboard = () => {
             Placeholder
           </Typography>
           <Box height="250px" mt="-20px">
-            {/* <BarChart isDashboard={true} /> */}
+            {/* Placeholder for Bar Chart */}
           </Box>
         </Box>
         <Box
@@ -272,7 +269,7 @@ const Dashboard = () => {
             Placeholder
           </Typography>
           <Box height="250px" mt="-20px">
-            {/* <BarChart isDashboard={true} /> */}
+            {/* Placeholder for another Bar Chart */}
           </Box>
         </Box>
       </Box>

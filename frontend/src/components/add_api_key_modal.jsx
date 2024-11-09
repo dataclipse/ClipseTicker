@@ -12,21 +12,28 @@ import { tokens } from "../theme";
 import { useTheme } from "@mui/material/styles";
 
 const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
+  // State hooks for service name and API key input fields
   const [service, setService] = useState("");
   const [api_key, setApiKey] = useState("");
+
+  // Get the theme and color tokens
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  // Handler for submitting the API key
   const handleSubmit = () => {
+    // Only submit if both fields are filled
     if (service && api_key) {
-      onSubmit(service, api_key);
+      onSubmit(service, api_key); // Trigger the onSubmit function passed as a prop
     }
   };
 
   return (
+    // Dialog component for the modal window, controlled by the 'open' prop
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add API Key</DialogTitle>
       <DialogContent>
+        {/* Input field for the service name */}
         <TextField
           fullWidth
           label="Service"
@@ -35,6 +42,7 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
           margin="normal"
           color={colors.redAccent[500]}
         />
+        {/* Input field for the API key */}
         <TextField
           fullWidth
           label="API Key"
@@ -45,6 +53,7 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
         />
       </DialogContent>
       <DialogActions>
+        {/* Button to close the modal */}
         <Button
           variant="contained"
           onClick={onClose}
@@ -52,6 +61,7 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
         >
           Cancel
         </Button>
+        {/* Button to submit the API key */}
         <Button variant="contained" color="primary" onClick={handleSubmit}>
           Add Key
         </Button>

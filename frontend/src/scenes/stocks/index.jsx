@@ -7,12 +7,15 @@ import Header from "../../components/header";
 import { Link } from "react-router-dom";
 import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components/helper";
 
+// Stocks Component - Displays the latest stock data in a DataGrid format
+// - Shows most recent OHLC (Open, High, Low, Close) data for stocks in NYSE.
 const Stocks = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [stocksData, setStocksData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Column definitions for DataGrid
   const columns = [
     {
       field: "ticker_symbol",
@@ -86,6 +89,8 @@ const Stocks = () => {
     },
   ];
 
+  // fetchData - Fetches the latest stock data from the API.
+  // - Updates stock data every 10 seconds.
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -97,6 +102,8 @@ const Stocks = () => {
         },
       });
       const data = await response.json();
+
+      // Format data for DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
         ticker_symbol: stock.ticker_symbol,
@@ -114,6 +121,7 @@ const Stocks = () => {
     }
   };
 
+  // Set interval to refetch data every 10 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 10000);

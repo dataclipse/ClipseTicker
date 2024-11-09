@@ -10,7 +10,9 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+
 const ApiKeys = () => {
+  // Theme and state hooks for managing colors and API key data
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [apiKeys, setApiKeys] = useState([]);
@@ -18,6 +20,8 @@ const ApiKeys = () => {
   const [openApiKeyModal, setOpenApiKeyModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedApiKey, setSelectedApiKey] = useState(null);
+  
+  // Handlers for opening and closing Add and Edit modals
   const handleOpenApiKeyModal = () => setOpenApiKeyModal(true);
   const handleCloseApiKeyModal = () => setOpenApiKeyModal(false);
   const handleOpenEditModal = (apiKey) => {
@@ -26,6 +30,7 @@ const ApiKeys = () => {
   };
   const handleCloseEditModal = () => setOpenEditModal(false);
 
+  // Column definitions for the DataGrid
   const columns = [
     {
       field: "service",
@@ -60,6 +65,7 @@ const ApiKeys = () => {
       headerName: "Actions",
       renderCell: (params) => (
         <Stack direction="row" alignItems={"center"} height={"100%"}>
+          {/* Edit button for opening the Edit modal */}
           <Button
             onClick={() => handleOpenEditModal(params.row)}
             sx={{
@@ -70,6 +76,7 @@ const ApiKeys = () => {
           >
             <EditIcon />
           </Button>
+          {/* Delete button for deleting API key */}
           <Button
             onClick={() => handleDeleteApiKey(params.row.service)}
             sx={{
@@ -86,6 +93,7 @@ const ApiKeys = () => {
     },
   ];
 
+  // Fetch API keys from the server
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -112,6 +120,7 @@ const ApiKeys = () => {
     }
   };
 
+  // Add API key handler
   const handleAddApiKey = async (service, api_key) => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -135,6 +144,7 @@ const ApiKeys = () => {
     }
   };
 
+  // Update API key handler
   const handleUpdateApiKey = async (service, api_key) => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -158,6 +168,7 @@ const ApiKeys = () => {
     }
   };
 
+  // Delete API key handler
   const handleDeleteApiKey = async (service) => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -179,6 +190,7 @@ const ApiKeys = () => {
     }
   };
 
+  // Fetch data on component mount and refresh every 30 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 30000);
@@ -189,6 +201,7 @@ const ApiKeys = () => {
     <Box m="20px">
       <Header title="API Keys" subtitle="API Keys for Data Providers" />
       <Box mb={2}>
+        {/* Button to open the Add API Key modal */}
         <Button
           variant="contained"
           color="secondary"

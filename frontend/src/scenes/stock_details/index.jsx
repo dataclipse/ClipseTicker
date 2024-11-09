@@ -14,6 +14,8 @@ import {
   formatDateChart,
 } from "../../components/helper";
 
+// Stocks Component - Displays detailed stock information for a selected ticker.
+// - Shows stock data in both a candlestick chart and a data grid.
 const Stocks = () => {
   const { ticker } = useParams();
   const theme = useTheme();
@@ -27,6 +29,7 @@ const Stocks = () => {
     colors
   );
 
+  // Column definitions for the DataGrid
   const columns = [
     {
       field: "ticker_symbol",
@@ -81,6 +84,8 @@ const Stocks = () => {
     },
   ];
 
+  // fetchData - Fetches stock details and formats data for both chart and table.
+  // - Data is updated periodically with an interval of 30 seconds.
   const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("auth_token");
@@ -92,6 +97,8 @@ const Stocks = () => {
         },
       });
       const data = await response.json();
+      
+      // Format data for the chart
       const chart_data = data
         .map((stock) => ({
           timestamp_end: formatDateChart(stock.timestamp_end),
@@ -103,6 +110,7 @@ const Stocks = () => {
         .filter((stock) => stock.timestamp_end)
         .sort((a, b) => b.timestamp_end - a.timestamp_end);
 
+      // Format data for the DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
         ticker_symbol: stock.ticker_symbol,
@@ -121,6 +129,7 @@ const Stocks = () => {
     }
   }, [ticker]);
 
+  // Set interval to refetch data every 30 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 30000);
@@ -130,6 +139,7 @@ const Stocks = () => {
   return (
     <Box m="20px">
       <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
+
       {/* ECharts Candlestick Chart */}
       <ReactECharts
         option={options}
@@ -163,6 +173,7 @@ const Stocks = () => {
           },
         }}
       >
+        
         {/* DataGrid */}
         <DataGrid
           rows={stockDetails}

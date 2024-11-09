@@ -18,6 +18,8 @@ import KeyIcon from "@mui/icons-material/Key";
 import { useState } from "react";
 import { useAuth } from "../../context/auth_context";
 
+// Sidebar item component for a clickable navigation link.
+// Changes color when selected and navigates to the specified route.
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -40,6 +42,8 @@ const Item = ({ title, to, icon, selected, setSelected }) => {
   );
 };
 
+// Sidebar component for application navigation.
+// Displays links to different pages based on user role and allows for role-based menu items.
 const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -58,6 +62,8 @@ const Sidebar = () => {
           },
         }}
       >
+
+        {/* Sidebar content */}
         <Box
           sx={{
             padding: "20px",
@@ -66,6 +72,8 @@ const Sidebar = () => {
             height: "100%",
           }}
         >
+
+          {/* Application title */}
           <Box mb="25px">
             <Typography
               variant="h2"
@@ -76,6 +84,8 @@ const Sidebar = () => {
               ClipseTicker
             </Typography>
           </Box>
+
+          {/* User profile image */}
           <Box
             mb="10px"
             display="flex"
@@ -90,6 +100,8 @@ const Sidebar = () => {
               style={{ cursor: "pointer", borderRadius: "20%" }}
             />
           </Box>
+
+          {/* User name and role display */}
           <Box textAlign="center">
             <Typography
               variant="h4"
@@ -104,6 +116,7 @@ const Sidebar = () => {
             </Typography>
           </Box>
 
+          {/* Sidebar navigation items */}
           <List sx={{ marginTop: "20px" }}>
             <Item
               title="Dashboard"
@@ -147,6 +160,8 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
           </List>
+
+          {/* Settings section, only visible to Admin users */}
           {user?.role === "Admin" && (
             <>
               <Typography

@@ -17,20 +17,24 @@ from sqlalchemy import (
 
 class DBSchemaManager:
     def __init__(self):
+        # Initialize metadata for schema management
         self.metadata = MetaData()
+        
+        # Initialize the database file path, creating it if necessary
         self.db_file_path = self._initialize_database()
 
     def _initialize_database(self):
-        # Create a fodler for the Database if it does not exist
+        # Create a folder for the database if it does not exist
         if not os.path.exists("db"):
             os.makedirs("db")
 
+        # Set the path for the SQLite database file
         db_file_path = os.path.join("db", "nyse_data.db")
         print("Database created and/or connected successfully at:", db_file_path)
         return db_file_path
 
     def define_tables(self):
-        # Define the stocks table
+        # Define the stocks table with columns for stock data
         stocks = Table(
             "stocks",
             self.metadata,
@@ -44,14 +48,14 @@ class DBSchemaManager:
             PrimaryKeyConstraint("ticker_symbol", "timestamp_end"),
         )
 
-        # Create an index on the stocks table for timestamp_end and ticker_symbol
+        # Create an index on stocks for fast lookup by timestamp_end and ticker_symbol
         Index(
             "idx_stocks_timestamp_ticker",
             stocks.c.ticker_symbol,
             stocks.c.timestamp_end,
         )
 
-        # Define the api_keys table
+        # Define the api_keys table for storing encrypted API keys
         api_keys = Table(
             "api_keys",
             self.metadata,
@@ -62,7 +66,7 @@ class DBSchemaManager:
             Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
         )
 
-        # Define the jobs table
+        # Define the jobs table for tracking job statuses and run times
         jobs = Table(
             "jobs",
             self.metadata,
@@ -81,6 +85,7 @@ class DBSchemaManager:
             ),  # Composite primary key
         )
         
+        # Define the users table for managing user accounts and preferences
         users = Table(
             "users",
             self.metadata,
@@ -95,6 +100,7 @@ class DBSchemaManager:
             Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
         )
         
+        # Define the stocks_scrape table for storing scraped stock data
         stocks_scrape = Table(
             "stocks_scrape",
             self.metadata,
@@ -109,6 +115,7 @@ class DBSchemaManager:
             PrimaryKeyConstraint("ticker_symbol", "timestamp"),  # Composite primary key
         )
         
+        # Define the jobs_schedule table for managing scheduled jobs
         jobs_schedule = Table(
             "jobs_schedule",
             self.metadata,
@@ -117,10 +124,10 @@ class DBSchemaManager:
             Column("status", String, nullable=False),
             Column("owner", String, nullable=False),
             Column("frequency", String, nullable=False),
-            Column("data_fetch_start_date", DateTime),
-            Column("data_fetch_end_date", DateTime),
             Column("scheduled_start_date", DateTime, nullable=False),
             Column("scheduled_end_date", DateTime), 
+            Column("data_fetch_start_date", DateTime),
+            Column("data_fetch_end_date", DateTime),
             Column("interval_days", Integer),
             Column("weekdays", String),
             Column("run_time", String), 
@@ -129,4 +136,5 @@ class DBSchemaManager:
             PrimaryKeyConstraint("job_type","service","frequency","scheduled_start_date"),
         )
 
+        # Return all defined tables for easy access
         return stocks, api_keys, jobs, users, stocks_scrape, jobs_schedule

@@ -17,16 +17,23 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 
 const AddJobModal = ({ open, onClose, onSubmit }) => {
+  // Get the theme and colors
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  // State hooks for date inputs and fetch option
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [fetchOption, setFetchOption] = useState("date_range");
+  const [fetchOption, setFetchOption] = useState("date_range"); // Default option is date range
 
+  // Handler for submitting the job request
   const handleFetch = () => {
-    onClose();
+    onClose(); // Close the modal after submission
+    const token = localStorage.getItem("auth_token"); // Retrieve auth token from local storage
+    
+    // Handle data fetch based on selected option
     if (fetchOption === "two_years") {
-      const token = localStorage.getItem("auth_token");
+      // Fetch data for two years if the 'two_years' option is selected
       fetch("/api/jobs/2yr", {
         method: "GET",
         headers: {
@@ -39,13 +46,13 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
           return response.json();
         })
         .then((data) => {
-          onSubmit(data);
+          onSubmit(data); // Pass fetched data to onSubmit function
         })
         .catch((error) => {
           console.error("Error fetching two years data:", error);
         });
     } else {
-      const token = localStorage.getItem("auth_token");
+      // Fetch data for a specific date range if 'date_range' option is selected
       fetch("/api/jobs", {
         method: "POST",
         headers: {
@@ -60,7 +67,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
         return response.json();
       })
       .then((data) => {
-        onSubmit(data);
+        onSubmit(data); // Pass fetched data to onSubmit function
       })
       .catch((error) => {
         console.error("Error fetching data from date range:", error);
@@ -69,10 +76,12 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
   };
 
   return (
+    // Dialog component for the modal, controlled by the 'open' prop
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Job</DialogTitle>
       <DialogContent>
         <FormControl component="fieldset">
+          {/* Radio buttons to choose between data fetch options */}
           <RadioGroup
             value={fetchOption}
             onChange={(e) => setFetchOption(e.target.value)}
@@ -90,6 +99,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
           </RadioGroup>
         </FormControl>
 
+        {/* Display date fields only if 'date_range' option is selected */}
         {fetchOption === "date_range" && (
           <Box display="flex" flexDirection="column" mt={2}>
             <TextField
@@ -113,6 +123,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
         )}
       </DialogContent>
       <DialogActions>
+        {/* Cancel button to close the modal without action */}
         <Button
           variant="contained"
           onClick={onClose}
@@ -120,6 +131,7 @@ const AddJobModal = ({ open, onClose, onSubmit }) => {
         >
           Cancel
         </Button>
+        {/* Fetch Data button to trigger data fetching */}
         <Button onClick={handleFetch} variant="contained" color="primary">
           Fetch Data
         </Button>

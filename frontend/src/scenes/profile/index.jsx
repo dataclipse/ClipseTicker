@@ -5,6 +5,9 @@ import Header from "../../components/header";
 import { useAuth } from "../../context/auth_context";
 import { useState, useEffect, useCallback } from "react";
 
+// Profile Component - Allows users to view and update their profile information, including username, password, email,
+// currency preference, and theme preference.
+
 const Profile = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -20,6 +23,7 @@ const Profile = () => {
     const [newPassword, setNewPassword] = useState("");
     const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
 
+    // Fetches the user's profile data from the API and updates the state with the user's information.
     const fetchUserProfile = useCallback(async () => {
         try {
             const token = localStorage.getItem("auth_token");
@@ -46,6 +50,7 @@ const Profile = () => {
         }
     }, [user.username]);
 
+    // Handlers for changing currency and theme preference, which update the respective state values.
     const handleCurrencyChange = (event) => {
         setFieldToEdit("Currency")
         setCurrency(event.target.value);
@@ -56,6 +61,7 @@ const Profile = () => {
         setThemePreference(event.target.value);
     };
 
+    // Opens a dialog for editing a specific field (username, password, or email) by setting relevant state variables.
     const handleOpenDialog = (field) => {
         setFieldToEdit(field);
         if (field === "Username") {
@@ -70,11 +76,13 @@ const Profile = () => {
         setDialogOpen(true);
     };
 
+    // Closes the edit dialog and resets the fieldToEdit state.
     const handleCloseDialog = () => {
         setDialogOpen(false);
         setFieldToEdit("");
     };
 
+    // Handles saving changes for the selected field, validates passwords, and makes an API request to update the user profile.
     const handleSave = useCallback(async () => {
         const payload = {
             username,
@@ -125,6 +133,7 @@ const Profile = () => {
         fetchUserProfile();
     }, [username, fieldToEdit, newValue, newPassword, newPasswordConfirm, currency, themePreference, fetchUserProfile]);
 
+    // Automatically saves changes when either currency or theme preference is updated by the user.
     useEffect(() => {
         if (fieldToEdit === "Currency" || fieldToEdit === "Theme" ) {
             handleSave();
@@ -141,18 +150,11 @@ const Profile = () => {
                 <Header title="Edit Profile" subtitle="Manage your account details" />
             </Box>
 
-            <Box
-                display="grid"
-                gridTemplateColumns="repeat(12, 1fr)"
-                gap="10px"
-                mt={2}
-            >
-                <Box
-                    gridColumn="span 6"
-                    backgroundColor={colors.primary[400]}
-                    p={2}
-                    borderRadius="8px"
-                >
+            {/* Profile fields for user information */}
+            <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap="10px" mt={2} >
+                <Box gridColumn="span 6" backgroundColor={colors.primary[400]} p={2} borderRadius="8px" >
+
+                    {/* Password Field */}
                     <Typography variant="h6">Username</Typography>
                     <TextField
                         fullWidth
@@ -168,6 +170,8 @@ const Profile = () => {
                             Change Username
                         </Link>
                     </Box>
+
+                    {/* Email Field */}
                     <Typography variant="h6" sx={{ mt: 3 }}>Password</Typography>
                     <TextField
                         fullWidth
@@ -183,6 +187,8 @@ const Profile = () => {
                             Change Password
                         </Link>
                     </Box>
+
+                    {/* Preferred Currency Selection */}
                     <Typography variant="h6" sx={{ mt: 3 }} >Email</Typography>
                     <TextField
                         fullWidth
@@ -213,6 +219,8 @@ const Profile = () => {
                         <MenuItem value="GBP">GBP</MenuItem>
                         <MenuItem value="JPY">JPY</MenuItem>
                     </TextField>
+
+                    {/* Preferred Theme Selection */}
                     <Typography variant="h6" sx={{ mt: 3 }}>Preferred Theme</Typography>
                     <TextField
                         fullWidth
@@ -229,6 +237,7 @@ const Profile = () => {
                 </Box>
             </Box>
 
+            {/* Dialog for editing username, email, or password */}
             <Dialog open={dialogOpen} onClose={handleCloseDialog} >
                 <DialogTitle>{`Change ${fieldToEdit}`}</DialogTitle>
                 <DialogContent>

@@ -11,6 +11,8 @@ import Menu from '@mui/material/Menu';
 import { useAuth} from "../../context/auth_context";
 import { useLocation, useNavigate } from "react-router-dom";
 
+// Topbar component that includes color mode toggle, notifications, and user menu.
+// Renders different options based on whether the user is on the login page or logged in.
 const Topbar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -20,34 +22,43 @@ const Topbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Handle opening the user menu
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
+  // Handle closing the user menu
   const handleClose = () => {
     setAnchorEl(null);
   };
 
+  // Handle user logout
   const handleLogout = () => {
     logout();
     handleClose();
   };
 
+  // Navigate to profile page
   const handleProfileClick = () => {
     navigate("/profile");
     handleClose();
   }
 
+  // Check if the current page is the login page
   const isLoginPage = location.pathname === "/login";
 
   return (
     <Box display="flex" justifyContent="space-between" p={2}>
+      {/* Left side of the topbar (currently empty but structured for future additions) */}
       <Box
         display="flex"
         backgroundColor={colors.primary[400]}
         borderRadius="3px"
       />
+
+      {/* Right side of the topbar with icons */}
       <Box display="flex">
+        {/* Toggle theme between light and dark mode */}
         <IconButton onClick={colorMode.toggleColorMode}>
           {theme.palette.mode === "dark" ? (
             <DarkModeOutlinedIcon />
@@ -55,16 +66,22 @@ const Topbar = () => {
             <LightModeOutlinedIcon /> 
           )}
         </IconButton>
+
+        {/* Notifications and user menu are hidden on the login page */}
         {!isLoginPage && (
           <IconButton>
             <NotificationsOutlinedIcon />
           </IconButton>
         )}
+
+        {/* User profile icon opens a dropdown menu */}
         {!isLoginPage && (
           <IconButton onClick={handleMenu}>
             <PersonOutlinedIcon />
           </IconButton>
         )}
+
+        {/* User dropdown menu with Profile and Logout options */}
         <Menu 
           id="user-appbar"
           anchorEl={anchorEl}
