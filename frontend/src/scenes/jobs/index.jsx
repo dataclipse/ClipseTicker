@@ -4,7 +4,6 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
-import AddJobModal from "../../components/add_job_modal";
 import ScheduleJobDialog from "../../components/schedule_job_dialog";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
@@ -17,12 +16,9 @@ const Jobs = () => {
   const colors = tokens(theme.palette.mode);
   const [Jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openJobModal, setOpenJobModal] = useState(false);
   const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
 
   // Opens and closes the modals for adding or scheduling jobs
-  const handleOpenJobModal = () => setOpenJobModal(true);
-  const handleCloseJobModal = () => setOpenJobModal(false);
   const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
   const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
@@ -205,11 +201,6 @@ const Jobs = () => {
       </Box>
 
       {/* Modal Components */}
-      <AddJobModal
-        open={openJobModal}
-        onClose={handleCloseJobModal}
-        onSubmit={handleCloseJobModal}
-      />
       <ScheduleJobDialog
         open={openScheduleJobDialog}
         onClose={handleCloseScheduleJobDialog}
