@@ -1,13 +1,12 @@
 // src/scenes/jobs/index.jsx
-import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
+import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
 import AddJobModal from "../../components/add_job_modal";
 import ScheduleJobDialog from "../../components/schedule_job_dialog";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
 import { useAuth } from "../../context/auth_context";
 
@@ -28,23 +27,20 @@ const Jobs = () => {
   const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
 
-  // Columns configuration for the DataGrid, including Actions for admin role
   const columns = [
     {
-      field: "job_name",
+      field: "job_type",
       renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Job Name"}</Typography>
+        <Typography sx={{ fontWeight: "bold" }}>{"Job Type"}</Typography>
       ),
-      flex: 1.5,
+      flex: 0.5,
     },
     {
-      field: "scheduled_start_time",
+      field: "service",
       renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>
-          {"Scheduled Start Time"}
-        </Typography>
+        <Typography sx={{ fontWeight: "bold" }}>{"Service"}</Typography>
       ),
-      flex: 1,
+      flex: 0.5,
     },
     {
       field: "status",
@@ -54,18 +50,60 @@ const Jobs = () => {
       flex: 0.6,
     },
     {
-      field: "start_time",
+      field: "owner",
       renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Start Time"}</Typography>
+        <Typography sx={{ fontWeight: "bold" }}>{"Owner"}</Typography>
       ),
-      flex: 1,
+      flex: 0.5,
     },
     {
-      field: "end_time",
+      field: "frequency",
       renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"End Time"}</Typography>
+        <Typography sx={{ fontWeight: "bold" }}>{"Frequency"}</Typography>
       ),
-      flex: 1,
+      flex: 0.6,
+    },
+    {
+      field: "scheduled_start_date",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Scheduled Start Date"}</Typography>
+      ),
+      flex: 0.5,
+    },
+    {
+      field: "scheduled_end_date",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Scheduled End Date"}</Typography>
+      ),
+      flex: 0.5,
+    },
+    {
+      field: "data_fetch_start_date",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch Start Date"}</Typography>
+      ),
+      flex: 0.5,
+    },
+    {
+      field: "data_fetch_end_date",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch End Date"}</Typography>
+      ),
+      flex: 0.5,
+    },
+    {
+      field: "interval_days",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Interval Days"}</Typography>
+      ),
+      flex: 0.5,
+    },
+    {
+      field: "weekdays",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Days of the Week"}</Typography>
+      ),
+      flex: 0.5,
     },
     {
       field: "run_time",
@@ -75,70 +113,39 @@ const Jobs = () => {
       flex: 0.5,
     },
     {
-      field: "actions",
+      field: "created_at",
       renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Actions"}</Typography>
-      ),
-      renderCell: (params) => (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems={"center"}
-          height={"100%"}
-        >
-          <DeleteIcon
-            onClick={() => {
-              if (user.role === "Admin") {
-                handleDeleteJob(
-                  params.row.job_name,
-                  params.row.scheduled_start_time
-                )
-              }
-            }}
-            sx={{
-              cursor: user.role === "Admin" ? "pointer" : "default",
-              color: user.role === "Admin" ? colors.redAccent[500] : colors.grey[400],
-              alignItems: "center",
-            }}
-          />
-        </Stack>
+        <Typography sx={{ fontWeight: "bold" }}>{"Created At"}</Typography>
       ),
       flex: 0.5,
     },
+    {
+      field: "updated_at",
+      renderHeader: () => (
+        <Typography sx={{ fontWeight: "bold" }}>{"Updated At"}</Typography>
+      ),
+      flex: 0.5,
+    }
   ];
 
-  // Deletes a job based on job name and scheduled start time if confirmed
-  const handleDeleteJob = async (job_name, scheduled_start_time) => {
-    if (
-      window.confirm(`Are you sure you want to delete the job: ${job_name}?`)
-    ) {
-      try {
-        const token = localStorage.getItem("auth_token");
-        const response = await fetch(`/api/jobs`, {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ job_name, scheduled_start_time }),
-        });
-
-        if (response.ok) {
-          fetchData();
-        } else {
-          console.error("Error deleting job:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error deleting job:", error);
-      }
-    }
+  function formatString(inputString) {
+    return inputString.replace(/_/g, ' ').toLowerCase().replace(/\b\w+\b/g, word => word === 'api' ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)); 
   };
 
-  // Fetches job data from the server, formats it, and updates the state
-  const fetchData = async () => {
+  function parseWeekdays(weekdaysStr) {
+    try {
+        const weekdaysArray = JSON.parse(weekdaysStr); // Parse JSON string into an array
+        return weekdaysArray.join(", "); // Convert array to CSV format
+    } catch (error) {
+        console.error("Error parsing weekdays JSON:", error);
+        return weekdaysStr; // Return the original string if parsing fails
+    }
+  };
+  
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/jobs", {
+      const response = await fetch("/api/jobs_schedule", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -148,12 +155,20 @@ const Jobs = () => {
       const data = await response.json();
       const formattedData = data.map((jobs, index) => ({
         id: index,
-        job_name: jobs.job_name,
-        scheduled_start_time: jobs.scheduled_start_time,
+        job_type: formatString(jobs.job_type),
+        service: formatString(jobs.service),
         status: jobs.status,
-        start_time: jobs.start_time,
-        end_time: jobs.end_time,
+        owner: jobs.owner,
+        frequency: formatString(jobs.frequency),
+        scheduled_start_date: jobs.scheduled_start_date,
+        scheduled_end_date: jobs.scheduled_end_date,
+        data_fetch_start_date: jobs.data_fetch_start_date,
+        data_fetch_end_date: jobs.data_fetch_end_date,
+        interval_days: jobs.interval_days,
+        weekdays: parseWeekdays(jobs.weekdays), 
         run_time: formatRunTime(jobs.run_time),
+        created_at: jobs.created_at,
+        updated_at: jobs.updated_at,
       }));
       setJobs(formattedData);
     } catch (error) {
@@ -161,14 +176,13 @@ const Jobs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Initialize data fetching and set up interval to refresh data every 10 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 10000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
   return (
     <Box m="20px">
@@ -176,18 +190,8 @@ const Jobs = () => {
         title="Data Fetch"
         subtitle="Status of Jobs to Fetch Stock Data"
       />
-      {/* Add and Schedule Job Buttons */}
+      {/* Button to open the modal */}
       <Box mb={2}>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleOpenJobModal}
-          startIcon={<AddCircleOutlineIcon />}
-          disabled={user.role !== "Admin"}
-          style={{ marginRight: "10px" }}
-        >
-          Add Job
-        </Button>
         <Button
           variant="outlined"
           color="secondary"
@@ -200,7 +204,7 @@ const Jobs = () => {
         </Button>
       </Box>
 
-      {/* Modals for Adding and Scheduling Jobs */}
+      {/* Modal Components */}
       <AddJobModal
         open={openJobModal}
         onClose={handleCloseJobModal}
@@ -210,8 +214,6 @@ const Jobs = () => {
         open={openScheduleJobDialog}
         onClose={handleCloseScheduleJobDialog}
       />
-
-      {/* DataGrid for displaying jobs */}
       <Box
         m="40px 0 0 0"
         display="flex"

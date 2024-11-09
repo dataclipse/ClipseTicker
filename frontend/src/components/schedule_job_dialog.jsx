@@ -243,7 +243,6 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
 
         // Convert selected days to JSON for transmission
         const selectedDaysJSON = JSON.stringify(selectedDays);
-
         // Send a POST request to the API endpoint with job scheduling data
         fetch("/api/jobs_schedule", {
             method: "POST",

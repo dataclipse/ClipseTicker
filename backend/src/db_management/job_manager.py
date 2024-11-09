@@ -519,10 +519,12 @@ class JobManager:
             jobs = result.fetchall()
             
             # Extract column names from the jobs table schema
-            column_names = [column.name for column in self.jobs.columns]
+            column_names = [column.name for column in self.jobs_schedule.columns]
             
             # Convert each row of results into a dictionary, pairing column names with row values
             jobs_list = [dict(zip(column_names, row)) for row in jobs]
+            
+            #print(jobs_list[6])
 
             # Print the count of job schedules retrieved or a message if no jobs were found
             print(

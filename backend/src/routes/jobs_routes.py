@@ -133,7 +133,7 @@ def schedule_job():
     try:
         # Extract JSON data from the request
         data = request.get_json()
-        
+        print(data)  # Debugging line to print the received data
         # Retrieve job scheduling details from JSON data
         job_type = data.get("jobType")
         service = data.get("service")
@@ -142,7 +142,7 @@ def schedule_job():
         data_fetch_start_date = validate_datetime(data.get("dataFetchStartDate"))
         data_fetch_end_date = validate_datetime(data.get("dataFetchEndDate"))
         interval_days = data.get("interval")
-        weekdays = data.get("weekdays")
+        weekdays = data.get("selectedDaysJSON")
         
         # Combine date and time for start and end if both are provided
         scheduled_start_str = (
