@@ -135,61 +135,35 @@ def schedule_job():
         data = request.get_json()
         
         # Retrieve job scheduling details from JSON data
-        job_type = data.get("job_type")
+        job_type = data.get("jobType")
         service = data.get("service")
         owner = data.get("owner")
         frequency = data.get("frequency")
-        data_fetch_start_date = data.get("data_fetch_start_date")
-        data_fetch_end_date = data.get("data_fetch_end_date")
-        scheduled_start_date = data.get("scheduled_start_date")
-        scheduled_end_date = data.get("scheduled_end_date")
-        scheduled_start_time = data.get("scheduled_start_time")
-        scheduled_end_time = data.get("scheduled_end_time")
+        data_fetch_start_date = validate_datetime(data.get("dataFetchStartDate"))
+        data_fetch_end_date = validate_datetime(data.get("dataFetchEndDate"))
         interval_days = data.get("interval")
         weekdays = data.get("weekdays")
         
-        # Initialize combined datetime objects for start and end times
-        scheduled_start_datetime = None
-        scheduled_end_datetime = None
+        # Combine date and time for start and end if both are provided
+        scheduled_start_str = (
+            datetime.strptime(f"{data['scheduledStartDate']} {data['scheduledStartTime']}", "%Y-%m-%d %H:%M")
+            .strftime("%Y-%m-%d %H:%M:%S") if data.get("scheduledStartDate") and data.get("scheduledStartTime") else None
+        )
         
-        # If both date and time are provided, combine them into datetime objects
-        if scheduled_start_date and scheduled_start_time:
-            scheduled_start_datetime = datetime.strptime(f"{scheduled_start_date} {scheduled_start_time}", "%Y-%m-%d %H:%M" )
-        if scheduled_end_date and scheduled_end_time:
-            scheduled_end_datetime = datetime.strptime(f"{scheduled_end_date} {scheduled_end_time}", "%Y-%m-%d %H:%M" )
+        scheduled_end_str = (
+            datetime.strptime(f"{data['scheduledEndDate']} {data['scheduledEndTime']}", "%Y-%m-%d %H:%M")
+            .strftime("%Y-%m-%d %H:%M:%S") if data.get("scheduledEndDate") and data.get("scheduledEndTime") else None
+        )
         
-        # Convert datetime objects to strings for database storage
-        scheduled_start_str = None
-        scheduled_end_str = None
-        
-        # If datetime strings are provided, combine them into datetime objects
-        if scheduled_start_datetime:
-            scheduled_start_str = scheduled_start_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        if scheduled_end_datetime:
-            scheduled_end_str = scheduled_end_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Convert empty interval_days to None if necessary
-        if (interval_days == ''):
-            interval_days = None
-        
-        # Validate date formats for database compatibility
-        data_fetch_start_date = validate_datetime(data_fetch_start_date)
-        data_fetch_end_date = validate_datetime(data_fetch_end_date)
-        scheduled_start_str = validate_datetime_sec(scheduled_start_str)
-        scheduled_end_str = validate_datetime_sec(scheduled_end_str)
+        # Validate date formats with seconds precision for database compatibility
+        scheduled_start_str = validate_datetime_sec(scheduled_start_str) if scheduled_start_str else None
+        scheduled_end_str = validate_datetime_sec(scheduled_end_str) if scheduled_end_str else None
         
         # Insert job schedule into the database using the Job Manager
         jobs_schedule_data = db_manager.job_manager.insert_job_schedule(
-            job_type,
-            service,
-            owner,
-            frequency,
-            scheduled_start_str,
-            scheduled_end_str,
-            data_fetch_start_date,
-            data_fetch_end_date,
-            interval_days,
-            weekdays
+            job_type, service, owner, frequency, scheduled_start_str,
+            scheduled_end_str, data_fetch_start_date, data_fetch_end_date,
+            interval_days, weekdays
         )
         
         # Return success response with the inserted job schedule data
@@ -199,6 +173,46 @@ def schedule_job():
         print(f"Error inserting Job Schedules: {e}")
         return jsonify({"error": "Unable to retrieve Job Schedules"}), 500
 
+@jobs_bp.route("/api/jobs_schedule", methods=["GET"])
+@token_required
+def get_jobs_schedule():
+    try:
+        # Fetch job schedules from the database
+        jobs_schedule_data = db_manager.job_manager.select_all_job_schedules()
+        
+        # Check if data is retrieved
+        if not jobs_schedule_data:
+            return jsonify({"message": "No job schedules found"}), 404
+        
+        # Return the job schedules data as JSON
+        return jsonify(jobs_schedule_data), 200
+    except Exception as e:
+        # Print error to server logs and return an error response to the client
+        print(f"Error retrieving Job Schedules: {e}")
+        return jsonify({"error": "Unable to retrieve Job Schedules"}), 500
+    
+@jobs_bp.route("/api/jobs_schedule/check_job", methods=["POST"])
+@token_required
+def check_job_schedule_exists():
+    try:
+        # Extract JSON data from the request
+        data = request.get_json()
+        job_type = data.get("jobType")
+        service = data.get("service")
+        frequency = data.get("frequency")
+        scheduled_start_date = data.get("scheduledStartDate")
+        
+        # Query the database to check if a matching job schedule exists
+        exists = db_manager.job_manager.select_job_schedule(
+            job_type, service, frequency, scheduled_start_date
+        )
+
+        # Return the result as JSON
+        return jsonify({"exists": exists}), 200
+    except Exception as e:
+        print(f"Error checking Job Schedule: {e}")
+        return jsonify({"error": "Unable to check job schedule"}), 500
+    
 @jobs_bp.route("/api/jobs/2yr", methods=["GET"])
 @token_required
 def fetch_data_job_2yr():

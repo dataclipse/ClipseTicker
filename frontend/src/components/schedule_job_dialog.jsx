@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
+import { z } from "zod";
 
 const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
     // Access the current theme for styling
@@ -26,21 +27,176 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
     const colors = tokens(theme.palette.mode);
 
     // State variables for managing form inputs
-    const [job_type, setJobType] = useState(''); // Job type
+    const [jobType, setJobType] = useState(''); // Job type
     const [service, setService] = useState(''); // Service used for the job
     const [owner, setOwner] = useState(''); // Job owner
-    const [data_fetch_start_date, setDataFetchStartDate] = useState(''); // Start date for data fetching
-    const [data_fetch_end_date, setDataFetchEndDate] = useState(''); // End date for data fetching
-    const [scheduled_start_date, setScheduledStartDate] = useState(''); // Job scheduled start date
-    const [scheduled_end_date, setScheduledEndDate] = useState(''); // Job scheduled end date
-    const [scheduled_start_time, setScheduledStartTime] = useState(''); // Job start time
-    const [scheduled_end_time, setScheduledEndTime] = useState(''); // Job end time
-    const [interval, setInterval] = useState(''); // Interval between job runs
+    const [dataFetchStartDate, setDataFetchStartDate] = useState(''); // Start date for data fetching
+    const [dataFetchEndDate, setDataFetchEndDate] = useState(''); // End date for data fetching
+    const [scheduledStartDate, setScheduledStartDate] = useState(''); // Job scheduled start date
+    const [scheduledEndDate, setScheduledEndDate] = useState(''); // Job scheduled end date
+    const [scheduledStartTime, setScheduledStartTime] = useState(''); // Job start time
+    const [scheduledEndTime, setScheduledEndTime] = useState(''); // Job end time
+    const [interval, setJobInterval] = useState(''); // Interval between job runs
     const [frequency, setFrequency] = useState(''); // Job frequency
     const [customInterval, setCustomInterval] = useState(''); // Custom interval for scheduling
     const [dataFetchType, setDataFetchType] = useState(''); // Type of data fetch
     const [selectedDays, setSelectedDays] = useState([]); // Selected days for job scheduling
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // Days of the week for selection
+    const [dateError, setDateError] = useState(""); // Error message for date validation
+    const [dataFetchDateError, setDataFetchDateError] = useState(""); // Error message for date validation
+    const [primaryKeyFail, setPrimaryKeyFail] = useState(""); // Error message for date validation
+    
+
+    // Simple Zod schema to validate that dates are strings
+    const dateSchema = z.object({
+        start_date: z.string(),
+        end_date: z.string()
+    });
+
+    const checkJobScheduleExists = async () => {
+        // Retrieve authentication token from local storage
+        const token = localStorage.getItem("auth_token");
+        // Combine scheduledStartDate and scheduledStartTime
+        const combinedStartDateTime = `${scheduledStartDate} ${scheduledStartTime}:00.000000`
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+        };
+
+        const body = JSON.stringify({
+            jobType,
+            service,
+            frequency,
+            scheduledStartDate: combinedStartDateTime,
+        });
+
+        try {
+            const response = await fetch("/api/jobs_schedule/check_job", {
+                method: "POST",
+                headers,
+                body,
+            });
+
+            // Return early on a non-OK response
+            if (!response.ok) return false;
+
+            const data = await response.json();
+            return data.exists;
+            
+        } catch (error) {
+            console.error("Error checking job schedule:", error);
+            return false;
+        }
+    };
+
+    // Custom function to check the date order
+    const validateDateRange = (start, end, setError, allowFutureDates = false) => {
+        try {
+            // Basic schema check for valid strings
+            dateSchema.parse({ start_date: start, end_date: end });
+
+            const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+
+            // If future dates are allowed, check that start is today or in the future
+            if (allowFutureDates && start < today) {
+                setError("Start date must be today or in the future.");
+                return false;
+            }
+
+            // If future dates are allowed, check that end is today or in the future
+            if (allowFutureDates && end < today && end !== '') {
+                setError("End date must be today or in the future.");
+                return false;
+            }
+            
+            // If future dates are allowed, check that start is before today
+            if (!allowFutureDates && start >= today) {
+                setError("Start date must be before today.");
+                return false;
+            }
+
+            // If future dates are allowed, check that end is before today
+            if (!allowFutureDates && end >= today) {
+                console.log(end) // Debugging line to check the value of end date
+                setError("End date must be before today.");
+                return false;
+            }
+
+            // Ensure start date is before or equal to end date
+            if (new Date(start) > new Date(end)) {
+                setError("Start date must be before or equal to the end date.");
+                return false;
+            }
+
+            setError(""); // Clear error if validation passes
+            return true;
+        } catch (error) {
+            setError("Invalid date format.");
+            return false;
+        }
+    };
+
+    const canSchedule = () => {
+        // Array of all conditions that need to be true
+        const conditions = [
+            dateError === "", // No date error
+            jobType !== "", // Job type is selected
+            service !== "", // Service is selected
+            owner !== "", // Owner is provided
+            scheduledStartDate !== "", // Start date is provided
+            scheduledStartTime !== "", // Start time is provided
+        ];
+
+        // Use every() to return true only if all conditions are true
+        return conditions.every(condition => condition);
+    };
+
+    const clearFields = (excludedFields = []) => {
+        // Reset each field only if it is not included in excludedFields
+        if (!excludedFields.includes("jobType")) setJobType('');
+        if (!excludedFields.includes("service")) setService('');
+        if (!excludedFields.includes("owner")) setOwner('');
+        if (!excludedFields.includes("dataFetchStartDate")) setDataFetchStartDate('');
+        if (!excludedFields.includes("dataFetchEndDate")) setDataFetchEndDate('');
+        if (!excludedFields.includes("scheduledStartDate")) setScheduledStartDate('');
+        if (!excludedFields.includes("scheduledEndDate")) setScheduledEndDate('');
+        if (!excludedFields.includes("scheduledStartTime")) setScheduledStartTime('');
+        if (!excludedFields.includes("scheduledEndTime")) setScheduledEndTime('');
+        if (!excludedFields.includes("jobInterval")) setJobInterval('');
+        if (!excludedFields.includes("frequency")) setFrequency('');
+        if (!excludedFields.includes("customInterval")) setCustomInterval('');
+        if (!excludedFields.includes("dataFetchType")) setDataFetchType('');
+        if (!excludedFields.includes("selectedDays")) setSelectedDays([]);
+        if (!excludedFields.includes("dateError")) setDateError('');
+        if (!excludedFields.includes("dataFetchDateError")) setDataFetchDateError('');
+    };
+
+    // Handlers for date changes
+    const handleStartDateChange = (event) => {
+        const newStartDate = event.target.value;
+        setScheduledStartDate(newStartDate);
+        validateDateRange(newStartDate, scheduledEndDate, setDateError, true);
+    };
+
+    const handleEndDateChange = (event) => {
+        const newEndDate = event.target.value;
+        setScheduledEndDate(newEndDate);
+        validateDateRange(scheduledStartDate, newEndDate, setDateError, true);
+    };
+
+    // Handlers for date changes
+    const handleDataFetchStartDateChange = (event) => {
+        const newStartDate = event.target.value;
+        setDataFetchStartDate(newStartDate);
+        validateDateRange(newStartDate, dataFetchEndDate, setDataFetchDateError, false);
+    };
+
+    const handleDataFetchEndDateChange = (event) => {
+        const newEndDate = event.target.value;
+        setDataFetchEndDate(newEndDate);
+        validateDateRange(dataFetchStartDate, newEndDate, setDataFetchDateError, false);
+    };
 
     // Handle checkbox changes for day selection
     const handleCheckboxChange = (day) => {
@@ -53,12 +209,8 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
 
     // Handle changes to job type and reset service if no job type is selected
     const handleJobTypeChange = (event) => {
-        const selected_job_type = event.target.value
         setJobType(event.target.value);
-
-        if (!selected_job_type) {
-            setService('');
-        }
+        clearFields(["jobType", "owner"]); // Clear fields except jobType and owner
     };
 
     // Handle changes to the service
@@ -100,16 +252,16 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                 "Content-Type": "application/json", // Specify JSON content type
             },
             body: JSON.stringify({ 
-                job_type, 
+                jobType, 
                 service, 
                 owner, 
                 frequency,
-                data_fetch_start_date, 
-                data_fetch_end_date, 
-                scheduled_start_date, 
-                scheduled_end_date, 
-                scheduled_start_time,
-                scheduled_end_time,
+                dataFetchStartDate, 
+                dataFetchEndDate, 
+                scheduledStartDate, 
+                scheduledEndDate, 
+                scheduledStartTime,
+                scheduledEndTime,
                 interval,
                 selectedDaysJSON // Include selected days as JSON
             }),
@@ -130,6 +282,18 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
         });
     };
 
+    const handleScheduleClick = async () => {
+        const exists = await checkJobScheduleExists();
+        if (exists) {
+            setPrimaryKeyFail("A schedule with this configuration already exists at this start date. Unable to schedule.")
+            return;
+        }
+
+        // Proceed to schedule the job and close the dialog
+        handleFetch();
+        clearFields();
+    };
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle>Schedule a Job</DialogTitle>
@@ -137,21 +301,21 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                 {/* Job Type Dropdown */}
                 <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Job Type</InputLabel>
-                        <Select label="Job Type" value={job_type} onChange={handleJobTypeChange}>
+                        <Select label="Job Type" value={jobType} onChange={handleJobTypeChange}>
                             <MenuItem value="api_fetch">API Fetch</MenuItem>
                             <MenuItem value="data_scrape">Data Scrape</MenuItem>
                         </Select>
                 </FormControl>
 
-                {/* Conditionally Render Service Dropdown based on job_type */}
-                {job_type && (
-                    <FormControl fullWidth margin="normal" color={colors.redAccent[500]} disabled={!job_type}>
+                {/* Conditionally Render Service Dropdown based on jobType */}
+                {jobType && (
+                    <FormControl fullWidth margin="normal" color={colors.redAccent[500]} disabled={!jobType}>
                             <InputLabel>Service</InputLabel>
                             <Select label="Service" value={service} onChange={handleServiceChange}>
-                                {job_type === "api_fetch" && (
+                                {jobType === "api_fetch" && (
                                     <MenuItem value="polygon_io">Polygon.io</MenuItem>
                                 )}
-                                {job_type === "data_scrape" && (
+                                {jobType === "data_scrape" && (
                                     <MenuItem value="stock_analysis">StockAnalysis</MenuItem>
                                 )}
                             </Select>
@@ -174,14 +338,14 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                         <Select value={frequency} onChange={handleFrequencyChange} label='Frequency'>
                             <MenuItem value="once">Once</MenuItem>
                             <MenuItem value="recurring_daily">Recurring Daily</MenuItem>
-                            {job_type !== "api_fetch" && (
+                            {jobType !== "api_fetch" && (
                                 <MenuItem value="custom_schedule">Custom Schedule</MenuItem>
                             )}
                         </Select>
                 </FormControl>
                 
                 {/* Data Fetch Type for one-time API fetch jobs */}
-                {frequency === "once" && job_type === "api_fetch" &&(
+                {frequency === "once" && jobType === "api_fetch" &&(
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Data Fetch Type</InputLabel>
                             <Select value={dataFetchType} onChange={handleDataFetchTypeChange} label='Data Fetch Type'>
@@ -192,13 +356,13 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                 )}
 
                 {/* Data Fetch Start and End Dates for API fetch jobs with date range */}
-                {job_type === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
+                {jobType === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
                     <TextField 
                         label="Data Fetch Start Date" 
                         type="date" 
                         fullWidth
-                        value={data_fetch_start_date}
-                        onChange={(e) => setDataFetchStartDate(e.target.value)} 
+                        value={dataFetchStartDate}
+                        onChange={handleDataFetchStartDateChange} 
                         margin="normal" 
                         slotProps={{ 
                             inputLabel: { shrink: true }, 
@@ -208,13 +372,13 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                 )}
 
                 {/* Schedule Start and End Dates */}
-                {job_type === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
+                {jobType === "api_fetch" &&  frequency !== "recurring_daily" && dataFetchType === 'date_range' && (
                 <TextField 
                     label="Data Fetch End Date" 
                     type="date" 
                     fullWidth
-                    value={data_fetch_end_date}
-                    onChange={(e) => setDataFetchEndDate(e.target.value)} 
+                    value={dataFetchEndDate}
+                    onChange={handleDataFetchEndDateChange} 
                     margin="normal" 
                     slotProps={{ 
                         inputLabel: { shrink: true }, 
@@ -222,25 +386,30 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                     color={colors.redAccent[500]}
                 />
                 )}
+                {dataFetchDateError && (
+                    <Box color="error.main">
+                        {dataFetchDateError}
+                    </Box>
+                )}
                 <TextField 
                     label="First Job Schedule Start Date" 
                     type="date" 
                     fullWidth
-                    value={scheduled_start_date}
-                    onChange={(e) => setScheduledStartDate(e.target.value)} 
+                    value={scheduledStartDate}
+                    onChange={handleStartDateChange} 
                     margin="normal" 
                     slotProps={{ 
                         inputLabel: { shrink: true }, 
                     }}
                     color={colors.redAccent[500]}
                 />
-                {job_type === 'data_scrape' && (
+                {jobType === 'data_scrape' && (
                     <TextField 
                         label="First Job Schedule End Date" 
                         type="date" 
                         fullWidth
-                        value={scheduled_end_date} 
-                        onChange={(e) => setScheduledEndDate(e.target.value)} 
+                        value={scheduledEndDate} 
+                        onChange={handleEndDateChange} 
                         margin="normal" 
                         slotProps={{ 
                             inputLabel: { shrink: true }, 
@@ -248,24 +417,29 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                         color={colors.redAccent[500]}
                     />
                 )}
+                {dateError && (
+                    <Box color="error.main">
+                        {dateError}
+                    </Box>
+                )}
 
                 {/* Schedule Start and End Times */}
                 <TextField 
                     label="First Job Schedule Start Time" 
                     type="time" 
                     fullWidth
-                    value={scheduled_start_time} 
+                    value={scheduledStartTime} 
                     onChange={(e) => setScheduledStartTime(e.target.value)} 
                     margin="normal" 
                     slotProps={{ inputLabel: { shrink: true } }} 
                     color={colors.redAccent[500]}
                 />
-                {job_type !== "api_fetch" && (
+                {jobType === "data_scrape" && (
                     <TextField 
                         label="First Job Schedule End Time" 
                         type="time" 
                         fullWidth
-                        value={scheduled_end_time}  
+                        value={scheduledEndTime}  
                         onChange={(e) => setScheduledEndTime(e.target.value)} 
                         margin="normal" 
                         slotProps={{ inputLabel: { shrink: true } }}  
@@ -289,7 +463,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                         type="number" 
                         fullWidth
                         value={interval} 
-                        onChange={(e) => setInterval(e.target.value)} 
+                        onChange={(e) => setJobInterval(e.target.value)} 
                         margin="normal" 
                         color={colors.redAccent[500]}
                     />
@@ -318,12 +492,33 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                         </FormGroup>
                     </Box>
                 )}
+                {primaryKeyFail && (
+                    <Box color="error.main">
+                        {primaryKeyFail}
+                    </Box>
+                )}
             </DialogContent>
 
             {/* Dialog Action Buttons */}
             <DialogActions>
-                <Button variant="contained" onClick={onClose} sx={{ backgroundColor: colors.grey[500] }}>Cancel</Button>
-                <Button onClick={handleFetch} variant="contained" color="primary">Schedule</Button>
+                <Button 
+                    variant="contained" 
+                    onClick={() => {
+                        onClose();
+                        clearFields();
+                    }} 
+                    sx={{ backgroundColor: colors.grey[500] }}
+                >
+                    Cancel
+                </Button>
+                <Button 
+                    onClick={handleScheduleClick} 
+                    variant="contained" 
+                    color="primary" 
+                    disabled={!canSchedule()} // Disable if any condition in canSchedule fails
+                >
+                    Schedule
+                </Button>
             </DialogActions>
         </Dialog>
     );

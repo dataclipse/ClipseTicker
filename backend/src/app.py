@@ -114,6 +114,10 @@ app.register_blueprint(stocks_bp)
 app.register_blueprint(api_key_bp)
 app.register_blueprint(jobs_bp)
 
+# Print all registered routes for debugging purposes
+# for rule in app.url_map.iter_rules():
+#     print(rule)
+
 # Start Flask application
 if __name__ == "__main__":
     app.run(debug=True)

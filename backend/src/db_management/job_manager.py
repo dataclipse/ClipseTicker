@@ -416,8 +416,6 @@ class JobManager:
                 created_at=datetime.now(), # Set the current time as the creation time
                 updated_at=datetime.now(), # Set the current time as the last update time
             )
-            # Print the prepared insert statement for debugging
-            print(insert_stmt)
             
             # Execute the insert statement
             session.execute(insert_stmt)
@@ -459,8 +457,8 @@ class JobManager:
             # Log a message indicating if the job was found or not
             print(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists." if job else "Job not found.")
             
-            # Return the job data as a dictionary if found, otherwise return None
-            return dict(job) if job else None
+            # Convert the row to a dictionary, or return None if no job found
+            return job._asdict() if job else None
         
         except Exception as e:
             # Print error details and return None if an exception occurs
