@@ -3,10 +3,12 @@ import requests, threading, queue, time
 from ..db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
 
 
 class PolygonStockFetcher:
     def __init__(self):
+        
         # Initialize a connection to the database through DBManager
         self.database_connect = DBManager()
         
@@ -91,9 +93,7 @@ class PolygonStockFetcher:
                     # If limit is reached and not on the last date, wait for the remaining time
                     if not is_last_date and time_since_first_request < 60:
                         wait_time = 60 - time_since_first_request
-                        print(
-                            f"Reached request limit. Waiting for {wait_time:.2f} seconds..."
-                        )
+                        print(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
                         time.sleep(wait_time)
 
                 # Submit the data fetch task to the ThreadPoolExecutor
@@ -134,9 +134,7 @@ class PolygonStockFetcher:
                     # If buffer reaches batch size, insert data into the database
                     if len(buffer) >= batch_size:
                         self.load_stock_data(buffer) # Insert the batch
-                        print(
-                            f"Inserted {len(buffer)} stock entries into the database."
-                        )
+                        print(f"Inserted {len(buffer)} stock entries into the database.")
                         buffer = [] # Clear the buffer after insertion
 
                 # Mark the task as done in the queue
@@ -146,9 +144,7 @@ class PolygonStockFetcher:
                 # If no data has been received within 60 seconds, insert remaining buffer
                 if buffer:
                     self.load_stock_data(buffer) # Insert remaining data
-                    print(
-                        f"Inserted {len(buffer)} remaining stock entries into the database."
-                    )
+                    print(f"Inserted {len(buffer)} remaining stock entries into the database.")
                     buffer = [] # Clear the buffer after insertion
                 break  # Exit the consumer thread
 
@@ -304,6 +300,4 @@ class PolygonStockFetcher:
             )
         else:
             # Log a message if the job entry already exists in the database
-            print(
-                f"Job '{job_name}' scheduled at {scheduled_start_time} already exists."
-            )
+            print(f"Job '{job_name}' scheduled at {scheduled_start_time} already exists.")

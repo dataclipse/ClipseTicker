@@ -3,6 +3,8 @@ from .db_manager import DBManager
 import time
 import random
 from datetime import datetime
+import logging
+
 
 # Endpoint URL for fetching stock data
 API_URL = "https://api.stockanalysis.com/api/screener/s/f?m=s&s=asc&c=s,revenue,marketCap,n,industry,price,change,volume,peRatio&cn=all&p=1&i=stocks&sc=s"

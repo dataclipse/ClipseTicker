@@ -2,13 +2,14 @@
 from sqlalchemy import select, update, func
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
+import logging
 
 class StockManager:
     def __init__(self, session, stocks_table):
         # Initialize the class with a session factory and a reference to the stocks table
         self.Session = session
         self.stocks = stocks_table
-        
+
     def insert_stock(self, ticker, close_price, highest_price, lowest_price, open_price, timestamp_end, timestamp):
         # Insert or update stock data in the stocks table based on ticker and timestamp_end
         session = self.Session()# Open a new session for database interaction

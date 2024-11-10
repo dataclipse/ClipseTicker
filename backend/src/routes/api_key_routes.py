@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt
 from  functools import wraps
+import logging
 
 # Initialize Blueprint
 api_key_bp = Blueprint('api_key', __name__)

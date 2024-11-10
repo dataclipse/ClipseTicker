@@ -2,17 +2,41 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timezone
 from .db_manager import DBManager
-
+from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
+import logging
 
 class Scheduler:
     def __init__(self):
-    # Initialize the background scheduler
+        # Initialize the background scheduler
         self.scheduler = BackgroundScheduler()
         self.db_manager = DBManager()
+        self.polygon_fetcher = PolygonStockFetcher()
+        #test_job_id = 'job-api_fetch-polygon_io-once-1732566840'
+        #self.fetch_data_task(test_job_id)
 
     def fetch_data_task(self, job_id):
         # Task to fetch data for a given job ID.
+        prefix, job_type, service, frequency, timestamp = job_id.split('-')
+        datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
         print(f"Fetching data for job ID: {job_id} at {datetime.now()}")
+        print("Prefix: %s", prefix)
+        print("Data Type: %s", job_type)
+        print("Job Type: %s", service)
+        print("Schedule Type: %s", frequency)
+        print("Timestamp: %s", datetime_obj)
+        
+        result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
+        
+        if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] == None ):
+            self.polygon_fetcher.fetch_previous_two_years()
+        
+        if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] != None ):
+            df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
+            df_end = result['data_fetch_start_date'].strftime('%Y-%m-%d')
+            
+            self.polygon_fetcher.fetch_data_for_date_range(df_start, df_end)
+            
+        print(result) 
         
     def schedule_existing_jobs(self):
         # Ensure the scheduler is started
@@ -47,7 +71,7 @@ class Scheduler:
                     timezone=timezone.utc  
                 )
                 # Set up a unique job ID for each task in APScheduler
-                job_id = f"job_{job['job_type']}_{job['service']}_{job['frequency']}_{int(scheduled_start_timestamp)}"
+                job_id = f"job-{job['job_type']}-{job['service']}-{job['frequency']}-{int(scheduled_start_timestamp)}"
 
                 # Schedule the job
                 self.scheduler.add_job(

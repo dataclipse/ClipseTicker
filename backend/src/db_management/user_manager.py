@@ -3,12 +3,14 @@ import bcrypt
 from datetime import datetime
 from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+import logging
 
 class UserManager:
     def __init__(self, session, users_table):
         # Initialize the class with a session factory and a reference to the users table
         self.Session = session
         self.users = users_table
+
 
     def _hash_password(self, password):
         # Hash the password using bcrypt for secure storage

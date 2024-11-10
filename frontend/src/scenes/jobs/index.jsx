@@ -277,7 +277,6 @@ const Jobs = () => {
           onClick={fetchData}
           startIcon={<RefreshIcon  />}
           disabled={user.role !== "Admin"}
-
         >
           Refresh Job Schedule
         </Button>

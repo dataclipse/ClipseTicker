@@ -13,15 +13,18 @@ from sqlalchemy import (
     Index,
     func,
 )
-
+import logging
 
 class DBSchemaManager:
     def __init__(self):
+        
         # Initialize metadata for schema management
         self.metadata = MetaData()
         
         # Initialize the database file path, creating it if necessary
         self.db_file_path = self._initialize_database()
+        
+
 
     def _initialize_database(self):
         # Create a folder for the database if it does not exist
@@ -30,7 +33,7 @@ class DBSchemaManager:
 
         # Set the path for the SQLite database file
         db_file_path = os.path.join("db", "nyse_data.db")
-        print("Database created and/or connected successfully at:", db_file_path)
+        print("Database created and/or connected successfully at: %s", db_file_path) 
         return db_file_path
 
     def define_tables(self):

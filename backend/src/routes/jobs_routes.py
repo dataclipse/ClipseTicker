@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from  functools import wraps
 from ..scheduler import Scheduler
 import pytz
+import logging
+
 
 # Initialize blueprint
 jobs_bp = Blueprint("jobs", __name__)

@@ -1,6 +1,7 @@
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
+import logging
 
 class ScrapeManager:
     def __init__(self, session, scrape_table):

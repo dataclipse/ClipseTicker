@@ -1,6 +1,7 @@
 # db_management/job_manager.py
 from sqlalchemy import select, update
 from datetime import datetime
+import logging
 
 
 class JobManager:
@@ -30,9 +31,7 @@ class JobManager:
             jobs_list = [dict(zip(column_names, row)) for row in jobs]
 
             # Print the count of jobs retrieved or a message if no jobs were found
-            print(
-                f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found."
-            )
+            print(f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found.")
             
             # Return the list of jobs as a list of dictionaries
             return jobs_list
@@ -143,9 +142,7 @@ class JobManager:
                 print(f"Job {job_name} deleted successfully.")
             else:
                 # Print a message if no matching job was found
-                print(
-                    f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted."
-                )
+                print(f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted.")
 
         except Exception as e:
             # Rollback the transaction if an error occurs
@@ -226,14 +223,10 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(
-                    f"Job '{job_name}' run time updated to '{run_time}' successfully."
-                )
+                print(f"Job '{job_name}' run time updated to '{run_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(
-                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
-                )
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
                 
         except Exception as e:
             # Rollback the transaction if an error occurs
@@ -271,14 +264,10 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(
-                    f"Job '{job_name}' end time updated to '{end_time}' successfully."
-                )
+                print(f"Job '{job_name}' end time updated to '{end_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(
-                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
-                )
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
@@ -315,14 +304,10 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(
-                    f"Job '{job_name}' start time updated to '{start_time}' successfully."
-                )
+                print(f"Job '{job_name}' start time updated to '{start_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(
-                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
-                )
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
@@ -359,14 +344,10 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(
-                    f"Job '{job_name}' status updated to '{new_status}' successfully."
-                )
+                print(f"Job '{job_name}' status updated to '{new_status}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(
-                    f"No job found with name '{job_name}' scheduled for {scheduled_start_time}."
-                )
+                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
@@ -527,9 +508,7 @@ class JobManager:
             #print(jobs_list[6])
 
             # Print the count of job schedules retrieved or a message if no jobs were found
-            print(
-                f"Retrieved {len(jobs_list)} job schedules." if jobs_list else "No job schedules found."
-            )
+            print(f"Retrieved {len(jobs_list)} job schedules." if jobs_list else "No job schedules found.")
             
             # Return the list of job schedules as a list of dictionaries
             return jobs_list

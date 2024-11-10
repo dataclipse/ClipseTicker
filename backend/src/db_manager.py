@@ -9,10 +9,13 @@ from .db_management.api_key_manager import ApiKeyManager
 from .db_management.stock_manager import StockManager
 from .db_management.user_manager import UserManager
 from .db_management.scrape_manager import ScrapeManager 
+import logging
 
 
 class DBManager:
     def __init__(self):
+        
+
         # Use DBSchemaManager for database and table setup
         self.schema_manager = DBSchemaManager()
         self.db_file_path = self.schema_manager.db_file_path

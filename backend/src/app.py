@@ -12,6 +12,7 @@ from .routes.jobs_routes import jobs_bp
 import jwt
 from functools import wraps
 from datetime import datetime, timedelta, timezone
+import logging 
 
 # Initialize Flask app and enable Cross-Origin Resource Sharing (CORS)
 app = Flask(__name__)
@@ -29,7 +30,7 @@ if os.path.exists(jwt_secret_key_file):
         app.config['SECRET_KEY'] = file.read()
 else:
     # Generate a new secret key if it does not exist
-    jwt_secret_key = os.urandom(24)
+    jwt_secret_key = os.urandom(24)  
     app.config['SECRET_KEY'] = jwt_secret_key
     with open(jwt_secret_key_file, "wb") as file:
         file.write(jwt_secret_key)
