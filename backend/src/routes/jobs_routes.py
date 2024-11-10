@@ -2,8 +2,10 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 from ..data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from  functools import wraps
+from ..scheduler import Scheduler
+import pytz
 
 # Initialize blueprint
 jobs_bp = Blueprint("jobs", __name__)
@@ -11,6 +13,8 @@ jobs_bp = Blueprint("jobs", __name__)
 # Initialize db_manager and polygon_fetcher
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
+scheduler = Scheduler()
+
 
 def validate_datetime(date_str):
     try:
@@ -61,72 +65,6 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated
 
-@jobs_bp.route("/api/jobs", methods=["DELETE"])
-@token_required
-def delete_jobs():
-    try:
-        # Extract JSON data from the request
-        data = request.get_json()
-        
-        # Retrieve job name and scheduled start time from request data
-        job_name = data.get("job_name")
-        scheduled_start_time = data.get("scheduled_start_time")
-
-        # Validate that both job name and scheduled start time are provided
-        if not job_name or not scheduled_start_time:
-            return jsonify({"error": "Both job_name and scheduled_start_time are required"}), 400
-
-        # Attempt to delete the specified job from the database using the Job Manager
-        db_manager.job_manager.delete_job(job_name, scheduled_start_time)
-        
-        # Return success message if the job was deleted successfully
-        return jsonify({"message": f"Job '{job_name}' scheduled to start at '{scheduled_start_time}' deleted successfully."}), 200
-
-    except Exception as e:
-        print(f"Error deleting job '{job_name}' scheduled at '{scheduled_start_time}': {e}")
-        return jsonify({"error": "Unable to delete job"}), 500
-
-@jobs_bp.route("/api/jobs", methods=["GET"])
-@token_required
-def get_jobs():
-    try:
-        # Retrieve all job records using the Job Manager
-        jobs_data = db_manager.job_manager.select_all_jobs()
-        
-        # Return the job data as JSON with a 200 OK status
-        return jsonify(jobs_data), 200
-
-    except Exception as e:
-        # Log any exception details to the console and return a 500 error response
-        print(f"Error retrieving jobs: {e}")
-        return jsonify({"error": "Unable to retrieve jobs"}), 500
-
-@jobs_bp.route("/api/jobs", methods=["POST"])
-@token_required
-def fetch_data_job():
-    try:
-        # Extract JSON data from the request
-        data = request.get_json()
-        
-        # Retrieve start and end dates from the request data
-        start_date = data.get("startDate")
-        end_date = data.get("endDate")
-
-        # Validate presence of both start and end dates
-        if not start_date or not end_date:
-            return jsonify({"error": "Both start_date and end_date are required"}), 400
-
-        # Fetch data from polygon_io for the specified date range
-        polygon_fetcher.fetch_data_for_date_range(start_date, end_date)
-        
-        # Return success message on successful data fetch
-        return jsonify({"message": "Data fetched successfully for the specified date range"}), 200
-
-    except Exception as e:
-        # Log error details to server logs and return an error response to the client
-        print(f"Error fetching data for date range {start_date} - {end_date}: {e}")
-        return jsonify({"error": "Unable to fetch data for the specified date range"}), 500
-
 @jobs_bp.route("/api/jobs_schedule", methods=["POST"])
 @token_required
 def schedule_job():
@@ -143,6 +81,7 @@ def schedule_job():
         data_fetch_end_date = validate_datetime(data.get("dataFetchEndDate"))
         interval_days = data.get("interval")
         weekdays = data.get("selectedDaysJSON")
+        timezone_str = data.get("currentTimezone")
         
         # Combine date and time for start and end if both are provided
         scheduled_start_str = (
@@ -155,16 +94,35 @@ def schedule_job():
             .strftime("%Y-%m-%d %H:%M:%S") if data.get("scheduledEndDate") and data.get("scheduledEndTime") else None
         )
         
+        # Parse timezone
+        local_tz = pytz.timezone(timezone_str)
+        print(local_tz)
+        
         # Validate date formats with seconds precision for database compatibility
-        scheduled_start_str = validate_datetime_sec(scheduled_start_str) if scheduled_start_str else None
-        scheduled_end_str = validate_datetime_sec(scheduled_end_str) if scheduled_end_str else None
+        scheduled_start_local = validate_datetime_sec(scheduled_start_str) if scheduled_start_str else None
+        scheduled_end_local = validate_datetime_sec(scheduled_end_str) if scheduled_end_str else None
+        
+        print(scheduled_end_local, scheduled_start_local)  # Debugging line to print the parsed dates
+        
+        # Convert scheduled_start_str and scheduled_end_str to UTC if they exist
+        if scheduled_start_local:
+            scheduled_start_utc = local_tz.localize(scheduled_start_local).astimezone(timezone.utc)
+        else:
+            scheduled_start_utc = None
+            
+        if scheduled_end_local:
+            scheduled_end_utc = local_tz.localize(scheduled_end_local).astimezone(timezone.utc)
+        else:
+            scheduled_end_utc = None
         
         # Insert job schedule into the database using the Job Manager
         jobs_schedule_data = db_manager.job_manager.insert_job_schedule(
-            job_type, service, owner, frequency, scheduled_start_str,
-            scheduled_end_str, data_fetch_start_date, data_fetch_end_date,
+            job_type, service, owner, frequency, scheduled_start_utc,
+            scheduled_end_utc, data_fetch_start_date, data_fetch_end_date,
             interval_days, weekdays
         )
+        #scheduler.start_scheduler()
+        scheduler.schedule_existing_jobs()
         
         # Return success response with the inserted job schedule data
         return jsonify(jobs_schedule_data), 200

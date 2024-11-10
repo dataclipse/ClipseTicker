@@ -3,13 +3,14 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from .db_manager import DBManager
+from .scheduler import Scheduler
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 from .routes.user_routes import user_bp
 from .routes.stocks_routes import stocks_bp
 from .routes.api_key_routes import api_key_bp
 from .routes.jobs_routes import jobs_bp
 import jwt
-from  functools import wraps
+from functools import wraps
 from datetime import datetime, timedelta, timezone
 
 # Initialize Flask app and enable Cross-Origin Resource Sharing (CORS)
@@ -19,6 +20,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # Initialize database manager and polygon data fetcher instances
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
+scheduler = Scheduler()
 
 # Generate or load JWT secret key for encoding tokens
 jwt_secret_key_file = "jwt_key.txt"
@@ -31,6 +33,8 @@ else:
     app.config['SECRET_KEY'] = jwt_secret_key
     with open(jwt_secret_key_file, "wb") as file:
         file.write(jwt_secret_key)
+
+
 
 # Login route for user authentication
 @app.route("/api/login", methods=["POST"])
@@ -113,11 +117,24 @@ app.register_blueprint(user_bp)
 app.register_blueprint(stocks_bp)
 app.register_blueprint(api_key_bp)
 app.register_blueprint(jobs_bp)
-
+    
 # Print all registered routes for debugging purposes
 # for rule in app.url_map.iter_rules():
 #     print(rule)
+def main():
+    try:
+        scheduler.start_scheduler()
+        scheduler.schedule_existing_jobs()
+        app.run(debug=True)
+        
+    except KeyboardInterrupt:
+        print(f"KeyboardInterrupt received, shutting down...")
+        
+    finally:
+        # Ensure the scheduler stops before the application fully exits
+        scheduler.stop_scheduler()
+
 
 # Start Flask application
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()

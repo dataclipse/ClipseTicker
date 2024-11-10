@@ -238,6 +238,9 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
         // Close the dialog
         onClose();
 
+        // Get the current timezone
+        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
         // Retrieve authentication token from local storage
         const token = localStorage.getItem("auth_token");
 
@@ -262,7 +265,8 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                 scheduledStartTime,
                 scheduledEndTime,
                 interval,
-                selectedDaysJSON // Include selected days as JSON
+                selectedDaysJSON,  // Include selected days as JSON
+                currentTimezone
             }),
         })
         .then((response) => {
