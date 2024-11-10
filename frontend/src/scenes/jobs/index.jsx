@@ -1,13 +1,20 @@
 // src/scenes/jobs/index.jsx
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
 import ScheduleJobDialog from "../../components/schedule_job_dialog";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { QuickSearchToolbar, formatRunTime } from "../../components/helper";
+import { formatRunTime } from "../../components/helper";
 import { useAuth } from "../../context/auth_context";
+import { styled } from '@mui/material/styles';
+import MuiAccordion from '@mui/material/Accordion';
+import MuiAccordionSummary from '@mui/material/AccordionSummary';
+import MuiAccordionDetails from '@mui/material/AccordionDetails';
+import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
+import RefreshIcon from "@mui/icons-material/Refresh";
+
 
 // Jobs Component - Displays a list of jobs with actions for managing them.
 // Includes options for adding and scheduling jobs, with permissions based on user role.
@@ -17,11 +24,64 @@ const Jobs = () => {
   const [Jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
+  const [expanded1, setExpanded1] = useState(false);
+  const [expanded2, setExpanded2] = useState(false);
+  const [expanded3, setExpanded3] = useState(false);
 
   // Opens and closes the modals for adding or scheduling jobs
   const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
   const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
+
+  const Accordion = styled((props) => (
+    <MuiAccordion disableGutters elevation={0} square {...props} />
+  ))(({ theme }) => ({
+    border: `1px solid ${theme.palette.divider}`,
+    '&:not(:last-child)': {
+      borderBottom: 0,
+    },
+    '&::before': {
+      display: 'none',
+    },
+  }));
+
+  const AccordionSummary = styled((props) => (
+    <MuiAccordionSummary
+      expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
+      {...props}
+    />
+  ))(({ theme }) => ({
+
+    flexDirection: 'row-reverse',
+    '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+      transform: 'rotate(90deg)',
+    },
+    '& .MuiAccordionSummary-content': {
+      marginLeft: theme.spacing(1),
+    },
+  }));
+
+  const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
+    padding: theme.spacing(2),
+    borderTop: '1px solid rgba(0, 0, 0, .125)',
+  }));
+
+  // Converts UTC date string to local timezone string
+  const convertToLocalTime = (utcDateString) => {
+    // Check if the date string is valid
+    if (!utcDateString) return "";
+
+    // Attempt to create a date object from the UTC string
+    const date = new Date(utcDateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return ""; // Return fallback if date parsing fails
+    }
+
+    // Convert to local timezone string if valid
+    return date.toLocaleString(); 
+  };
 
   const columns = [
     {
@@ -133,7 +193,6 @@ const Jobs = () => {
         const weekdaysArray = JSON.parse(weekdaysStr); // Parse JSON string into an array
         return weekdaysArray.join(", "); // Convert array to CSV format
     } catch (error) {
-        console.error("Error parsing weekdays JSON:", error);
         return weekdaysStr; // Return the original string if parsing fails
     }
   };
@@ -156,8 +215,8 @@ const Jobs = () => {
         status: jobs.status,
         owner: jobs.owner,
         frequency: formatString(jobs.frequency),
-        scheduled_start_date: jobs.scheduled_start_date,
-        scheduled_end_date: jobs.scheduled_end_date,
+        scheduled_start_date: convertToLocalTime(jobs.scheduled_start_date),
+        scheduled_end_date: convertToLocalTime(jobs.scheduled_end_date),
         data_fetch_start_date: jobs.data_fetch_start_date,
         data_fetch_end_date: jobs.data_fetch_end_date,
         interval_days: jobs.interval_days,
@@ -167,6 +226,9 @@ const Jobs = () => {
         updated_at: jobs.updated_at,
       }));
       setJobs(formattedData);
+      setExpanded1(formattedData.some((job) => job.status === "Running"));
+      setExpanded2(formattedData.some((job) => job.status === "Scheduled"));
+      setExpanded3(formattedData.some((job) => job.status === "Complete"));
     } catch (error) {
       console.error("Error fetching Jobs data:", error);
     } finally {
@@ -176,9 +238,20 @@ const Jobs = () => {
 
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 10000);
-    return () => clearInterval(intervalId);
   }, [fetchData]);
+
+  const handleAccordionChange1 = (panel) => (isExpanded) => {
+    setExpanded1(isExpanded ? panel === 'panel1' && expanded1 === false : false)
+  };
+  
+  const handleAccordionChange2 = (panel) => (isExpanded) => {
+    setExpanded2(isExpanded ? panel === 'panel2' && expanded2 === false : false)
+  };
+  
+  const handleAccordionChange3 = (panel) => (isExpanded) => {
+    setExpanded3(isExpanded ? panel === 'panel3' && expanded3 === false : false)
+  };
+  
 
   return (
     <Box m="20px">
@@ -187,7 +260,7 @@ const Jobs = () => {
         subtitle="Status of Jobs to Fetch Stock Data"
       />
       {/* Button to open the modal */}
-      <Box mb={2}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Button
           variant="outlined"
           color="secondary"
@@ -198,6 +271,16 @@ const Jobs = () => {
         >
           Schedule a New Job
         </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={fetchData}
+          startIcon={<RefreshIcon  />}
+          disabled={user.role !== "Admin"}
+
+        >
+          Refresh Job Schedule
+        </Button>
       </Box>
 
       {/* Modal Components */}
@@ -205,37 +288,132 @@ const Jobs = () => {
         open={openScheduleJobDialog}
         onClose={handleCloseScheduleJobDialog}
       />
-      <Box
-        m="40px 0 0 0"
-        display="flex"
-        sx={{
-          "& .MuiDataGrid-root": {
-            border: "none",
-          },
-          "& .MuiDataGrid-cell": {
-            borderBottom: "none",
-          },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: colors.blueAccent[700],
-            borderBottom: "none",
-            fontWeight: "bold",
-          },
-          "& .MuiDataGrid-virtualScroller": {
-            backgroundColor: colors.primary[400],
-          },
-          "& .MuiPaginationItem-root": {
-            borderTop: "none",
-            backgroundColor: `${colors.blueAccent[700]} !important`,
-          },
-        }}
-      >
-        <DataGrid
-          slots={{ toolbar: QuickSearchToolbar }}
-          rows={Jobs}
-          columns={columns}
-          loading={loading}
-        />
-      </Box>
+        <Accordion 
+          expanded={expanded1 === true}
+          onChange={handleAccordionChange1('panel1')}
+          m="40px 0 0 0"
+          display="flex"
+          sx={{
+            "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+              backgroundColor: colors.primary[500]
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiPaginationItem-root": {
+              borderTop: "none",
+              backgroundColor: `${colors.blueAccent[700]} !important`,
+            },
+            backgroundColor: colors.primary[500]
+          }}
+        >
+          <AccordionSummary
+            aria-controls="panel1a-content"
+            id="panel1a-header"
+          >
+            <Typography sx={{ fontWeight: "bold" }}>Running Jobs</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <DataGrid
+              rows={Jobs.filter((job) => job.status === "Running")}
+              columns={columns}
+              loading={loading}
+            />
+          </AccordionDetails>
+        </Accordion>
+        <Accordion 
+          expanded={expanded2 === true}
+          onChange={handleAccordionChange2('panel2')}
+          m="40px 0 0 0"
+          display="flex"
+          sx={{
+            "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+              backgroundColor: colors.primary[500]
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiPaginationItem-root": {
+              borderTop: "none",
+              backgroundColor: `${colors.blueAccent[700]} !important`,
+            },
+            backgroundColor: colors.primary[500]
+          }}
+        >
+          <AccordionSummary
+            aria-controls="panel2a-content"
+            id="panel2a-header"
+          >
+            <Typography sx={{ fontWeight: "bold" }}>Scheduled Jobs</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <DataGrid
+              rows={Jobs.filter((job) => job.status === "Scheduled")}
+              columns={columns}
+              loading={loading}
+            />
+          </AccordionDetails>
+        </Accordion>
+        <Accordion 
+          expanded={expanded3 === true}
+          onChange={handleAccordionChange3('panel3')}
+          m="40px 0 0 0"
+          display="flex"
+          sx={{
+            "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+              backgroundColor: colors.primary[500]
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiPaginationItem-root": {
+              borderTop: "none",
+              backgroundColor: `${colors.blueAccent[700]} !important`,
+            },
+            backgroundColor: colors.primary[500]
+          }}
+        >
+          <AccordionSummary
+            aria-controls="panel3a-content"
+            id="panel3a-header"
+          >
+            <Typography sx={{ fontWeight: "bold" }}>Completed Jobs</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <DataGrid
+              rows={Jobs.filter((job) => job.status === "Complete")}
+              columns={columns}
+              loading={loading}
+            />
+          </AccordionDetails>
+        </Accordion>
     </Box>
   );
 };
