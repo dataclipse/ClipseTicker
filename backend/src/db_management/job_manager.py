@@ -1,8 +1,8 @@
 # db_management/job_manager.py
 from sqlalchemy import select, update
 from datetime import datetime
-import logging
-
+import logging 
+logger = logging.getLogger(__name__)
 
 class JobManager:
     def __init__(self, session, jobs_table, jobs_schedule_table):
@@ -31,14 +31,14 @@ class JobManager:
             jobs_list = [dict(zip(column_names, row)) for row in jobs]
 
             # Print the count of jobs retrieved or a message if no jobs were found
-            print(f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found.")
+            logger.debug(f"Retrieved {len(jobs_list)} jobs." if jobs_list else "No jobs found.")
             
             # Return the list of jobs as a list of dictionaries
             return jobs_list
         
         except Exception as e:
             # Print error details if an exception occurs and return an empty list
-            print(f"Error selecting all jobs: {e}")
+            logger.error(f"Error selecting all jobs: {e}")
             return []
         
         finally:
@@ -62,14 +62,14 @@ class JobManager:
             job = result.fetchone()
             
             # Print a message indicating if the job was found or not
-            print(f"Job {job_name} exists." if job else "Job not found.")
+            logger.debug(f"Job {job_name} exists." if job else "Job not found.")
             
             # Return the job data as a dictionary if found, otherwise return None
             return dict(job) if job else None
         
         except Exception as e:
             # Print an error message if an exception occurs
-            print(f"Error selecting job: {e}")
+            logger.error(f"Error selecting job: {e}")
             
             # Return None in case of an error
             return None
@@ -102,14 +102,14 @@ class JobManager:
             session.commit()
             
             # Check if any rows were affected and print appropriate message
-            print(f"Job {job_name} updated." if result.rowcount else "Job not found.")
+            logger.debug(f"Job {job_name} updated." if result.rowcount else "Job not found.")
             
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error updating job: {e}")
+            logger.error(f"Error updating job: {e}")
             
         finally:
             # Close the database session to free resources
@@ -139,17 +139,17 @@ class JobManager:
 
             # Check if any rows were affected to confirm deletion
             if result.rowcount > 0:
-                print(f"Job {job_name} deleted successfully.")
+                logger.debug(f"Job {job_name} deleted successfully.")
             else:
                 # Print a message if no matching job was found
-                print(f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted.")
+                logger.debug(f"No job found with name '{job_name}' and scheduled start time {scheduled_start_time}. Nothing deleted.")
 
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error deleting job: {e}")
+            logger.error(f"Error deleting job: {e}")
             
         finally:
             # Close the database session to free resources
@@ -186,13 +186,13 @@ class JobManager:
             session.commit()
             
             # Print a success message to indicate the job was inserted
-            print(f"Job {job_name} inserted successfully.")
+            logger.debug(f"Job {job_name} inserted successfully.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details of the exception
-            print(f"Error inserting job '{job_name}': {e}")
+            logger.error(f"Error inserting job '{job_name}': {e}")
             
         finally:
             # Close the database session to free resources
@@ -223,17 +223,17 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(f"Job '{job_name}' run time updated to '{run_time}' successfully.")
+                logger.debug(f"Job '{job_name}' run time updated to '{run_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                logger.debug(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
                 
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error updating job run time: {e}")
+            logger.error(f"Error updating job run time: {e}")
             
         finally:
             # Close the database session to free resources
@@ -264,16 +264,16 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(f"Job '{job_name}' end time updated to '{end_time}' successfully.")
+                logger.debug(f"Job '{job_name}' end time updated to '{end_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                logger.debug(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error updating job end time: {e}")
+            logger.error(f"Error updating job end time: {e}")
             
         finally:
             # Close the database session to free resources
@@ -304,16 +304,16 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(f"Job '{job_name}' start time updated to '{start_time}' successfully.")
+                logger.debug(f"Job '{job_name}' start time updated to '{start_time}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                logger.debug(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error updating job start time: {e}")
+            logger.error(f"Error updating job start time: {e}")
             
         finally:
             # Close the database session to free resources
@@ -344,16 +344,16 @@ class JobManager:
 
             # Check if any rows were affected to confirm the update
             if result.rowcount > 0:
-                print(f"Job '{job_name}' status updated to '{new_status}' successfully.")
+                logger.debug(f"Job '{job_name}' status updated to '{new_status}' successfully.")
             else:
                 # Print a message if no matching job was found
-                print(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
+                logger.debug(f"No job found with name '{job_name}' scheduled for {scheduled_start_time}.")
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             
             # Print an error message with details
-            print(f"Error updating job status: {e}")
+            logger.error(f"Error updating job status: {e}")
             
         finally:
             # Close the database session to free resources
@@ -405,13 +405,13 @@ class JobManager:
             session.commit()
             
             # Print a success message
-            print(f"The {job_type} for {service} scheduled successfully.")
+            logger.debug(f"The {job_type} for {service} scheduled successfully.")
             
         except Exception as e:
             # Rollback the transaction if an error occurs
             session.rollback()
             # Print an error message with details
-            print(f"Error inserting job '{job_type} for {service}': {e}")
+            logger.error(f"Error inserting job '{job_type} for {service}': {e}")
             
         finally:
             # Close the session to release database resources
@@ -436,14 +436,14 @@ class JobManager:
             job = result.fetchone()
             
             # Log a message indicating if the job was found or not
-            print(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists." if job else "Job not found.")
+            logger.debug(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists." if job else "Job not found.")
             
             # Convert the row to a dictionary, or return None if no job found
             return job._asdict() if job else None
         
         except Exception as e:
             # Print error details and return None if an exception occurs
-            print(f"Error selecting job: {e}")
+            logger.error(f"Error selecting job: {e}")
             return None
         
         finally:
@@ -476,14 +476,14 @@ class JobManager:
 
             # Check if any rows were affected and print the appropriate message
             if result.rowcount > 0:
-                print(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists.")
+                logger.debug(f"The {job_type} {service} Job exists with a frequency of '{frequency}' starting {scheduled_start_date} exists.")
             else:
-                print(f"No {job_type} {service} Job found with a frequency of '{frequency}' starting {scheduled_start_date} exists. Nothing deleted.")
+                logger.debug(f"No {job_type} {service} Job found with a frequency of '{frequency}' starting {scheduled_start_date} exists. Nothing deleted.")
         
         # Handle any exceptions that occur, roll back the transaction, and print the error
         except Exception as e:
             session.rollback()
-            print(f"Error deleting job: {e}")
+            logger.error(f"Error deleting job: {e}")
         finally:
             # Close the database session to free resources
             session.close()
@@ -508,13 +508,13 @@ class JobManager:
             #print(jobs_list[6])
 
             # Print the count of job schedules retrieved or a message if no jobs were found
-            print(f"Retrieved {len(jobs_list)} job schedules." if jobs_list else "No job schedules found.")
+            logger.debug(f"Retrieved {len(jobs_list)} job schedules." if jobs_list else "No job schedules found.")
             
             # Return the list of job schedules as a list of dictionaries
             return jobs_list
         except Exception as e:
             # Print error details if an exception occurs and return an empty list
-            print(f"Error selecting all job schedules: {e}")
+            logger.error(f"Error selecting all job schedules: {e}")
             return []
         finally:
             # Close the database session to free resources

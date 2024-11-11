@@ -2,7 +2,8 @@
 from sqlalchemy import select, update, func
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from datetime import datetime
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 class StockManager:
     def __init__(self, session, stocks_table):
@@ -40,7 +41,7 @@ class StockManager:
                 )
                 # Execute the update statement to modify the existing record
                 session.execute(update_stmt)
-                print(f"Stock data for {ticker} at {timestamp_end} updated successfully.")
+                logger.debug(f"Stock data for {ticker} at {timestamp_end} updated successfully.")
             else:
                 # If no existing record is found, prepare an insert statement with the provided values
                 insert_stmt = self.stocks.insert().values(
@@ -54,13 +55,13 @@ class StockManager:
                 )
                 # Execute the insert statement to add the new record
                 session.execute(insert_stmt)
-                print(f"Stock data for {ticker} at {timestamp_end} inserted successfully.")
+                logger.debug(f"Stock data for {ticker} at {timestamp_end} inserted successfully.")
             
             # Commit the transaction to save the changes in the database
             session.commit()
         except Exception as e:
             # Rollback the transaction in case of an error to maintain data integrity
-            print(f"Error inserting stock data: {e}")
+            logger.error(f"Error inserting stock data: {e}")
             session.rollback()
         finally:
             # Close the session to free resources
@@ -79,18 +80,18 @@ class StockManager:
             
             # Check if any records were retrieved
             if rows:
-                print("Retrieved stock data:")
+                logger.debug("Retrieved stock data:")
                 # Iterate through each row and print stock details
                 for row in rows:
                     id, ticker, price, timestamp = row
-                    print(f"ID: {id}, Ticker: {ticker}, Price: {price}, Timestamp: {timestamp}")
+                    logger.debug(f"ID: {id}, Ticker: {ticker}, Price: {price}, Timestamp: {timestamp}")
             else:
                 # Log if no stock data was found
-                print("No stock data found.")
+                logger.debug("No stock data found.")
         except Exception as e:
             # Rollback if an error occurs and log the error
             session.rollback()
-            print(f"Error selecting stock data: {e}")
+            logger.error(f"Error selecting stock data: {e}")
         finally:
             # Close the session to free resources
             session.close()
@@ -129,12 +130,12 @@ class StockManager:
             
             # Commit the transaction to save all changes in the database
             session.commit()
-            print(f"Inserted or update batch of {len(stock_data_batch)} stock entries successfully.")
+            logger.debug(f"Inserted or update batch of {len(stock_data_batch)} stock entries successfully.")
             
         except Exception as e:
             # Rollback the transaction in case of an error to maintain data integrity
             session.rollback()
-            print(f"Error during batch upsert: {e}")
+            logger.error(f"Error during batch upsert: {e}")
         finally:
             # Close the session to free resources
             session.close()
@@ -188,7 +189,7 @@ class StockManager:
             return stocks_data
         except Exception as e:
             # Print an error message and return an empty list if an error occurs
-            print(f"Error retrieving recent stock prices: {e}")
+            logger.debug(f"Error retrieving recent stock prices: {e}")
             return []
         finally:
             # Close the session to free resources
@@ -228,7 +229,7 @@ class StockManager:
             return stocks_data
         except Exception as e:
             # Print an error message and return an empty list if an error occurs
-            print(f"Error retrieving stock data for '{ticker_symbol}': {e}")
+            logger.error(f"Error retrieving stock data for '{ticker_symbol}': {e}")
             return []
         finally:
             # Close the session to free resources

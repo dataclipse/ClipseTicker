@@ -13,6 +13,19 @@ import jwt
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 import logging 
+import logging.handlers
+import sys
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)-s] [%(levelname)-s] %(message)s",
+    handlers=[
+        logging.handlers.RotatingFileHandler('debug.log', maxBytes=(1048576*5), backupCount=7),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger()
 
 # Initialize Flask app and enable Cross-Origin Resource Sharing (CORS)
 app = Flask(__name__)
@@ -82,7 +95,7 @@ def login():
             return jsonify({"error": "Invalid credentials"}), 401
     except Exception as e:
         # Log error and return server error response
-        print(f"Error during authentication for user '{username}': {e}")
+        logger.error(f"Error during authentication for user '{username}': {e}")
         return jsonify({"error": "Authentication error"}), 500
     
 # Token protection decorator to enforce JWT token requirements
@@ -129,7 +142,7 @@ def main():
         app.run(debug=True)
         
     except KeyboardInterrupt:
-        print(f"KeyboardInterrupt received, shutting down...")
+        logger.debug(f"KeyboardInterrupt received, shutting down...")
         
     finally:
         # Ensure the scheduler stops before the application fully exits

@@ -3,7 +3,8 @@ import bcrypt
 from datetime import datetime
 from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 class UserManager:
     def __init__(self, session, users_table):
@@ -47,11 +48,11 @@ class UserManager:
             
             # Commit the transaction to save the new user in the database
             session.commit()
-            print(f"User '{username}' created successfully.")
+            logger.debug(f"User '{username}' created successfully.")
         except Exception as e:
             # Rollback the transaction if an error occurs to maintain data integrity
             session.rollback()
-            print(f"Error creating user '{username}': {e}")
+            logger.error(f"Error creating user '{username}': {e}")
         finally:
             # Close the session to free resources
             session.close()
@@ -68,15 +69,15 @@ class UserManager:
             
             # Check if a user record was found
             if result:
-                print(f"Retrieved user data for '{username}'")
+                logger.debug(f"Retrieved user data for '{username}'")
                 return result._asdict() # Convert the result to a dictionary and return it
             else:
                 # Log a message if no user was found with the specified username
-                print(f"No user found with username '{username}'.")
+                logger.debug(f"No user found with username '{username}'.")
                 return None
         except Exception as e:
             # Log any error that occurs during retrieval
-            print(f"Error retrieving user '{username}': {e}")
+            logger.error(f"Error retrieving user '{username}': {e}")
             return None
         finally:
             # Close the session to free resources
@@ -124,14 +125,14 @@ class UserManager:
             
             # Check if any rows were affected by the update
             if result.rowcount > 0:
-                print(f"User '{username}' updated successfully.")
+                logger.debug(f"User '{username}' updated successfully.")
             else:
                 # Log a message if no user was found with the specified username
-                print(f"No user found with '{username}'.")
+                logger.debug(f"No user found with '{username}'.")
         except Exception as e:
             # Rollback the transaction if an error occurs and log the error
             session.rollback()
-            print(f"Error updating user '{username}': {e}")
+            logger.error(f"Error updating user '{username}': {e}")
         finally:
             # Close the session to free resources
             session.close()
@@ -151,14 +152,14 @@ class UserManager:
             
             # Check if any rows were affected by the delete operation
             if result.rowcount > 0:
-                print(f"User '{username}' deleted successfully.")
+                logger.debug(f"User '{username}' deleted successfully.")
             else:
                 # Log a message if no user was found with the specified username
-                print(f"No user found with username '{username}'.")
+                logger.debug(f"No user found with username '{username}'.")
         except Exception as e:
             # Rollback the transaction if an error occurs and log the error
             session.rollback()
-            print(f"Error deleting user '{username}': {e}")
+            logger.error(f"Error deleting user '{username}': {e}")
         finally:
             # Close the session to free resources
             session.close()
@@ -178,18 +179,18 @@ class UserManager:
                 
                 # Verify the provided password against the stored hashed password
                 if self._verify_password(password, user_data["password_hash"]):
-                    print(f"Authentication successful for user '{username}'.")
+                    logger.debug(f"Authentication successful for user '{username}'.")
                     return True # Return True if authentication is successful
                 else:
-                    print(f"Authentication failed for user '{username}'.")
+                    logger.debug(f"Authentication failed for user '{username}'.")
                     return False # Return False if password verification fails
             else:
                 # Log a message if no user was found with the specified username
-                print(f"No user found with username '{username}'.")
+                logger.debug(f"No user found with username '{username}'.")
                 return False # Return False if no matching user is found
         except Exception as e:
             # Log any error that occurs during authentication
-            print(f"Error authenticating user '{username}': {e}")
+            logger.error(f"Error authenticating user '{username}': {e}")
             return False # Return False if an exception occurs
         finally:
             # Close the session to free resources

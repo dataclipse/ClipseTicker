@@ -1,3 +1,4 @@
+# routes/jobs_routes.py
 from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 from ..data_ingest.polygon_stock_fetcher import PolygonStockFetcher
@@ -6,8 +7,8 @@ from datetime import datetime, timezone
 from  functools import wraps
 from ..scheduler import Scheduler
 import pytz
-import logging
-
+import logging 
+logger = logging.getLogger(__name__)
 
 # Initialize blueprint
 jobs_bp = Blueprint("jobs", __name__)
@@ -73,7 +74,7 @@ def schedule_job():
     try:
         # Extract JSON data from the request
         data = request.get_json()
-        print(data)  # Debugging line to print the received data
+
         # Retrieve job scheduling details from JSON data
         job_type = data.get("jobType")
         service = data.get("service")
@@ -98,13 +99,10 @@ def schedule_job():
         
         # Parse timezone
         local_tz = pytz.timezone(timezone_str)
-        print(local_tz)
         
         # Validate date formats with seconds precision for database compatibility
         scheduled_start_local = validate_datetime_sec(scheduled_start_str) if scheduled_start_str else None
         scheduled_end_local = validate_datetime_sec(scheduled_end_str) if scheduled_end_str else None
-        
-        print(scheduled_end_local, scheduled_start_local)  # Debugging line to print the parsed dates
         
         # Convert scheduled_start_str and scheduled_end_str to UTC if they exist
         if scheduled_start_local:
@@ -130,7 +128,7 @@ def schedule_job():
         return jsonify(jobs_schedule_data), 200
     except Exception as e:
         # Print error to server logs and return an error response to the client
-        print(f"Error inserting Job Schedules: {e}")
+        logger.error(f"Error inserting Job Schedules: {e}")
         return jsonify({"error": "Unable to retrieve Job Schedules"}), 500
 
 @jobs_bp.route("/api/jobs_schedule", methods=["GET"])
@@ -148,7 +146,7 @@ def get_jobs_schedule():
         return jsonify(jobs_schedule_data), 200
     except Exception as e:
         # Print error to server logs and return an error response to the client
-        print(f"Error retrieving Job Schedules: {e}")
+        logger.error(f"Error retrieving Job Schedules: {e}")
         return jsonify({"error": "Unable to retrieve Job Schedules"}), 500
     
 @jobs_bp.route("/api/jobs_schedule/check_job", methods=["POST"])
@@ -170,7 +168,7 @@ def check_job_schedule_exists():
         # Return the result as JSON
         return jsonify({"exists": exists}), 200
     except Exception as e:
-        print(f"Error checking Job Schedule: {e}")
+        logger.error(f"Error checking Job Schedule: {e}")
         return jsonify({"error": "Unable to check job schedule"}), 500
     
 @jobs_bp.route("/api/jobs/2yr", methods=["GET"])
@@ -185,5 +183,5 @@ def fetch_data_job_2yr():
 
     except Exception as e:
         # Log the error to the console and return a 500 error response to the client
-        print(f"Error retrieving two-year jobs data: {e}")
+        logger.error(f"Error retrieving two-year jobs data: {e}")
         return jsonify({"error": "Unable to retrieve jobs data for the last two years"}), 500

@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt
 from  functools import wraps
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 # Initialize Blueprint
 stocks_bp = Blueprint('stocks', __name__)
@@ -58,7 +59,7 @@ def get_stocks():
         return jsonify(stocks_data), 200
     except Exception as e:
         # Log any error that occurs during data retrieval
-        print(f"Error retrieving stock data: {e}")
+        logger.error(f"Error retrieving stock data: {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": "Unable to retrieve stock data"}), 500
@@ -80,7 +81,7 @@ def get_stock_by_ticker(ticker_symbol):
         return jsonify(stock_data), 200
     except Exception as e:
         # Log any error that occurs during data retrieval
-        print(f"Error retrieving stock data for ticker symbol '{ticker_symbol}': {e}")
+        logger.error(f"Error retrieving stock data for ticker symbol '{ticker_symbol}': {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": f"Unable to retrieve stock data"}), 500

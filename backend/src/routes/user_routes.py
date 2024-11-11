@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt
 from  functools import wraps
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 # Initialize Blueprint
 user_bp = Blueprint("user_bp", __name__)
@@ -85,7 +86,7 @@ def update_user():
         return jsonify({'message': 'User updated successfully'}), 200
     except Exception as e:
         # Log any error that occurs during the update process
-        print(f"Error updating user '{username}': {e}")
+        logger.error(f"Error updating user '{username}': {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({'error': 'Unable to update user'}), 500
@@ -116,7 +117,7 @@ def get_user_by_username(username):
         }), 200
     except Exception as e:
         # Log any error that occurs during data retrieval
-        print(f"Error getting user '{username}': {e}")
+        logger.error(f"Error getting user '{username}': {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({'error': 'Unable to get user'}), 500

@@ -1,9 +1,11 @@
+# scheduler.py
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timezone
 from .db_manager import DBManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(self):
@@ -18,12 +20,12 @@ class Scheduler:
         # Task to fetch data for a given job ID.
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
         datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
-        print(f"Fetching data for job ID: {job_id} at {datetime.now()}")
-        print("Prefix: %s", prefix)
-        print("Data Type: %s", job_type)
-        print("Job Type: %s", service)
-        print("Schedule Type: %s", frequency)
-        print("Timestamp: %s", datetime_obj)
+        logger.debug(f"Fetching data for job ID: {job_id} at {datetime.now()}")
+        logger.debug("Prefix: %s", prefix)
+        logger.debug("Data Type: %s", job_type)
+        logger.debug("Job Type: %s", service)
+        logger.debug("Schedule Type: %s", frequency)
+        logger.debug("Timestamp: %s", datetime_obj)
         
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
         
@@ -36,13 +38,13 @@ class Scheduler:
             
             self.polygon_fetcher.fetch_data_for_date_range(df_start, df_end)
             
-        print(result) 
+        logger.debug(result) 
         
     def schedule_existing_jobs(self):
         # Ensure the scheduler is started
         if not self.scheduler.running:
             self.scheduler.start()
-            print("Scheduler started.")
+            logger.debug("Scheduler started.")
         
         # Query the database for scheduled jobs
         jobs = self.db_manager.job_manager.select_all_job_schedules()
@@ -82,26 +84,26 @@ class Scheduler:
                     replace_existing=True
                 )
                 
-                # Retrieve the job to print its nexxt run time after a brief delay
+                # Retrieve the job to logger.debug its nexxt run time after a brief delay
                 scheduled_job = self.scheduler.get_job(job_id)
                 if scheduled_job:
                     if scheduled_job.next_run_time:
-                        print(f"Next Run Time for {job_id}: {scheduled_job.next_run_time}")
+                        logger.debug(f"Next Run Time for {job_id}: {scheduled_job.next_run_time}")
                     else:
-                        print(f"No next run time initialized yet for {job_id}")
+                        logger.debug(f"No next run time initialized yet for {job_id}")
                 else:
-                    print(f"{job_id} not found in the scheduler.")
+                    logger.debug(f"{job_id} not found in the scheduler.")
                 
     def start_scheduler(self):
         # Start the scheduler if it isn't running already
         if not self.scheduler.running:
             self.scheduler.start()
-            print("APScheduler started.")
+            logger.debug("APScheduler started.")
         
     def stop_scheduler(self):
         # Stop the scheduler
-        print("APScheduler Stopped.")
+        logger.debug("APScheduler Stopped.")
         self.scheduler.shutdown()
 
 if __name__ == "__main__":
-    print("Placeholder")
+    logger.debug("Placeholder")

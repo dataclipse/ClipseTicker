@@ -13,7 +13,8 @@ from sqlalchemy import (
     Index,
     func,
 )
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 class DBSchemaManager:
     def __init__(self):
@@ -33,7 +34,7 @@ class DBSchemaManager:
 
         # Set the path for the SQLite database file
         db_file_path = os.path.join("db", "nyse_data.db")
-        print("Database created and/or connected successfully at: %s", db_file_path) 
+        logger.debug("Database created and/or connected successfully at: %s", db_file_path) 
         return db_file_path
 
     def define_tables(self):

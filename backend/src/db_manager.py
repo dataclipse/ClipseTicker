@@ -9,8 +9,8 @@ from .db_management.api_key_manager import ApiKeyManager
 from .db_management.stock_manager import StockManager
 from .db_management.user_manager import UserManager
 from .db_management.scrape_manager import ScrapeManager 
-import logging
-
+import logging 
+logger = logging.getLogger(__name__)
 
 class DBManager:
     def __init__(self):
@@ -29,7 +29,7 @@ class DBManager:
 
         # Create the tables if they do no exist
         self.schema_manager.metadata.create_all(self.engine)
-        print("Tables created successfully, if they didn't exist.")
+        logger.debug("Tables created successfully, if they didn't exist.")
 
         # Create a session
         self.Session = sessionmaker(bind=self.engine)
@@ -83,10 +83,10 @@ class DBManager:
                     role=user["role"]
                 )
                 # Log a message indicating the default user has been created
-                print(f"Default {user['role']} user '{user['username']}' created.")
+                logger.debug(f"Default {user['role']} user '{user['username']}' created.")
             else:
                 # Log a message if the user already exists in the database
-                print(f"User '{user['username']}' already exists.")
+                logger.debug(f"User '{user['username']}' already exists.")
 
 if __name__ == "__main__":
-    print("Placeholder")
+    logger.debug("Placeholder")

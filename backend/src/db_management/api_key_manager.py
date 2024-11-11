@@ -1,6 +1,7 @@
 # db_management/api_key_manager.py
 from sqlalchemy import select, update, func
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 
 class ApiKeyManager:
@@ -33,13 +34,13 @@ class ApiKeyManager:
             
             # Confirm deletion or log if no key was found
             if result.rowcount > 0:
-                print(f"API key for {service} deleted successfully.")
+                logger.debug(f"API key for {service} deleted successfully.")
             else:
-                print(f"No API key found for {service}.")
+                logger.debug(f"No API key found for {service}.")
         except Exception as e:
             # Rollback if an error occurs and log the error
             session.rollback()
-            print(f"Error deleting API key for {service}: {e}")
+            logger.error(f"Error deleting API key for {service}: {e}")
         finally:
             # Close the session to free up resources
             session.close()
@@ -64,19 +65,19 @@ class ApiKeyManager:
                     .values(encrypted_api_key=encrypted_key, updated_at=func.now())
                 )
                 session.execute(update_stmt)
-                print(f"API key for {service} updated successfully.")
+                logger.debug(f"API key for {service} updated successfully.")
             else:
                 # Insert new API key if none exists for the service
                 insert_stmt = self.api_keys.insert().values(
                     service=service, encrypted_api_key=encrypted_key
                 )
                 session.execute(insert_stmt)
-                print(f"API key for {service} inserted successfully.")
+                logger.debug(f"API key for {service} inserted successfully.")
             session.commit()
         except Exception as e:
             # Rollback if an error occurs and log the error
             session.rollback()
-            print(f"Error inserting/updating API key for {service}: {e}")
+            logger.error(f"Error inserting/updating API key for {service}: {e}")
         finally:
             # Close the session to free up resources
             session.close()
@@ -95,15 +96,15 @@ class ApiKeyManager:
             if encrypted_key:
                 # Decrypt and return the API key if found
                 decrypted_key = self.decrypt_api_key(encrypted_key)
-                print(f"API key for {service}: {decrypted_key}")
+                logger.debug(f"API key for {service}: {decrypted_key}")
                 return decrypted_key
             else:
                 # Log if no API key is found for the service
-                print(f"No API key found for {service}.")
+                logger.debug(f"No API key found for {service}.")
                 return None
         except Exception as e:
             # Log any error that occurs
-            print(f"Error selecting API key for {service}: {e}")
+            logger.error(f"Error selecting API key for {service}: {e}")
             return None
         finally:
             # Close the session to free up resources
@@ -144,15 +145,15 @@ class ApiKeyManager:
             
             # Log the number of API keys retrieved or that none were found
             if not api_keys_list:
-                print("No API keys found.")
+                logger.debug("No API keys found.")
             else:
-                print(f"Retrieved {len(api_keys_list)} API keys.")
+                logger.debug(f"Retrieved {len(api_keys_list)} API keys.")
 
             # Return the list of API keys
             return api_keys_list
         except Exception as e:
             # Log any error that occurs
-            print(f"Error selecting all API keys: {e}")
+            logger.error(f"Error selecting all API keys: {e}")
             return []
         finally:
             # Close the session to free up resources

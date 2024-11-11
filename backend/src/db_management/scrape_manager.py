@@ -1,7 +1,9 @@
+# db_management/scrape_manager.py
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 class ScrapeManager:
     def __init__(self, session, scrape_table):
@@ -22,10 +24,10 @@ class ScrapeManager:
             
             # Commit the transaction to save changes in the database
             session.commit()
-            print(f"Batch insert of {len(stock_data_list)} records completed successfully.")
+            logger.debug(f"Batch insert of {len(stock_data_list)} records completed successfully.")
         except Exception as e:
             # Rollback the transaction if an error occurs to maintain data integrity
-            print(f"Error creating scrape batch: {e}")
+            logger.error(f"Error creating scrape batch: {e}")
             session.rollback()
         finally:
             # Close the session to free resources
@@ -52,10 +54,10 @@ class ScrapeManager:
             
             # Commit the transaction to save the changes in the database
             session.commit()
-            print(f"Scrape for {ticker_symbol} at {timestamp} created successfully.")
+            logger.debug(f"Scrape for {ticker_symbol} at {timestamp} created successfully.")
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error to maintain data integrity
-            print(f"Error creating scrape: {e}")
+            logger.error(f"Error creating scrape: {e}")
             session.rollback()
         finally:
             # Close the session to free resources
@@ -77,13 +79,13 @@ class ScrapeManager:
             scrapes_list = [dict(zip(column_names, row)) for row in scrapes] # Convert each row to a dictionary
             
             # Log the number of records retrieved
-            print(f"Retrieved {len(scrapes_list)} scrapes.")
+            logger.debug(f"Retrieved {len(scrapes_list)} scrapes.")
             
             # Return the list of scrape records as dictionaries
             return scrapes_list
         except SQLAlchemyError as e:
             # Log error if retrieval fails and return an empty list
-            print(f"Error retrieving scrapes: {e}")
+            logger.error(f"Error retrieving scrapes: {e}")
             return []
         finally:
             # Close the session to free resources
@@ -105,15 +107,15 @@ class ScrapeManager:
             # If a record is found, convert it to a dictionary with column names as keys
             if result:
                 scrape = dict(zip([column.name for column in self.stocks_scrape.columns], result))
-                print(f"Scrape for {ticker_symbol} at {timestamp} retrieved successfully.")
+                logger.debug(f"Scrape for {ticker_symbol} at {timestamp} retrieved successfully.")
                 return scrape # Return the scrape record as a dictionary
             else:
                 # Log if no matching record is found
-                print("Scrape not found.")
+                logger.debug("Scrape not found.")
                 return None
         except SQLAlchemyError as e:
             # Log any error that occurs during retrieval
-            print(f"Error retrieving scrape: {e}")
+            logger.error(f"Error retrieving scrape: {e}")
             return None
         finally:
             # Close the session to free resources
@@ -138,15 +140,15 @@ class ScrapeManager:
             
             # Check if any rows were affected by the update
             if result.rowcount > 0:
-                print(f"Scrape for {ticker_symbol} at {timestamp} updated successfully.")
+                logger.debug(f"Scrape for {ticker_symbol} at {timestamp} updated successfully.")
                 return True # Return True to indicate a successful update
             else:
                 # Log if no matching record was found for update
-                print("Scrape not found for update.")
+                logger.debug("Scrape not found for update.")
                 return False # Return False to indicate that no record was updated
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error to maintain data integrity
-            print(f"Error updating scrape: {e}")
+            logger.error(f"Error updating scrape: {e}")
             session.rollback()
             return False
         finally:
@@ -170,15 +172,15 @@ class ScrapeManager:
             
             # Check if any rows were affected by the delete operation
             if result.rowcount > 0:
-                print(f"Scrape for {ticker_symbol} at {timestamp} deleted successfully.")
+                logger.debug(f"Scrape for {ticker_symbol} at {timestamp} deleted successfully.")
                 return True # Return True to indicate a successful deletion
             else:
                 # Log if no matching record was found for deletion
-                print("Scrape not found for deletion.")
+                logger.debug("Scrape not found for deletion.")
                 return False # Return False to indicate that no record was deleted
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error to maintain data integrity
-            print(f"Error deleting scrape: {e}")
+            logger.error(f"Error deleting scrape: {e}")
             session.rollback()
             return False
         finally:

@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt
 from  functools import wraps
-import logging
+import logging 
+logger = logging.getLogger(__name__)
 
 # Initialize Blueprint
 api_key_bp = Blueprint('api_key', __name__)
@@ -59,7 +60,7 @@ def get_api_keys():
         return jsonify(api_keys_list)
     except Exception as e:
         # Log any error that occurs during the retrieval process
-        print(f"Error retrieving API keys: {e}")
+        logger.error(f"Error retrieving API keys: {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": "Unable to retrieve API keys"}), 500
@@ -84,7 +85,7 @@ def update_api_key(service):
         return jsonify({"message": "API Key updated successfully"}), 200
     except Exception as e:
         # Log any error that occurs during the update process
-        print(f"Error updating API key: {e}")
+        logger.error(f"Error updating API key: {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": "Unable to update API key"}), 500
@@ -101,7 +102,7 @@ def delete_api_key(service):
         return jsonify({"message": f"API key for {service} deleted successfully."}), 200
     except Exception as e:
         # Log any error that occurs during the deletion process
-        print(f"Error deleting API key for service {service}: {e}")
+        logger.error(f"Error deleting API key for service {service}: {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": "Unable to delete API key"}), 500
@@ -127,7 +128,7 @@ def add_api_key():
         return jsonify({"message": "API key added successfully"}), 201
     except Exception as e:
         # Log any error that occurs during the addition process
-        print(f"Error adding API key: {e}")
+        logger.error(f"Error adding API key: {e}")
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": "Unable to add API key"}), 500

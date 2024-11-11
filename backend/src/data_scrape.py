@@ -1,10 +1,11 @@
+# data_scrape.py
 import requests
 from .db_manager import DBManager
 import time
 import random
 from datetime import datetime
-import logging
-
+import logging 
+logger = logging.getLogger(__name__)
 
 # Endpoint URL for fetching stock data
 API_URL = "https://api.stockanalysis.com/api/screener/s/f?m=s&s=asc&c=s,revenue,marketCap,n,industry,price,change,volume,peRatio&cn=all&p=1&i=stocks&sc=s"
@@ -31,9 +32,9 @@ def fetch_and_store_stock_data():
                 data = response.json()
                 stock_list = data.get('data', {}).get('data',[])
                 
-                # Check if stock_list is a list, otherwise print an error and exit
+                # Check if stock_list is a list, otherwise logger.debug an error and exit
                 if not isinstance(stock_list, list):
-                    print("Unexpected format: stock_list is not a list.")
+                    logger.debug("Unexpected format: stock_list is not a list.")
                     return
                 
                 stock_data_list = [] # List to hold stock data dictionaries
@@ -54,7 +55,7 @@ def fetch_and_store_stock_data():
                 
                 # Insert all stock data into the database in a single batch
                 db_manager.scrape_manager.create_scrape_batch(stock_data_list)
-                print("Stock data stored successfully. Sleeping for ~1 minute")
+                logger.debug("Stock data stored successfully. Sleeping for ~1 minute")
                 
                 # Reset delay after a successful request and add a random variation to avoid exact intervals
                 delay = 60 + random.uniform(-10, 10)
@@ -62,24 +63,24 @@ def fetch_and_store_stock_data():
             except requests.exceptions.HTTPError as http_err:
                 # Handle HTTP errors, particularly rate limiting (status 429)
                 if response.status_code == 429:  # Too Many Requests
-                    print("Rate limit hit; backing off.")
+                    logger.error("Rate limit hit; backing off.")
                     delay = min(delay * 2, 600)  # Exponential backoff, max 10 minutes
                 else:
-                    print(f"HTTP error occurred: {http_err}")
+                    logger.error(f"HTTP error occurred: {http_err}")
             except requests.exceptions.RequestException as req_err:
                 # Handle other request errors (e.g., network issues)
-                print(f"Request error occurred: {req_err}")
+                logger.error(f"Request error occurred: {req_err}")
                 delay = min(delay * 2, 600)  # Exponential backoff, max 10 minutes
             
             # Wait for the defined delay before the next API call
             time.sleep(delay)
     except KeyboardInterrupt:
         # Handle manual interruption of the process
-        print("Execution interrupted by the user.")
+        logger.error("Execution interrupted by the user.")
     
     except requests.RequestException as e:
         # Log any other request-related exceptions that might not be caught in the loop
-        print(f"Error fetching data: {e}")
+        logger.error(f"Error fetching data: {e}")
 
 # Main function to coordinate the scraping process
 def main():
