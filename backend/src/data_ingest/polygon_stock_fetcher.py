@@ -3,28 +3,23 @@ import requests, threading, queue, time
 from ..db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import logging 
+logger = logging.getLogger(__name__)
 
 class PolygonStockFetcher:
     def __init__(self):
         # Initialize a connection to the database through DBManager
         self.database_connect = DBManager()
-        
         # Retrieve the API key for Polygon.io from the database
         self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")
-        
         # Set the base URL for Polygon.io's API
         self.base_url = "https://api.polygon.io"
-        
         # Set the maximum number of requests allowed per minute to prevent API rate limiting
         self.max_requests_per_minute = 5
-        
         # Define the limit for retrying failed requests
         self.retry_limit = 3
-        
         # Initialize a queue to manage API calls, ensuring rate limits are respected
         self.api_call_queue = queue.Queue()
-        
         # Initialize a queue to handle database inserts asynchronously
         self.db_insert_queue = queue.Queue()
 
@@ -48,20 +43,20 @@ class PolygonStockFetcher:
                 return data["results"]
             else:
                 # Print message if no data is available, likely due to market closure on the date
-                print(f"No stock data found for {date}.")
+                logger.info(f"No stock data found for {date}.")
                 return []
             
         # Handle rate limit errors (status code 429)
         elif response.status_code == 429:
             # Handle rate limit error (429 Too Many Requests)
-            print("Rate limit exceeded. Waiting for 60 seconds before retrying...")
+            logger.error("Rate limit exceeded. Waiting for 60 seconds before retrying...")
             time.sleep(60)  # Wait for 60 seconds before retrying
             return None
         
         # Handle other errors by printing the status and error message
         else:
             # If the response status is not 200, raise an error
-            print(f"Error fetching data: {response.status_code} - {response.text}")
+            logger.error(f"Error fetching data: {response.status_code} - {response.text}")
             return None
 
     def load_stock_data(self, stock_data_batch):
@@ -91,15 +86,11 @@ class PolygonStockFetcher:
                     # If limit is reached and not on the last date, wait for the remaining time
                     if not is_last_date and time_since_first_request < 60:
                         wait_time = 60 - time_since_first_request
-                        print(
-                            f"Reached request limit. Waiting for {wait_time:.2f} seconds..."
-                        )
+                        logger.info(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
                         time.sleep(wait_time)
 
                 # Submit the data fetch task to the ThreadPoolExecutor
-                futures.append(
-                    executor.submit(self.fetch_data_for_date, formatted_date)
-                )
+                futures.append(executor.submit(self.fetch_data_for_date, formatted_date))
 
                 # Log the request time and manage the request timing list for rate limiting
                 request_times.append(time.time())
@@ -114,7 +105,7 @@ class PolygonStockFetcher:
                 try:
                     future.result()  # Raises any exception that occurred during the task
                 except Exception as e:
-                    print(f"Error in fetching data: {e}")
+                    logger.error(f"Error in fetching data: {e}")
 
     def consumer_thread(self):
         # Consumer thread that batches and inserts stock data into the database
@@ -134,9 +125,7 @@ class PolygonStockFetcher:
                     # If buffer reaches batch size, insert data into the database
                     if len(buffer) >= batch_size:
                         self.load_stock_data(buffer) # Insert the batch
-                        print(
-                            f"Inserted {len(buffer)} stock entries into the database."
-                        )
+                        logger.info(f"Inserted {len(buffer)} stock entries into the database.")
                         buffer = [] # Clear the buffer after insertion
 
                 # Mark the task as done in the queue
@@ -146,9 +135,7 @@ class PolygonStockFetcher:
                 # If no data has been received within 60 seconds, insert remaining buffer
                 if buffer:
                     self.load_stock_data(buffer) # Insert remaining data
-                    print(
-                        f"Inserted {len(buffer)} remaining stock entries into the database."
-                    )
+                    logger.info(f"Inserted {len(buffer)} remaining stock entries into the database.")
                     buffer = [] # Clear the buffer after insertion
                 break  # Exit the consumer thread
 
@@ -163,30 +150,16 @@ class PolygonStockFetcher:
             # Place the data in db_insert_queue to be processed later by the consumer thread in batches
             self.db_insert_queue.put(stock_data)
 
-    def fetch_data_for_date_range(self, start_date, end_date):
+    def fetch_data_for_date_range(self, start_date, end_date, job_type, service, frequency, datetime_obj):
         # Fetch stock data for a specified date range using a producer-consumer threading model
-        
         start_time = time.time() # Start timer to track total runtime
-        job_name = f"Fetch Data for Date Range: {start_date} to {end_date}"
-        scheduled_start_time = datetime.now().replace(microsecond=0) # Current time as job start time
 
-        # Initialize job entry in the database with "Scheduled" status if it doesn't exist
-        self.job_init(job_name, scheduled_start_time, "Scheduled")
+        logger.info(f"Fetching stock data from {start_date} to {end_date}...")
 
-        # Update job status to "Running" and set start time in the database
-        self.database_connect.job_manager.update_job_status(
-            job_name, scheduled_start_time, "Running"
-        )
-        self.database_connect.job_manager.update_job_start_time(
-            job_name, scheduled_start_time, scheduled_start_time
-        )
-
-        print(f"Fetching stock data from {start_date} to {end_date}...")
-
+        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
+        
         # Initialize producer and consumer threads
-        producer = threading.Thread(
-            target=self.producer_thread, args=(start_date, end_date)
-        )
+        producer = threading.Thread(target=self.producer_thread, args=(start_date, end_date))
         consumer = threading.Thread(target=self.consumer_thread)
 
         # Start the threads
@@ -207,22 +180,14 @@ class PolygonStockFetcher:
         minutes, seconds = divmod(remainder, 60)
         formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
-        # Update job end time, run time, and set status to "Completed" in the database
-        self.database_connect.job_manager.update_job_end_time(
-            job_name, scheduled_start_time, datetime.now()
-        )
-        self.database_connect.job_manager.update_job_run_time(
-            job_name, scheduled_start_time, formatted_run_time
-        )
-        self.database_connect.job_manager.update_job_status(
-            job_name, scheduled_start_time, "Completed"
-        )
-
+        self.database_connect.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
+        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
+        
         # Log completion message with total time taken
-        print(f"Finished fetching data for date range {start_date} to {end_date}.")
-        print(f"Time Taken: {formatted_run_time}")
+        logger.info(f"Finished fetching data for date range {start_date} to {end_date}.")
+        logger.info(f"Time Taken: {formatted_run_time}")
 
-    def fetch_previous_two_years(self):
+    def fetch_previous_two_years(self, job_type, service, frequency, datetime_obj):
         # Start a timer to measure the runtime of the function
         start_time = time.time()
 
@@ -237,27 +202,12 @@ class PolygonStockFetcher:
         start_date_str = two_years_ago.strftime("%Y-%m-%d")
         end_date_str = end_date.strftime("%Y-%m-%d")
 
-        # Define the job name based on the date range and get the scheduled start time
-        job_name = f"Fetch Previous Two Years: {start_date_str} to {end_date_str}"
-        scheduled_start_time = datetime.now().replace(microsecond=0)
+        logger.info(f"Fetching data from {start_date_str} to {end_date_str}...")
 
-        # Initialize job in the database with status "Scheduled" if it doesn't exist
-        self.job_init(job_name, scheduled_start_time, "Scheduled")
-
-        # Update the job status to "Running" and record the start time in the database
-        self.database_connect.job_manager.update_job_status(
-            job_name, scheduled_start_time, "Running"
-        )
-        self.database_connect.job_manager.update_job_start_time(
-            job_name, scheduled_start_time, scheduled_start_time
-        )
-
-        print(f"Fetching data from {start_date_str} to {end_date_str}...")
+        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
 
         # Initialize producer and consumer threads for fetching and inserting data
-        producer = threading.Thread(
-            target=self.producer_thread, args=(start_date_str, end_date_str)
-        )
+        producer = threading.Thread(target=self.producer_thread, args=(start_date_str, end_date_str))
         consumer = threading.Thread(target=self.consumer_thread)
 
         # Start the producer and consumer threads
@@ -277,34 +227,9 @@ class PolygonStockFetcher:
         hours, remainder = divmod(total_time, 3600)
         minutes, seconds = divmod(remainder, 60)
         formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
-
-        # Update job end time, run time, and status to "Completed" in the database
-        self.database_connect.job_manager.update_job_end_time(
-            job_name, scheduled_start_time, datetime.now()
-        )
-        self.database_connect.job_manager.update_job_run_time(
-            job_name, scheduled_start_time, formatted_run_time
-        )
-        self.database_connect.job_manager.update_job_status(
-            job_name, scheduled_start_time, "Completed"
-        )
-
+        
+        self.database_connect.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
+        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
+        
         # Print the completion message and formatted runtime
-        print(f"Finished fetching data. Time Taken: {formatted_run_time}")
-
-    def job_init(self, job_name, scheduled_start_time, status):
-        # Check if a job entry with the same name and scheduled start time already exists
-        existing_job = self.database_connect.job_manager.select_job(
-            job_name, scheduled_start_time
-        )
-        if not existing_job:
-            # If the job does not exist, insert it with the provided status
-            self.database_connect.job_manager.insert_job(
-                job_name, scheduled_start_time, status
-            )
-        else:
-            # Log a message if the job entry already exists in the database
-            print(
-                f"Job '{job_name}' scheduled at {scheduled_start_time} already exists."
-            )
-
+        logger.info(f"Finished fetching data. Time Taken: {formatted_run_time}")

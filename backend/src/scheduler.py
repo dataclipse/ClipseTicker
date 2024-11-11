@@ -17,10 +17,7 @@ class Scheduler:
         self.db_manager = DBManager()
         self.polygon_fetcher = PolygonStockFetcher()
         self.sa_fetcher = StockAnalysisFetcher()
-        test_job_id = 'job-api_fetch-polygon_io-once-1732566840'
-        #self.fetch_scrape_data_task(test_job_id)
-        self.fetch_api_data_task(test_job_id)
-
+        
     def fetch_scrape_data_task(self, job_id):
         # Task to fetch data for a given job ID.
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
@@ -32,9 +29,7 @@ class Scheduler:
         logger.info("Schedule Type: %s", frequency)
         logger.info("Timestamp: %s", datetime_obj)
         #logger.info("Suffix: %s", interval_suffix)
-        
-        self.sa_fetcher.fetch_and_store_stock_data()
-            
+        #self.sa_fetcher.fetch_and_store_stock_data()
 
     def fetch_api_data_task(self, job_id):
         # Task to fetch data for a given job ID.
@@ -50,13 +45,14 @@ class Scheduler:
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
         
         if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] == None ):
-            self.polygon_fetcher.fetch_previous_two_years()
+            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_previous_two_years, args=(job_type, service, frequency, datetime_obj), daemon=True)
+            fetch_thread.start()
         
         if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] != None ):
             df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
             df_end = result['data_fetch_start_date'].strftime('%Y-%m-%d')
             
-            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end), daemon=True)
+            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end, job_type, service, frequency, datetime_obj), daemon=True)
             fetch_thread.start()
             
         logger.info(result) 
@@ -125,7 +121,7 @@ class Scheduler:
                     self.scheduler.add_job(
                         self.fetch_api_data_task,
                         trigger=trigger_start,
-                        args=[job],
+                        args=[job_id],
                         id=job_id,
                         replace_existing=True
                     )
@@ -134,9 +130,8 @@ class Scheduler:
                     # Schedule the job
                     self.scheduler.add_job(self.enable_interval, trigger=trigger_start, args=[job_id, job], id=job_id, replace_existing = True)
                     self.scheduler.add_job(self.disable_interval, trigger=trigger_start, args=[job], id=job_id, replace_existing = True)
-                    print('placeholder')
                 
-                # Retrieve the job to logger.debug its nexxt run time after a brief delay
+                # Retrieve the job to logger.debug its next run time after a brief delay
                 scheduled_job = self.scheduler.get_job(job_id)
                 if scheduled_job:
                     if scheduled_job.next_run_time:
