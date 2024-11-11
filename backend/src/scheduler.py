@@ -2,10 +2,13 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timezone
+import threading
 from .db_manager import DBManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
+from .data_ingest.stock_analysis_fetcher import StockAnalysisFetcher
 import logging 
 logger = logging.getLogger(__name__)
+
 
 class Scheduler:
     def __init__(self):
@@ -13,19 +16,36 @@ class Scheduler:
         self.scheduler = BackgroundScheduler()
         self.db_manager = DBManager()
         self.polygon_fetcher = PolygonStockFetcher()
-        #test_job_id = 'job-api_fetch-polygon_io-once-1732566840'
-        #self.fetch_data_task(test_job_id)
+        self.sa_fetcher = StockAnalysisFetcher()
+        test_job_id = 'job-api_fetch-polygon_io-once-1732566840'
+        #self.fetch_scrape_data_task(test_job_id)
+        self.fetch_api_data_task(test_job_id)
 
-    def fetch_data_task(self, job_id):
+    def fetch_scrape_data_task(self, job_id):
         # Task to fetch data for a given job ID.
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
         datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
-        logger.debug(f"Fetching data for job ID: {job_id} at {datetime.now()}")
-        logger.debug("Prefix: %s", prefix)
-        logger.debug("Data Type: %s", job_type)
-        logger.debug("Job Type: %s", service)
-        logger.debug("Schedule Type: %s", frequency)
-        logger.debug("Timestamp: %s", datetime_obj)
+        logger.info(f"Fetching data for job ID: {job_id} at {datetime.now()}")
+        logger.info("Prefix: %s", prefix)
+        logger.info("Data Type: %s", job_type)
+        logger.info("Job Type: %s", service)
+        logger.info("Schedule Type: %s", frequency)
+        logger.info("Timestamp: %s", datetime_obj)
+        #logger.info("Suffix: %s", interval_suffix)
+        
+        self.sa_fetcher.fetch_and_store_stock_data()
+            
+
+    def fetch_api_data_task(self, job_id):
+        # Task to fetch data for a given job ID.
+        prefix, job_type, service, frequency, timestamp = job_id.split('-')
+        datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
+        logger.info(f"Fetching data for job ID: {job_id} at {datetime.now()}")
+        logger.info("Prefix: %s", prefix)
+        logger.info("Data Type: %s", job_type)
+        logger.info("Job Type: %s", service)
+        logger.info("Schedule Type: %s", frequency)
+        logger.info("Timestamp: %s", datetime_obj)
         
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
         
@@ -36,9 +56,16 @@ class Scheduler:
             df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
             df_end = result['data_fetch_start_date'].strftime('%Y-%m-%d')
             
-            self.polygon_fetcher.fetch_data_for_date_range(df_start, df_end)
+            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end), daemon=True)
+            fetch_thread.start()
             
-        logger.debug(result) 
+        logger.info(result) 
+    
+    def disable_interval(self, job_id):
+        self.scheduler.remove_job(job_id)
+        
+    def enable_interval(self, job_id, job):
+        self.scheduler.add_job(self.fetch_scrape_data_task, 'interval', minutes=1, args=[job], id=f"{job_id}-interval_job", replace_existing=True)
         
     def schedule_existing_jobs(self):
         # Ensure the scheduler is started
@@ -52,18 +79,35 @@ class Scheduler:
         for job in jobs:
             # Convert scheduled_start_date to a UTC timestamp
             scheduled_start_datetime = job['scheduled_start_date']
+            scheduled_end_datetime = job['scheduled_end_date']
             
-            # If it's a string, convert it to a datetime object
+            # Convert string to datetime object and set to UTC timezone if necessary
             if isinstance(scheduled_start_datetime, str):
                 scheduled_start_datetime = datetime.strptime(scheduled_start_datetime, "%Y-%m-%d %H:%M:%S")
-            
-            # Convert to UTC if necessary and get the timestamp
             scheduled_start_datetime = scheduled_start_datetime.replace(tzinfo=timezone.utc)
             scheduled_start_timestamp = scheduled_start_datetime.timestamp()
             
+            # If the scheduled end datetime exists
+            if scheduled_end_datetime:
+                # Convert string to datetime object and set to UTC timezone if necessary
+                if isinstance(scheduled_end_datetime, str):
+                    scheduled_end_datetime = datetime.strptime(scheduled_end_datetime, "%Y-%m-%d %H:%M:%S")
+                scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=timezone.utc)
+                
+                # Set up trigger to stop the job
+                trigger_stop = CronTrigger(
+                    year=scheduled_end_datetime.year,
+                    month=scheduled_end_datetime.month,
+                    day=scheduled_end_datetime.day,
+                    hour=scheduled_end_datetime.hour,
+                    minute=scheduled_end_datetime.minute,
+                    second=scheduled_end_datetime.second,
+                    timezone=timezone.utc  
+                )
+            
             if scheduled_start_datetime > datetime.now(timezone.utc):
                 # Set up the trigger
-                trigger = CronTrigger(
+                trigger_start = CronTrigger(
                     year=scheduled_start_datetime.year,
                     month=scheduled_start_datetime.month,
                     day=scheduled_start_datetime.day,
@@ -72,23 +116,31 @@ class Scheduler:
                     second=scheduled_start_datetime.second,
                     timezone=timezone.utc  
                 )
+                
                 # Set up a unique job ID for each task in APScheduler
                 job_id = f"job-{job['job_type']}-{job['service']}-{job['frequency']}-{int(scheduled_start_timestamp)}"
-
-                # Schedule the job
-                self.scheduler.add_job(
-                    self.fetch_data_task,
-                    trigger=trigger,
-                    args=[job],
-                    id=job_id,
-                    replace_existing=True
-                )
+                
+                if job['job_type'] == 'api_fetch' and job['service'] == 'polygon_io':
+                    # Schedule the job
+                    self.scheduler.add_job(
+                        self.fetch_api_data_task,
+                        trigger=trigger_start,
+                        args=[job],
+                        id=job_id,
+                        replace_existing=True
+                    )
+                    
+                if job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis' and job['frequency'] == 'custom_schedule':
+                    # Schedule the job
+                    self.scheduler.add_job(self.enable_interval, trigger=trigger_start, args=[job_id, job], id=job_id, replace_existing = True)
+                    self.scheduler.add_job(self.disable_interval, trigger=trigger_start, args=[job], id=job_id, replace_existing = True)
+                    print('placeholder')
                 
                 # Retrieve the job to logger.debug its nexxt run time after a brief delay
                 scheduled_job = self.scheduler.get_job(job_id)
                 if scheduled_job:
                     if scheduled_job.next_run_time:
-                        logger.debug(f"Next Run Time for {job_id}: {scheduled_job.next_run_time}")
+                        logger.info(f"Next Run Time for {job_id}: {scheduled_job.next_run_time}")
                     else:
                         logger.debug(f"No next run time initialized yet for {job_id}")
                 else:

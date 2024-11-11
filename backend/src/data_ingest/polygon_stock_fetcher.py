@@ -3,13 +3,10 @@ import requests, threading, queue, time
 from ..db_manager import DBManager
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import logging 
-logger = logging.getLogger(__name__)
 
 
 class PolygonStockFetcher:
     def __init__(self):
-        
         # Initialize a connection to the database through DBManager
         self.database_connect = DBManager()
         
@@ -51,20 +48,20 @@ class PolygonStockFetcher:
                 return data["results"]
             else:
                 # Print message if no data is available, likely due to market closure on the date
-                logger.debug(f"No stock data found for {date}.")
+                print(f"No stock data found for {date}.")
                 return []
             
         # Handle rate limit errors (status code 429)
         elif response.status_code == 429:
             # Handle rate limit error (429 Too Many Requests)
-            logger.error("Rate limit exceeded. Waiting for 60 seconds before retrying...")
+            print("Rate limit exceeded. Waiting for 60 seconds before retrying...")
             time.sleep(60)  # Wait for 60 seconds before retrying
             return None
         
         # Handle other errors by printing the status and error message
         else:
             # If the response status is not 200, raise an error
-            logger.error(f"Error fetching data: {response.status_code} - {response.text}")
+            print(f"Error fetching data: {response.status_code} - {response.text}")
             return None
 
     def load_stock_data(self, stock_data_batch):
@@ -94,7 +91,9 @@ class PolygonStockFetcher:
                     # If limit is reached and not on the last date, wait for the remaining time
                     if not is_last_date and time_since_first_request < 60:
                         wait_time = 60 - time_since_first_request
-                        logger.debug(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
+                        print(
+                            f"Reached request limit. Waiting for {wait_time:.2f} seconds..."
+                        )
                         time.sleep(wait_time)
 
                 # Submit the data fetch task to the ThreadPoolExecutor
@@ -115,7 +114,7 @@ class PolygonStockFetcher:
                 try:
                     future.result()  # Raises any exception that occurred during the task
                 except Exception as e:
-                    logger.error(f"Error in fetching data: {e}")
+                    print(f"Error in fetching data: {e}")
 
     def consumer_thread(self):
         # Consumer thread that batches and inserts stock data into the database
@@ -135,7 +134,9 @@ class PolygonStockFetcher:
                     # If buffer reaches batch size, insert data into the database
                     if len(buffer) >= batch_size:
                         self.load_stock_data(buffer) # Insert the batch
-                        logger.debug(f"Inserted {len(buffer)} stock entries into the database.")
+                        print(
+                            f"Inserted {len(buffer)} stock entries into the database."
+                        )
                         buffer = [] # Clear the buffer after insertion
 
                 # Mark the task as done in the queue
@@ -145,7 +146,9 @@ class PolygonStockFetcher:
                 # If no data has been received within 60 seconds, insert remaining buffer
                 if buffer:
                     self.load_stock_data(buffer) # Insert remaining data
-                    logger.debug(f"Inserted {len(buffer)} remaining stock entries into the database.")
+                    print(
+                        f"Inserted {len(buffer)} remaining stock entries into the database."
+                    )
                     buffer = [] # Clear the buffer after insertion
                 break  # Exit the consumer thread
 
@@ -178,7 +181,7 @@ class PolygonStockFetcher:
             job_name, scheduled_start_time, scheduled_start_time
         )
 
-        logger.debug(f"Fetching stock data from {start_date} to {end_date}...")
+        print(f"Fetching stock data from {start_date} to {end_date}...")
 
         # Initialize producer and consumer threads
         producer = threading.Thread(
@@ -216,8 +219,8 @@ class PolygonStockFetcher:
         )
 
         # Log completion message with total time taken
-        logger.debug(f"Finished fetching data for date range {start_date} to {end_date}.")
-        logger.debug(f"Time Taken: {formatted_run_time}")
+        print(f"Finished fetching data for date range {start_date} to {end_date}.")
+        print(f"Time Taken: {formatted_run_time}")
 
     def fetch_previous_two_years(self):
         # Start a timer to measure the runtime of the function
@@ -249,7 +252,7 @@ class PolygonStockFetcher:
             job_name, scheduled_start_time, scheduled_start_time
         )
 
-        logger.debug(f"Fetching data from {start_date_str} to {end_date_str}...")
+        print(f"Fetching data from {start_date_str} to {end_date_str}...")
 
         # Initialize producer and consumer threads for fetching and inserting data
         producer = threading.Thread(
@@ -287,7 +290,7 @@ class PolygonStockFetcher:
         )
 
         # Print the completion message and formatted runtime
-        logger.debug(f"Finished fetching data. Time Taken: {formatted_run_time}")
+        print(f"Finished fetching data. Time Taken: {formatted_run_time}")
 
     def job_init(self, job_name, scheduled_start_time, status):
         # Check if a job entry with the same name and scheduled start time already exists
@@ -301,4 +304,7 @@ class PolygonStockFetcher:
             )
         else:
             # Log a message if the job entry already exists in the database
-            logger.debug(f"Job '{job_name}' scheduled at {scheduled_start_time} already exists.")
+            print(
+                f"Job '{job_name}' scheduled at {scheduled_start_time} already exists."
+            )
+
