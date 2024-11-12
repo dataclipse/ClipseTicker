@@ -22,11 +22,11 @@ export const formatRunTime = (run_time) => {
         formatted.push(part.replace("h", "h"));
       }
     } else if (part.includes("m")) {
-      // Include minutes, but if it’s zero, push "0"
+      // Include minutes, but if it’s zero, push "0m"
       if (part[0] !== "0") {
         formatted.push(part.replace("m", "m"));
       } else {
-        formatted.push("0");
+        formatted.push("0m");
       }
     } else if (part.includes("s")) {
       // Include seconds, removing any decimal points

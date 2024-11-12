@@ -80,7 +80,6 @@ class StockAnalysisFetcher:
         
         if result is not None: # If data was fetched successfully
             self.store_stock_data(result) # Store the fetched data
-        
 
     def fetch_and_store_stock_data_dep(self):
         delay = 60  # Initial delay set to 60 seconds

@@ -20,16 +20,19 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import { z } from "zod";
+import { useAuth } from "../context/auth_context";
+
 
 const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     // Access the current theme for styling
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
+    const { user } = useAuth();
 
     // State variables for managing form inputs
     const [jobType, setJobType] = useState(''); // Job type
     const [service, setService] = useState(''); // Service used for the job
-    const [owner, setOwner] = useState(''); // Job owner
+    const [owner, setOwner] = useState(user?.username); // Job owner
     const [dataFetchStartDate, setDataFetchStartDate] = useState(''); // Start date for data fetching
     const [dataFetchEndDate, setDataFetchEndDate] = useState(''); // End date for data fetching
     const [scheduledStartDate, setScheduledStartDate] = useState(''); // Job scheduled start date
@@ -156,7 +159,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
         // Reset each field only if it is not included in excludedFields
         if (!excludedFields.includes("jobType")) setJobType('');
         if (!excludedFields.includes("service")) setService('');
-        if (!excludedFields.includes("owner")) setOwner('');
+        if (!excludedFields.includes("owner")) setOwner(user?.username);
         if (!excludedFields.includes("dataFetchStartDate")) setDataFetchStartDate('');
         if (!excludedFields.includes("dataFetchEndDate")) setDataFetchEndDate('');
         if (!excludedFields.includes("scheduledStartDate")) setScheduledStartDate('');
@@ -439,7 +442,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                     }}
                     color={colors.redAccent[500]}
                 />
-                {jobType === 'data_scrape' && (
+                {jobType === 'data_scrape' && frequency === 'custom_schedule' && (
                     <TextField 
                         label="First Job Schedule End Date" 
                         type="date" 
@@ -470,7 +473,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                     slotProps={{ inputLabel: { shrink: true } }} 
                     color={colors.redAccent[500]}
                 />
-                {jobType === "data_scrape" && (
+                {jobType === "data_scrape" && frequency === 'custom_schedule' && (
                     <TextField 
                         label="First Job Schedule End Time" 
                         type="time" 

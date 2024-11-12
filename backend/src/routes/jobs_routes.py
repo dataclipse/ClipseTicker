@@ -86,6 +86,9 @@ def schedule_job():
         weekdays = data.get("selectedDaysJSON")
         timezone_str = data.get("currentTimezone")
         
+        if isinstance(interval_days, str):
+                interval_days = int(interval_days) if interval_days.isdigit() else None
+        
         # Combine date and time for start and end if both are provided
         scheduled_start_str = (
             datetime.strptime(f"{data['scheduledStartDate']} {data['scheduledStartTime']}", "%Y-%m-%d %H:%M")

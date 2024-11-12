@@ -48,8 +48,6 @@ else:
     with open(jwt_secret_key_file, "wb") as file:
         file.write(jwt_secret_key)
 
-
-
 # Login route for user authentication
 @app.route("/api/login", methods=["POST"])
 def login():
