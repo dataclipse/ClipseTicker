@@ -1,7 +1,7 @@
 # scheduler.py
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import threading
 from .db_manager import DBManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
@@ -41,17 +41,38 @@ class Scheduler:
         logger.info("Job Type: %s", service)
         logger.info("Schedule Type: %s", frequency)
         logger.info("Timestamp: %s", datetime_obj)
-        
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
-        
         if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] != None ):
             df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
             df_end = result['data_fetch_end_date'].strftime('%Y-%m-%d')
-            
             fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end, job_type, service, frequency, datetime_obj), daemon=True)
             fetch_thread.start()
-            
-        logger.info(result) 
+            if (result['frequency'] == 'recurring_daily'):
+                scheduled_start_date = result['scheduled_start_date']
+                data_fetch_start_date = result['data_fetch_start_date']
+                data_fetch_end_date = result['data_fetch_end_date']
+                if isinstance(scheduled_start_date, str):
+                    scheduled_start_date = datetime.strptime(scheduled_start_date, "%Y-%m-%d %H:%M:%S")
+                if isinstance(data_fetch_start_date, str):
+                    data_fetch_start_date = datetime.strptime(data_fetch_start_date, "%Y-%m-%d %H:%M:%S")
+                if isinstance(data_fetch_end_date, str):
+                    data_fetch_end_date = datetime.strptime(data_fetch_end_date, "%Y-%m-%d %H:%M:%S")
+                new_start_date = scheduled_start_date + timedelta(days=1)
+                new_data_fetch_start_date = data_fetch_start_date + timedelta(days=1)
+                new_data_fetch_end_date = data_fetch_end_date + timedelta(days=1)
+                create_new_schedule_iteration = self.db_manager.job_manager.insert_job_schedule(
+                    result['job_type'], 
+                    result['service'],
+                    result['owner'],
+                    result['frequency'], 
+                    new_start_date,
+                    None,
+                    new_data_fetch_start_date,
+                    new_data_fetch_end_date,
+                    None,
+                    None
+                )
+                logger.info(create_new_schedule_iteration)
     
     def disable_interval(self, job_id):
         self.scheduler.remove_job(job_id)

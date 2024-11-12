@@ -380,7 +380,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 </FormControl>
                 
                 {/* Data Fetch Type for one-time API fetch jobs */}
-                {frequency === "once" && jobType === "api_fetch" &&(
+                {jobType === "api_fetch" &&(
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Data Fetch Type</InputLabel>
                             <Select value={dataFetchType} onChange={handleDataFetchTypeChange} label='Data Fetch Type'>
