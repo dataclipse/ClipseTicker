@@ -35,45 +35,53 @@ class Scheduler:
         # Task to fetch data for a given job ID.
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
         datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
+        
         logger.info(f"Fetching data for job ID: {job_id} at {datetime.now()}")
-        logger.info("Prefix: %s", prefix)
-        logger.info("Data Type: %s", job_type)
-        logger.info("Job Type: %s", service)
-        logger.info("Schedule Type: %s", frequency)
-        logger.info("Timestamp: %s", datetime_obj)
+        logger.info("Prefix: %s, Data Type: %s, Job Type: %s, Schedule Type: %s, Timestamp: %s", prefix, job_type, service, frequency, datetime_obj)
+        
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
-        if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] != None ):
-            df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
-            df_end = result['data_fetch_end_date'].strftime('%Y-%m-%d')
-            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end, job_type, service, frequency, datetime_obj), daemon=True)
-            fetch_thread.start()
-            if (result['frequency'] == 'recurring_daily'):
-                scheduled_start_date = result['scheduled_start_date']
-                data_fetch_start_date = result['data_fetch_start_date']
-                data_fetch_end_date = result['data_fetch_end_date']
-                if isinstance(scheduled_start_date, str):
-                    scheduled_start_date = datetime.strptime(scheduled_start_date, "%Y-%m-%d %H:%M:%S")
-                if isinstance(data_fetch_start_date, str):
-                    data_fetch_start_date = datetime.strptime(data_fetch_start_date, "%Y-%m-%d %H:%M:%S")
-                if isinstance(data_fetch_end_date, str):
-                    data_fetch_end_date = datetime.strptime(data_fetch_end_date, "%Y-%m-%d %H:%M:%S")
-                new_start_date = scheduled_start_date + timedelta(days=1)
-                new_data_fetch_start_date = data_fetch_start_date + timedelta(days=1)
-                new_data_fetch_end_date = data_fetch_end_date + timedelta(days=1)
-                create_new_schedule_iteration = self.db_manager.job_manager.insert_job_schedule(
-                    result['job_type'], 
-                    result['service'],
-                    result['owner'],
-                    result['frequency'], 
-                    new_start_date,
-                    None,
-                    new_data_fetch_start_date,
-                    new_data_fetch_end_date,
-                    None,
-                    None
-                )
-                logger.info(create_new_schedule_iteration)
-    
+        
+        # Early exit if the conditions for data fetching are not met
+        if not (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date']):
+            return
+        
+        # Fetch data for the current date range
+        df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
+        df_end = result['data_fetch_end_date'].strftime('%Y-%m-%d')
+        
+        fetch_thread = threading.Thread(
+            target=self.polygon_fetcher.fetch_data_for_date_range,
+            args=(df_start, df_end, job_type, service, frequency, datetime_obj),
+            daemon=True
+        )
+        fetch_thread.start()
+        
+        # Proceed with scheduling new iterations only for recurring daily jobs
+        if result['frequency'] == 'recurring_daily':
+            # Helper function for date conversion
+            def parse_date(date_str):
+                return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S") if isinstance(date_str, str) else date_str
+            
+            # Update start and end dates by 1 day
+            new_start_date = parse_date(result['scheduled_start_date']) + timedelta(days=1)
+            new_data_fetch_start_date = parse_date(result['data_fetch_start_date']) + timedelta(days=1)
+            new_data_fetch_end_date = parse_date(result['data_fetch_end_date']) + timedelta(days=1)
+            
+            # Insert new job schedule iteration with updated dates
+            create_new_schedule_iteration = self.db_manager.job_manager.insert_job_schedule(
+                job_type=result['job_type'],
+                service=result['service'],
+                owner=result['owner'],
+                frequency=frequency,
+                scheduled_start_date=new_start_date,
+                scheduled_end_date=None,
+                data_fetch_start_date=new_data_fetch_start_date,
+                data_fetch_end_date=new_data_fetch_end_date,
+                interval_days=None,
+                weekdays=None
+            )
+            logger.info(f"Created new job schedule iteration: {create_new_schedule_iteration}")
+                
     def disable_interval(self, job_id):
         self.scheduler.remove_job(job_id)
         
