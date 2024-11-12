@@ -2,9 +2,9 @@
 import { Box, useTheme, Typography, Stack } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components/helper";
 
 // Stocks Component - Displays the latest stock data in a DataGrid format
@@ -12,6 +12,7 @@ import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components
 const Stocks = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [stocksData, setStocksData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,7 +92,7 @@ const Stocks = () => {
 
   // fetchData - Fetches the latest stock data from the API.
   // - Updates stock data every 10 seconds.
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/stocks", {
@@ -101,6 +102,13 @@ const Stocks = () => {
           "Content-Type": "application/json",
         },
       });
+
+      if (response.status === 401 ) {
+        // Unauthorized, redirect to login page
+        navigate("/login");
+        return;
+      }
+
       const data = await response.json();
 
       // Format data for DataGrid
@@ -119,14 +127,14 @@ const Stocks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  },[navigate]);
 
   // Set interval to refetch data every 10 seconds
   useEffect(() => {
     fetchData();
     const intervalId = setInterval(fetchData, 10000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
   return (
     <Box m="20px">

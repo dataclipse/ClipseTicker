@@ -14,6 +14,7 @@ import MuiAccordionSummary from '@mui/material/AccordionSummary';
 import MuiAccordionDetails from '@mui/material/AccordionDetails';
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { useNavigate } from "react-router-dom";
 
 
 // Jobs Component - Displays a list of jobs with actions for managing them.
@@ -21,6 +22,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 const Jobs = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [Jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
@@ -224,6 +226,11 @@ const Jobs = () => {
           "Content-Type": "application/json",
         },
       });
+      if (response.status === 401) {
+        // Unauthorized, redirect to login page
+        navigate("/login");
+        return;
+      }
       const data = await response.json();
       const formattedData = data.map((jobs, index) => ({
         id: index,
@@ -251,7 +258,7 @@ const Jobs = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     fetchData();

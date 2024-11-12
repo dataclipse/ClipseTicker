@@ -4,7 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ReactECharts from "echarts-for-react";
 import { getCandlestickChartOptions } from "../../components/echart_options";
 import {
@@ -20,6 +20,7 @@ const Stocks = () => {
   const { ticker } = useParams();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const navigate = useNavigate();
   const [stockDetails, setStockDetails] = useState([]);
   const [stockDetailsChartData, setStockDetailsChartData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,11 @@ const Stocks = () => {
           "Content-Type": "application/json",
         },
       });
+      if (response.status === 401 ) {
+        // Unauthorized, redirect to login page
+        navigate("/login");
+        return;
+      }
       const data = await response.json();
       
       // Format data for the chart
@@ -127,7 +133,7 @@ const Stocks = () => {
     } finally {
       setLoading(false);
     }
-  }, [ticker]);
+  }, [ticker, navigate]);
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {

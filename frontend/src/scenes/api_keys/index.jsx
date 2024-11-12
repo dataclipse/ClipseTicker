@@ -2,13 +2,14 @@
 import { Box, Stack, useTheme, Typography, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/header";
 import AddApiKeyModal from "../../components/add_api_key_modal";
 import EditApiKeyModal from "../../components/edit_api_key_modal";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
 
 
 const ApiKeys = () => {
@@ -20,7 +21,7 @@ const ApiKeys = () => {
   const [openApiKeyModal, setOpenApiKeyModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedApiKey, setSelectedApiKey] = useState(null);
-  
+  const navigate = useNavigate();
   // Handlers for opening and closing Add and Edit modals
   const handleOpenApiKeyModal = () => setOpenApiKeyModal(true);
   const handleCloseApiKeyModal = () => setOpenApiKeyModal(false);
@@ -94,7 +95,7 @@ const ApiKeys = () => {
   ];
 
   // Fetch API keys from the server
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/keys", {
@@ -104,6 +105,11 @@ const ApiKeys = () => {
           "Content-Type": "application/json",
         },
       });
+      if (response.status === 401) {
+        // Unauthorized, redirect to login page
+        navigate("/login");
+        return;
+      }
       const data = await response.json();
       const formattedData = data.map((api, index) => ({
         id: index,
@@ -118,7 +124,7 @@ const ApiKeys = () => {
     } finally {
       setLoading(false);
     }
-  };
+  },[navigate]);
 
   // Add API key handler
   const handleAddApiKey = async (service, api_key) => {
@@ -195,7 +201,7 @@ const ApiKeys = () => {
     fetchData();
     const intervalId = setInterval(fetchData, 30000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
   return (
     <Box m="20px">

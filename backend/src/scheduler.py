@@ -23,11 +23,7 @@ class Scheduler:
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
         datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
         logger.info(f"Fetching data for job ID: {job_id} at {datetime.now()}")
-        logger.info("Prefix: %s", prefix)
-        logger.info("Data Type: %s", job_type)
-        logger.info("Job Type: %s", service)
-        logger.info("Schedule Type: %s", frequency)
-        logger.info("Timestamp: %s", datetime_obj)
+        logger.info("Prefix: %s, Data Type: %s, Job Type: %s, Schedule Type: %s, Timestamp: %s", prefix, job_type, service, frequency, datetime_obj)
         #logger.info("Suffix: %s", interval_suffix)
         #self.sa_fetcher.fetch_and_store_stock_data()
 

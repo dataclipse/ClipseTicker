@@ -4,6 +4,7 @@ import { tokens } from "../../theme";
 import Header from "../../components/header";
 import { useAuth } from "../../context/auth_context";
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Profile Component - Allows users to view and update their profile information, including username, password, email,
 // currency preference, and theme preference.
@@ -12,7 +13,7 @@ const Profile = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const { user } = useAuth();
-
+    const navigate = useNavigate();
     const [currency, setCurrency] = useState("USD");
     const [themePreference, setThemePreference] = useState("");
     const [email, setEmail] = useState("");
@@ -34,7 +35,11 @@ const Profile = () => {
                     "Content-Type": "application/json",
                 },
             });
-
+            if (response.status === 401 ) {
+                // Unauthorized, redirect to login page
+                navigate("/login");
+                return;
+            }
             if (response.ok) {
                 const userData = await response.json();
                 // Populate state with user data
@@ -48,7 +53,7 @@ const Profile = () => {
         } catch (error) {
             console.error("Error fetching user profile:", error)
         }
-    }, [user.username]);
+    }, [user.username, navigate]);
 
     // Handlers for changing currency and theme preference, which update the respective state values.
     const handleCurrencyChange = (event) => {
