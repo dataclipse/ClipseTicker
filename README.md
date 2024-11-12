@@ -3,6 +3,9 @@
 ClipseTicker is a stock data aggregation application designed to fetch and manage historical OHLC (Open-High-Low-Close) data from the NYSE using the Polygon.io API. The application features a secure API key management system, role-based user authentication, and scheduling capabilities for data fetching jobs. It includes a Flask backend and a React frontend.
 
 ---
+## Example Screenshot (WIP)
+
+![example](https://github.com/user-attachments/assets/c1d00360-1554-47c3-90bf-f3dfbe3f685a)
 
 ## Features
 
