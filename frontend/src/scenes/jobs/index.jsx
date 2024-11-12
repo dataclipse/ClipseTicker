@@ -103,7 +103,24 @@ const Jobs = () => {
       renderHeader: () => (
         <Typography sx={{ fontWeight: "bold" }}>{"Status"}</Typography>
       ),
+      renderCell: (params) => (
+        <Typography
+          sx={{
+            fontWeight: "medium",
+            color: params.row.status === "Failed" ? colors.redAccent[500] : "inherit",
+            display: 'flex',
+            justifyContent: 'left',
+            alignItems: 'center',
+            width: '100%', 
+            height: '100%',
+            textAlign: 'left'
+          }}
+      >
+        {params.row.status}
+      </Typography>
+      ),
       flex: 0.6,
+      align: 'center', 
     },
     {
       field: "owner",
@@ -228,7 +245,7 @@ const Jobs = () => {
       setJobs(formattedData);
       setExpanded1(formattedData.some((job) => job.status === "Running"));
       setExpanded2(formattedData.some((job) => job.status === "Scheduled"));
-      setExpanded3(formattedData.some((job) => job.status === "Complete"));
+      setExpanded3(formattedData.some((job) => job.status === "Complete" || job.status === "Failed"));
     } catch (error) {
       console.error("Error fetching Jobs data:", error);
     } finally {
@@ -407,7 +424,7 @@ const Jobs = () => {
           </AccordionSummary>
           <AccordionDetails>
             <DataGrid
-              rows={Jobs.filter((job) => job.status === "Complete")}
+              rows={Jobs.filter((job) => job.status === "Complete" || job.status === "Failed")}
               columns={columns}
               loading={loading}
             />

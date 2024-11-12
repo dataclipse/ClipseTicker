@@ -8,20 +8,14 @@ logger = logging.getLogger(__name__)
 
 class PolygonStockFetcher:
     def __init__(self):
-        # Initialize a connection to the database through DBManager
-        self.database_connect = DBManager()
-        # Retrieve the API key for Polygon.io from the database
-        self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")
-        # Set the base URL for Polygon.io's API
-        self.base_url = "https://api.polygon.io"
-        # Set the maximum number of requests allowed per minute to prevent API rate limiting
-        self.max_requests_per_minute = 5
-        # Define the limit for retrying failed requests
-        self.retry_limit = 3
-        # Initialize a queue to manage API calls, ensuring rate limits are respected
-        self.api_call_queue = queue.Queue()
-        # Initialize a queue to handle database inserts asynchronously
-        self.db_insert_queue = queue.Queue()
+        self.database_connect = DBManager() # Initialize a connection to the database through DBManager
+        self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")# Retrieve the API key for Polygon.io from the database
+        self.base_url = "https://api.polygon.io"  # Set the base URL for Polygon.io's API
+        self.max_requests_per_minute = 5 # Set the maximum number of requests allowed per minute to prevent API rate limiting
+        self.retry_limit = 3 # Define the limit for retrying failed requests 
+        
+        self.api_call_queue = queue.Queue() # Initialize a queue to manage API calls, ensuring rate limits are respected
+        self.db_insert_queue = queue.Queue() # Initialize a queue to handle database inserts asynchronously
 
     def get_stock_data(self, date):
         # Refresh the API key to ensure the latest key is used for the request
@@ -51,7 +45,7 @@ class PolygonStockFetcher:
             # Handle rate limit error (429 Too Many Requests)
             logger.error("Rate limit exceeded. Waiting for 60 seconds before retrying...")
             time.sleep(60)  # Wait for 60 seconds before retrying
-            return None
+            return "RATE_LIMIT_EXCEEDED" # Return a special signal for a 429 error
         
         # Handle other errors by printing the status and error message
         else:
@@ -65,7 +59,7 @@ class PolygonStockFetcher:
             # Perform batch insertion to improve database operation efficiency
             self.database_connect.stock_manager.insert_stock_batch(stock_data_batch)
 
-    def producer_thread(self, start_date, end_date):
+    def producer_thread(self, start_date, end_date, rate_limit_counter):
         # Producer thread to fetch stock data concurrently for a date range
         current_date = datetime.strptime(start_date, "%Y-%m-%d")
         end_date = datetime.strptime(end_date, "%Y-%m-%d")
@@ -103,7 +97,12 @@ class PolygonStockFetcher:
             # Process completed tasks and handle any errors that occur in threads
             for future in as_completed(futures):
                 try:
-                    future.result()  # Raises any exception that occurred during the task
+                    result = future.result()  # Raises any exception that occurred during the task
+                    if result == "RATE_LIMIT_EXCEEDED":
+                        rate_limit_counter["count"] += 1
+                        if rate_limit_counter["count"] >= 15:
+                            logger.error("Exceeded maximum rate limit retries (15). Exiting.")
+                            return "RATE_LIMIT_FAILURE"
                 except Exception as e:
                     logger.error(f"Error in fetching data: {e}")
 
@@ -158,8 +157,10 @@ class PolygonStockFetcher:
 
         self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
         
+        rate_limit_counter = {"count": 0}  # Initialize rate limit counter
+        
         # Initialize producer and consumer threads
-        producer = threading.Thread(target=self.producer_thread, args=(start_date, end_date))
+        producer = threading.Thread(target=self.producer_thread, args=(start_date, end_date, rate_limit_counter))
         consumer = threading.Thread(target=self.consumer_thread)
 
         # Start the threads
@@ -168,6 +169,12 @@ class PolygonStockFetcher:
 
         # Wait for producer to finish and ensure consumer has processed all data
         producer.join() # Wait for producer to finish
+        if rate_limit_counter["count"] >= 15:
+            # Exit with a failure message if rate limit count exceeded
+            logger.error("Job failed due to excessive rate limiting.")
+            self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Failed')
+            return
+        
         self.db_insert_queue.join() # Ensure all items in queue are processed by the consumer
         consumer.join() # Wait for consumer to finish processing
 
@@ -186,50 +193,3 @@ class PolygonStockFetcher:
         # Log completion message with total time taken
         logger.info(f"Finished fetching data for date range {start_date} to {end_date}.")
         logger.info(f"Time Taken: {formatted_run_time}")
-
-    def fetch_previous_two_years(self, job_type, service, frequency, datetime_obj):
-        # Start a timer to measure the runtime of the function
-        start_time = time.time()
-
-        # Get today's date and calculate the date two years ago (plus one day for range inclusion)
-        today = datetime.now()
-        two_years_ago = (today - timedelta(days=365 * 2)) + timedelta(days=1)
-
-        # Set the end date as yesterday to avoid fetching today’s incomplete data
-        end_date = today - timedelta(days=1)
-
-        # Format dates to 'YYYY-MM-DD' string for API compatibility
-        start_date_str = two_years_ago.strftime("%Y-%m-%d")
-        end_date_str = end_date.strftime("%Y-%m-%d")
-
-        logger.info(f"Fetching data from {start_date_str} to {end_date_str}...")
-
-        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
-
-        # Initialize producer and consumer threads for fetching and inserting data
-        producer = threading.Thread(target=self.producer_thread, args=(start_date_str, end_date_str))
-        consumer = threading.Thread(target=self.consumer_thread)
-
-        # Start the producer and consumer threads
-        producer.start()
-        consumer.start()
-
-        # Wait for the producer to finish and ensure the consumer processes all data
-        producer.join() # Wait for producer thread to finish fetching
-        self.db_insert_queue.join() # Ensure all queued data is processed by consumer
-        consumer.join() # Wait for consumer thread to finish
-
-        # Calculate the total runtime
-        end_time = time.time()
-        total_time = end_time - start_time
-
-        # Format runtime into hours, minutes, and seconds for readability
-        hours, remainder = divmod(total_time, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
-        
-        self.database_connect.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
-        self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
-        
-        # Print the completion message and formatted runtime
-        logger.info(f"Finished fetching data. Time Taken: {formatted_run_time}")

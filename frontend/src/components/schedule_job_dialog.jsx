@@ -1,6 +1,6 @@
 // src/components/schedule_job_dialog.jsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Box,
     Dialog, 
@@ -21,7 +21,7 @@ import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
 import { z } from "zod";
 
-const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
+const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     // Access the current theme for styling
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -172,6 +172,31 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
         if (!excludedFields.includes("dataFetchDateError")) setDataFetchDateError('');
     };
 
+    const calculateDataFetchDates = useCallback(() => {
+        const today = new Date();
+        let startDate, endDate;
+
+        // Set endDate to yesterday
+        endDate = new Date(today);
+        endDate.setDate(today.getDate() - 1); // Subtract 1 day from today's date
+
+        if (dataFetchType === "2yrs_data") {
+            startDate = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+            startDate.setDate(startDate.getDate() + 1);
+            // Format dates as needed
+            setDataFetchStartDate(startDate.toISOString().split('T')[0]); // Set start date for data fetch
+            setDataFetchEndDate(endDate.toISOString().split('T')[0]); // Set end date for data fetch
+        } else if (dataFetchType === "2wk_data") {
+            startDate = new Date(endDate);
+            startDate.setDate(endDate.getDate() - 15);
+            // Format dates and set
+            setDataFetchStartDate(startDate.toISOString().split('T')[0]); // Set start date for data fetch
+            setDataFetchEndDate(endDate.toISOString().split('T')[0]); // Set end date for data fetch
+        } else {
+            return;
+        }
+    }, [dataFetchType]); // Dependency array includes dataFetchType
+
     // Handlers for date changes
     const handleStartDateChange = (event) => {
         const newStartDate = event.target.value;
@@ -230,7 +255,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
     
     // Handle changes to data fetch type
     const handleDataFetchTypeChange = (event) => {
-        setDataFetchType(event.target.value)
+        setDataFetchType(event.target.value);
     };
 
     // Handle submission of the form data to the backend API
@@ -246,6 +271,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
 
         // Convert selected days to JSON for transmission
         const selectedDaysJSON = JSON.stringify(selectedDays);
+
         // Send a POST request to the API endpoint with job scheduling data
         fetch("/api/jobs_schedule", {
             method: "POST",
@@ -291,11 +317,17 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
             setPrimaryKeyFail("A schedule with this configuration already exists at this start date. Unable to schedule.")
             return;
         }
-
         // Proceed to schedule the job and close the dialog
         handleFetch();
         clearFields();
     };
+
+    // Ensure the dates are calculated correctly if the datatype changes
+    useEffect(() => {
+        if (dataFetchType) {
+            calculateDataFetchDates();
+        }
+    }, [dataFetchType, calculateDataFetchDates]);
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -352,7 +384,8 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit }) => {
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Data Fetch Type</InputLabel>
                             <Select value={dataFetchType} onChange={handleDataFetchTypeChange} label='Data Fetch Type'>
-                                <MenuItem value="date_range">Date Range</MenuItem>
+                                <MenuItem value="date_range">Custom Date Range</MenuItem>
+                                <MenuItem value="2wk_data">Relative 2 Week Data Fetch</MenuItem>
                                 <MenuItem value="2yrs_data">Max Data Fetch (2 Years Data, ~3 hour run time)</MenuItem>
                             </Select>
                     </FormControl>

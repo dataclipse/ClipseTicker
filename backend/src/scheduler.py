@@ -44,13 +44,9 @@ class Scheduler:
         
         result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
         
-        if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] == None ):
-            fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_previous_two_years, args=(job_type, service, frequency, datetime_obj), daemon=True)
-            fetch_thread.start()
-        
         if (result['job_type'] == 'api_fetch' and result['service'] == 'polygon_io' and result['data_fetch_start_date'] != None ):
             df_start = result['data_fetch_start_date'].strftime('%Y-%m-%d')
-            df_end = result['data_fetch_start_date'].strftime('%Y-%m-%d')
+            df_end = result['data_fetch_end_date'].strftime('%Y-%m-%d')
             
             fetch_thread = threading.Thread(target=self.polygon_fetcher.fetch_data_for_date_range, args=(df_start, df_end, job_type, service, frequency, datetime_obj), daemon=True)
             fetch_thread.start()
