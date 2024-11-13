@@ -1,6 +1,6 @@
 // src/scenes/global/topbar.jsx
 import { Box, IconButton, useTheme } from "@mui/material";
-import { useContext, useState } from "react";
+import { useContext, useState, useMemo } from "react";
 import { ColorModeContext, tokens } from "../../theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
@@ -21,6 +21,9 @@ const Topbar = () => {
   const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Memoized check for login page
+  const isLoginPage = useMemo(() => location.pathname === "/login", [location.pathname]);
 
   // Handle opening the user menu
   const handleMenu = (event) => {
@@ -44,9 +47,6 @@ const Topbar = () => {
     handleClose();
   }
 
-  // Check if the current page is the login page
-  const isLoginPage = location.pathname === "/login";
-
   return (
     <Box display="flex" justifyContent="space-between" p={2}>
       {/* Left side of the topbar (currently empty but structured for future additions) */}
@@ -69,16 +69,14 @@ const Topbar = () => {
 
         {/* Notifications and user menu are hidden on the login page */}
         {!isLoginPage && (
-          <IconButton>
-            <NotificationsOutlinedIcon />
-          </IconButton>
-        )}
-
-        {/* User profile icon opens a dropdown menu */}
-        {!isLoginPage && (
-          <IconButton onClick={handleMenu}>
-            <PersonOutlinedIcon />
-          </IconButton>
+          <>
+            <IconButton>
+              <NotificationsOutlinedIcon />
+            </IconButton>
+            <IconButton onClick={handleMenu}>
+              <PersonOutlinedIcon />
+            </IconButton>
+          </>
         )}
 
         {/* User dropdown menu with Profile and Logout options */}
@@ -97,9 +95,9 @@ const Topbar = () => {
           sx={{ mt: '35px' }}
           open={Boolean(anchorEl)}
           onClose={handleClose}
-          >
-            <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        >
+          <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Box>
     </Box>
