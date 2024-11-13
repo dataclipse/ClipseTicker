@@ -318,106 +318,51 @@ class Scheduler:
         for job in jobs:
             # Convert to UTC datetime
             scheduled_start_datetime = job['scheduled_start_date']
-            
-            # Convert string to datetime and set to UTC if necessary
             if isinstance(scheduled_start_datetime, str):
-                scheduled_start_datetime = datetime.strptime(scheduled_start_datetime, "%Y-%m-%d %H:%M:%S")
-            scheduled_start_datetime = scheduled_start_datetime.replace(tzinfo=timezone.utc)
-            scheduled_start_timestamp = scheduled_start_datetime.timestamp()
+                scheduled_start_datetime = datetime.strptime(scheduled_start_datetime, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             
-            # Create a unique job ID for each task
+            # Ensure scheduled_start_datetime is timezone-aware
+            if scheduled_start_datetime.tzinfo is None:
+                scheduled_start_datetime = scheduled_start_datetime.replace(tzinfo=timezone.utc)
+
+            scheduled_start_timestamp = scheduled_start_datetime.timestamp()
             job_id = f"job-{job['job_type']}-{job['service']}-{job['frequency']}-{int(scheduled_start_timestamp)}"
             
-            # Check if any jobs need to be restarted due to system restart or failure
-            if (
-                scheduled_start_datetime < datetime.now(timezone.utc) and 
-                job['status'] == 'Running' and 
-                job['job_type'] == 'api_fetch' and
-                job['service'] == 'polygon_io' 
-            ):
-                # Restart the API fetch job from the beginning
-                self.scheduler.add_job(
-                    self.fetch_api_data_task,
-                    trigger=DateTrigger(run_date=(datetime.now() + timedelta(seconds=30))),
-                    args=[job_id],
-                    id=job_id,
-                    replace_existing=True
-                )
-                logger.info(f"Restarted API fetch task with job ID: {job_id} due to running status.")
-                # Log a list of current Jobs for debug purposes
-                self.list_scheduled_jobs()
-                continue  # Skip the rest of the loop for this job
+            # Check if the job needs to be restarted
+            if scheduled_start_datetime < datetime.now(timezone.utc):
+                # Handle API fetch jobs
+                if job['job_type'] == 'api_fetch' and job['service'] == 'polygon_io':
+                    if job['status'] in ['Running', 'Scheduled']:
+                        self.scheduler.add_job(
+                            self.fetch_api_data_task,
+                            trigger=DateTrigger(run_date=(datetime.now(timezone.utc) + timedelta(seconds=30))),
+                            args=[job_id],
+                            id=job_id,
+                            replace_existing=True
+                        )
+                        logger.info(f"Restarted API fetch task with job ID: {job_id}.")
+                # Handle data scrape jobs
+                elif job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis':
+                    if job['status'] in ['Running', 'Scheduled']:
+                        scheduled_end_datetime = job.get('scheduled_end_date')
+                        if scheduled_end_datetime and isinstance(scheduled_end_datetime, str):
+                            scheduled_end_datetime = datetime.strptime(scheduled_end_datetime, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                        # Ensure scheduled_end_datetime is timezone-aware
+                        if scheduled_end_datetime.tzinfo is None:
+                            scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=timezone.utc)
+                        # Check if the scheduled end date is in the future
+                        if scheduled_end_datetime > datetime.now(timezone.utc):
+                            self.scheduler.add_job(
+                                self.enable_interval,
+                                trigger=DateTrigger(run_date=(datetime.now(timezone.utc) + timedelta(seconds=30))),
+                                args=[job_id],
+                                id=job_id,
+                                replace_existing=True
+                            )
+                            logger.info(f"Scheduled enable interval for data scrape task with job ID: {job_id}.")
             
-            # Check if scheduled_start_datetime is in the past and status is 'scheduled' and was not started due to system restart or failure
-            if (
-                scheduled_start_datetime < datetime.now(timezone.utc) and 
-                job['status'] == 'Scheduled' and 
-                job['job_type'] == 'api_fetch' and
-                job['service'] == 'polygon_io'
-            ):
-                # Restart the API fetch job from the beginning
-                self.scheduler.add_job(
-                    self.fetch_api_data_task,
-                    trigger=DateTrigger(run_date=(datetime.now() + timedelta(seconds=30))),
-                    args=[job_id],
-                    id=job_id,
-                    replace_existing=True
-                )
-                logger.info(f"Restarted API fetch task with job ID: {job_id}.")
-                # Log a list of current Jobs for debug purposes
-                self.list_scheduled_jobs()
-                continue  # Skip the rest of the loop for this job
-            
-            # Check if any jobs need to be restarted due to system restart or failure
-            if (
-                scheduled_start_datetime < datetime.now(timezone.utc) and
-                (job['status'] == 'Running' or job['status'] == 'Scheduled') and
-                job['job_type'] == 'data_scrape' and
-                job['service'] == 'stock_analysis' and
-                job.get('scheduled_end_date')
-            ):
-                # Check if the end date is in the future
-                scheduled_end_datetime = job['scheduled_end_date']
-                if isinstance(scheduled_end_datetime, str):
-                    scheduled_end_datetime = datetime.strptime(scheduled_end_datetime, "%Y-%m-%d %H:%M:%S")
-                scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=timezone.utc)
-                
-                if scheduled_end_datetime > datetime.now(timezone.utc):
-                    # Schedule the enable_interval function to manage recurring tasks
-                    self.scheduler.add_job(
-                        self.enable_interval,
-                        trigger=DateTrigger(run_date=(datetime.now() + timedelta(seconds=30))),
-                        args=[job_id],
-                        id=job_id,
-                        replace_existing=True
-                    )
-                    logger.info(f"Scheduled enable interval for data scrape task with job ID: {job_id}.")
-                    # Log a list of current Jobs for debug purposes
-                    self.list_scheduled_jobs()
-                continue  # Skip the rest of the loop for this job
-            
-            # Check if scheduled_start_datetime is in the past and status is 'scheduled' and was not started due to system restart or failure  
-            if (
-                scheduled_start_datetime < datetime.now(timezone.utc) and
-                job['status'] == 'Scheduled' and
-                job['job_type'] == 'data_scrape' and
-                job['service'] == 'stock_analysis'
-            ):
-                self.scheduler.add_job(
-                    self.enable_interval,
-                    trigger=DateTrigger(run_date=(datetime.now() + timedelta(seconds=30))),
-                    args=[job_id],
-                    id=job_id,
-                    replace_existing=True
-                )
-                logger.info(f"Scheduled single fetch for data scrape task with job ID: {job_id}.")
-                # Log a list of current Jobs for debug purposes
-                self.list_scheduled_jobs()
-                continue  # Skip the rest of the loop for this job
-                
             # Only schedule jobs with a start date in the future
             if scheduled_start_datetime > datetime.now(timezone.utc):
-                # Define a cron trigger for the job's scheduled start time
                 trigger_start = CronTrigger(
                     year=scheduled_start_datetime.year,
                     month=scheduled_start_datetime.month,
@@ -427,31 +372,18 @@ class Scheduler:
                     second=scheduled_start_datetime.second,
                     timezone=timezone.utc  
                 )
-                
+                # Schedule API fetch jobs
                 if job['job_type'] == 'api_fetch' and job['service'] == 'polygon_io':
-                    # Schedule the job based on its type and service
                     self.scheduler.add_job(self.fetch_api_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
                     logger.info(f"Scheduled API fetch task with job ID: {job_id}")
-                    
-                if job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis' and job['frequency'] == 'custom_schedule':
-                    # Check frequency to determine if it's a custom schedule
-                    self.scheduler.add_job(self.enable_interval, trigger=trigger_start, args=[job_id], id=job_id, replace_existing = True)
-                    logger.info(f"Scheduled data scrape task with job ID: {job_id}")
-                
-                if job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis' and job['frequency'] != 'custom_schedule':
-                    # Check frequency to determine if it is a single data scrape request
-                    self.scheduler.add_job(self.fetch_scrape_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
-                    logger.info(f"Scheduled data scrape task with job ID: {job_id}")
-                    
-                # Retrieve and log the next run time of the scheduled job
-                scheduled_job = self.scheduler.get_job(job_id)
-                if scheduled_job:
-                    if scheduled_job.next_run_time:
-                        logger.info(f"Next Run Time for {job_id}: {scheduled_job.next_run_time}")
+                # Schedule data scrape jobs
+                elif job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis':
+                    if job['frequency'] == 'custom_schedule':
+                        self.scheduler.add_job(self.enable_interval, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
+                        logger.info(f"Scheduled data scrape task with job ID: {job_id}")
                     else:
-                        logger.debug(f"No next run time initialized yet for {job_id}")
-                else:
-                    logger.debug(f"{job_id} not found in the scheduler.")
+                        self.scheduler.add_job(self.fetch_scrape_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
+                        logger.info(f"Scheduled data scrape task with job ID: {job_id}")
             
             # Log a list of current Jobs for debug purposes
             self.list_scheduled_jobs()
