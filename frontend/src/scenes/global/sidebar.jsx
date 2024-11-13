@@ -50,6 +50,13 @@ const Sidebar = () => {
   const [selected, setSelected] = useState("Dashboard");
   const { user } = useAuth();
 
+  // Define sidebar items
+  const sidebarItems = [
+    { title: "Dashboard", to: "/", icon: <HomeOutlinedIcon /> },
+    { title: "Stocks", to: "/stocks", icon: <ShowChartIcon /> },
+    { title: "Job Scheduler", to: "/jobs", icon: <WorkIcon /> },
+  ];
+
   return (
     <Box sx={{ display: "flex" }}>
       <Drawer
@@ -62,7 +69,6 @@ const Sidebar = () => {
           },
         }}
       >
-
         {/* Sidebar content */}
         <Box
           sx={{
@@ -72,7 +78,6 @@ const Sidebar = () => {
             height: "100%",
           }}
         >
-
           {/* Application title */}
           <Box mb="25px">
             <Typography
@@ -86,12 +91,7 @@ const Sidebar = () => {
           </Box>
 
           {/* User profile image */}
-          <Box
-            mb="10px"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-          >
+          <Box mb="10px" display="flex" justifyContent="center" alignItems="center">
             <img
               alt="profile-user"
               width="50px"
@@ -103,12 +103,7 @@ const Sidebar = () => {
 
           {/* User name and role display */}
           <Box textAlign="center">
-            <Typography
-              variant="h4"
-              color={colors.grey[100]}
-              fontWeight="bold"
-              sx={{ m: "1px 0 0 0" }}
-            >
+            <Typography variant="h4" color={colors.grey[100]} fontWeight="bold" sx={{ m: "1px 0 0 0" }}>
               {user?.username}
             </Typography>
             <Typography variant="h5" color={colors.greenAccent[500]}>
@@ -126,6 +121,8 @@ const Sidebar = () => {
               setSelected={setSelected}
             />
           </List>
+
+          {/* Markets section header */}
           <Typography
             variant="h6"
             fontWeight={"bold"}
@@ -135,14 +132,19 @@ const Sidebar = () => {
             Markets
           </Typography>
           <List>
-            <Item
-              title="Stocks"
-              to="/stocks"
-              icon={<ShowChartIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
+            {sidebarItems.slice(1, 2).map((item) => ( // Only include "Stocks" here
+              <Item
+                key={item.title}
+                title={item.title}
+                to={item.to}
+                icon={item.icon}
+                selected={selected}
+                setSelected={setSelected}
+              />
+            ))}
           </List>
+
+          {/* Data section header */}
           <Typography
             variant="h6"
             color={colors.grey[300]}
@@ -152,13 +154,16 @@ const Sidebar = () => {
             Data
           </Typography>
           <List>
-            <Item
-              title="Job Scheduler"
-              to="/jobs"
-              icon={<WorkIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
+            {sidebarItems.slice(2).map((item) => ( // Only include "Job Scheduler" here
+              <Item
+                key={item.title}
+                title={item.title}
+                to={item.to}
+                icon={item.icon}
+                selected={selected}
+                setSelected={setSelected}
+              />
+            ))}
           </List>
 
           {/* Settings section, only visible to Admin users */}

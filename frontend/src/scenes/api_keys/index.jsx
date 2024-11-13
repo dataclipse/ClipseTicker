@@ -22,6 +22,7 @@ const ApiKeys = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedApiKey, setSelectedApiKey] = useState(null);
   const navigate = useNavigate();
+  
   // Handlers for opening and closing Add and Edit modals
   const handleOpenApiKeyModal = useCallback(() => setOpenApiKeyModal(true), []);
   const handleCloseApiKeyModal = useCallback(() => setOpenApiKeyModal(false), []);
@@ -31,6 +32,7 @@ const ApiKeys = () => {
   }, []);
   const handleCloseEditModal = useCallback(() => setOpenEditModal(false), []);
 
+  // Function to fetch data with authorization
   const fetchWithAuth = useCallback(async (url, options) => {
     const token = localStorage.getItem("auth_token");
     const response = await fetch(url, {
@@ -48,6 +50,7 @@ const ApiKeys = () => {
     return response;
   }, [navigate]);
 
+  // Fetch API keys data
   const fetchData = useCallback(async () => {
     try {
       const response = await fetchWithAuth("/api/keys", { method: "GET" });
@@ -67,6 +70,7 @@ const ApiKeys = () => {
     }
   }, [fetchWithAuth]); 
 
+  // Handler for adding a new API key
   const handleAddApiKey = useCallback(async (newApiKey) => {
     try {
       const response = await fetchWithAuth(`/api/keys`, {
@@ -83,8 +87,9 @@ const ApiKeys = () => {
     } catch (error) {
       console.error("Error adding API key:", error);
     }
-  }, [fetchData, fetchWithAuth]);
+  }, [fetchData, fetchWithAuth, handleCloseApiKeyModal]);
 
+  // Handler for updating an existing API key
   const handleUpdateApiKey = useCallback(async (service, updatedApiKey) => {
     try {
       const response = await fetchWithAuth(`/api/keys/${service}`, {
@@ -101,8 +106,9 @@ const ApiKeys = () => {
     } catch (error) {
       console.error("Error updating API key:", error);
     }
-  }, [fetchData, fetchWithAuth]);
+  }, [fetchData, fetchWithAuth, handleCloseEditModal]);
 
+  // Handler for deleting an API key
   const handleDeleteApiKey = useCallback(async (service) => {
     try {
       const response = await fetchWithAuth(`/api/keys/${service}`, {
@@ -180,7 +186,7 @@ const ApiKeys = () => {
       ),
       flex: 0.5,
     },
-  ], [colors.redAccent, handleDeleteApiKey]);
+  ], [colors.redAccent, handleDeleteApiKey, handleOpenEditModal]);
 
   // Fetch data on component mount and refresh every 30 seconds
   useEffect(() => {
