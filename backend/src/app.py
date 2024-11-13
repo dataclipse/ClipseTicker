@@ -15,6 +15,10 @@ from datetime import datetime, timedelta, timezone
 import logging 
 import logging.handlers
 import sys
+import time
+
+# Set UTC for asctime
+logging.Formatter.converter = time.gmtime
 
 logging.basicConfig(
     level=logging.INFO,
@@ -137,9 +141,6 @@ def main():
     try:
         scheduler.start_scheduler()
         scheduler.schedule_existing_jobs()
-        #test_job_id = 'job-api_fetch-polygon_io-once-1732566840'
-        #self.fetch_scrape_data_task(test_job_id)
-        #scheduler.fetch_api_data_task(test_job_id)
         app.run(debug=True)
         
     except KeyboardInterrupt:
