@@ -37,123 +37,134 @@ const Jobs = () => {
   const handleCloseScheduleJobDialog = useCallback(() => setOpenScheduleJobDialog(false), []);
   const { user } = useAuth();
 
-  const columns = useMemo(() =>[
-    {
-      field: "job_type",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Job Type"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "service",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Service"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "status",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Status"}</Typography>
-      ),
-      renderCell: (params) => (
-        <Typography
-          sx={{
-            fontWeight: "medium",
-            color: params.row.status === "Failed" ? colors.redAccent[500] : "inherit",
-            display: 'flex',
-            justifyContent: 'left',
-            alignItems: 'center',
-            width: '100%', 
-            height: '100%',
-            textAlign: 'left'
-          }}
-      >
-        {params.row.status}
-      </Typography>
-      ),
-      flex: 0.6,
-      align: 'center', 
-    },
-    {
-      field: "owner",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Owner"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "frequency",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Frequency"}</Typography>
-      ),
-      flex: 0.6,
-    },
-    {
-      field: "scheduled_start_date",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Scheduled Start Date"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "scheduled_end_date",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Scheduled End Date"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "data_fetch_start_date",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch Start Date"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "data_fetch_end_date",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch End Date"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "interval_days",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Interval Days"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "weekdays",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Days of the Week"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "run_time",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Run Time"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "created_at",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Created At"}</Typography>
-      ),
-      flex: 0.5,
-    },
-    {
-      field: "updated_at",
-      renderHeader: () => (
-        <Typography sx={{ fontWeight: "bold" }}>{"Updated At"}</Typography>
-      ),
-      flex: 0.5,
-    }
-  ], [colors.redAccent]);
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState({
+    data_fetch_start_date: false,
+    data_fetch_end_date: false,
+    interval_days: false,
+    weekdays: false,
+  });
+
+  const columns = useMemo(() => { 
+    const baseColumns = [
+      {
+        field: "job_type",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Job Type"}</Typography>
+        ),
+        flex: 0.4,
+      },
+      {
+        field: "service",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Service"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "status",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Status"}</Typography>
+        ),
+        renderCell: (params) => (
+          <Typography
+            sx={{
+              fontWeight: "medium",
+              color: params.row.status === "Failed" ? colors.redAccent[500] : "inherit",
+              display: 'flex',
+              justifyContent: 'left',
+              alignItems: 'center',
+              width: '100%', 
+              height: '100%',
+              textAlign: 'left'
+            }}
+        >
+          {params.row.status}
+        </Typography>
+        ),
+        flex: 0.4,
+        align: 'center', 
+      },
+      {
+        field: "owner",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Owner"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "frequency",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Frequency"}</Typography>
+        ),
+        flex: 0.6,
+      },
+      {
+        field: "scheduled_start_date",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Scheduled Start Date"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "scheduled_end_date",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Scheduled End Date"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "data_fetch_start_date",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch Start Date"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "data_fetch_end_date",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch End Date"}</Typography>
+        ),
+        flex: 0.5,
+        hide: true,
+      },
+      {
+        field: "interval_days",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Interval Days"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "weekdays",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Days of the Week"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "run_time",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Run Time"}</Typography>
+        ),
+        flex: 0.4,
+      },
+      {
+        field: "created_at",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Created At"}</Typography>
+        ),
+        flex: 0.5,
+      },
+      {
+        field: "updated_at",
+        renderHeader: () => (
+          <Typography sx={{ fontWeight: "bold" }}>{"Updated At"}</Typography>
+        ),
+        flex: 0.5,
+      }
+    ];
+    return baseColumns;
+  }, [colors.redAccent]);
 
   const AccordionComponent = ({ title, filterCondition }) => (
     <Accordion 
@@ -192,13 +203,17 @@ const Jobs = () => {
           rows={Jobs.filter((job) => job.status === filterCondition)}
           columns={columns}
           loading={loading}
+          columnVisibilityModel={columnVisibilityModel}
+          onColumnVisibilityModelChange={(newModel) =>
+            setColumnVisibilityModel(newModel)
+          }
         />
       </AccordionDetails>
     </Accordion>
   );
 
   // Memoize AccordionComponent to prevent unnecessary re-renders
-  const MemoizedAccordionComponent = useCallback(AccordionComponent, [Jobs, loading, colors.blueAccent, colors.primary, columns, expandedPanels]);
+  const MemoizedAccordionComponent = useCallback(AccordionComponent, [Jobs, loading, colors.blueAccent, colors.primary, columns, expandedPanels, columnVisibilityModel]);
 
   const Accordion = styled((props) => (
     <MuiAccordion disableGutters elevation={0} square {...props} />
