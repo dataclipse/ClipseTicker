@@ -1,5 +1,5 @@
 // src/components/edit_api_key_modal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   TextField,
@@ -18,7 +18,12 @@ const EditApiKeyModal = ({ open, onClose, apiKey, onSubmit }) => {
   // Access the theme and color tokens for consistent styling
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
+  
+  // Update local state when apiKey prop changes
+  useEffect(() => {
+    setApiKey(apiKey?.api_key || "");
+  }, [apiKey]);
+  
   // Handler for submitting the updated API key
   const handleSubmit = () => {
     // Submit the new API key only if the service name and API key are provided
@@ -47,6 +52,7 @@ const EditApiKeyModal = ({ open, onClose, apiKey, onSubmit }) => {
           fullWidth
           label="API Key"
           defaultValue={apiKey?.api_key}
+          value={api_key}
           onChange={(e) => setApiKey(e.target.value)}
           margin="normal"
           color={colors.redAccent[500]}
@@ -58,12 +64,19 @@ const EditApiKeyModal = ({ open, onClose, apiKey, onSubmit }) => {
           variant="contained"
           onClick={onClose}
           sx={{ backgroundColor: colors.grey[500] }}
+          aria-label="Cancel editing"
         >
           Cancel
         </Button>
 
         {/* Button to submit the updated API key */}
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleSubmit}
+          disabled={!api_key} // Disable if api_key is empty
+          aria-label="Update API Key"
+        >
           Update Key
         </Button>
       </DialogActions>

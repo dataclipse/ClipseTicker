@@ -7,13 +7,15 @@ const Header = ({ title, subtitle }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  const titleColor = colors.grey[100]
+
   return (
     // Box component for layout and spacing
     <Box mb="30px">
       {/* Title displayed with larger, bold typography */}
       <Typography
         variant="h2"
-        color={tokens(useTheme().palette.mode).grey[100]}
+        color={titleColor}
         fontWeight="bold"
         sx={{ mb: "5px" }}
       >

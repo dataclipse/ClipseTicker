@@ -113,12 +113,7 @@ export const getCandlestickChartOptions = (
       {
         type: "candlestick",
         name: ticker,
-        data: stockDetailsChartData.map((stock) => [
-          stock.open,
-          stock.close,
-          stock.low,
-          stock.high,
-        ]),
+        data: stockDetailsChartData.map(({ open, close, low, high }) => [open, close, low, high]),
         itemStyle: {
           color: colors.redAccent[500],
           color0: colors.greenAccent[700],
