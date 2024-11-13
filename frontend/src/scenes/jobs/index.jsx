@@ -6,7 +6,7 @@ import { tokens } from "../../theme";
 import Header from "../../components/header";
 import ScheduleJobDialog from "../../components/schedule_job_dialog";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import { formatRunTime } from "../../components/helper";
+import { formatRunTime, convertToLocalTime, formatString, parseWeekdays } from "../../components/helper";
 import { useAuth } from "../../context/auth_context";
 import { styled } from '@mui/material/styles';
 import MuiAccordion from '@mui/material/Accordion';
@@ -233,36 +233,6 @@ const Jobs = () => {
     borderTop: '1px solid rgba(0, 0, 0, .125)',
   }));
 
-  // Converts UTC date string to local timezone string
-  const convertToLocalTime = (utcDateString) => {
-    // Check if the date string is valid
-    if (!utcDateString) return "";
-
-    // Attempt to create a date object from the UTC string
-    const date = new Date(utcDateString);
-
-    // Check if the date is valid
-    if (isNaN(date.getTime())) {
-      return ""; // Return fallback if date parsing fails
-    }
-
-    // Convert to local timezone string if valid
-    return date.toLocaleString(); 
-  };
-
-  function formatString(inputString) {
-    return inputString.replace(/_/g, ' ').toLowerCase().replace(/\b\w+\b/g, word => word === 'api' ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)); 
-  };
-
-  function parseWeekdays(weekdaysStr) {
-    try {
-        const weekdaysArray = JSON.parse(weekdaysStr); // Parse JSON string into an array
-        return weekdaysArray.join(", "); // Convert array to CSV format
-    } catch (error) {
-        return weekdaysStr; // Return the original string if parsing fails
-    }
-  };
-  
   const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem("auth_token");

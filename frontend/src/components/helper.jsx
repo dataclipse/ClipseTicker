@@ -110,3 +110,28 @@ export const formatDateChart = (unix_timestamp) => {
     unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
   return new Date(timestamp);
 };
+
+// Converts UTC date string to local timezone string
+export const convertToLocalTime = (utcDateString) => {
+  if (!utcDateString) return "";
+  const date = new Date(utcDateString);
+  if (isNaN(date.getTime())) {
+    return ""; // Return fallback if date parsing fails
+  }
+  return date.toLocaleString(); 
+};
+
+// Formats a string by replacing underscores and capitalizing words
+export function formatString(inputString) {
+  return inputString.replace(/_/g, ' ').toLowerCase().replace(/\b\w+\b/g, word => word === 'api' ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)); 
+};
+
+// Parses a JSON string of weekdays into a CSV format
+export function parseWeekdays(weekdaysStr) {
+  try {
+    const weekdaysArray = JSON.parse(weekdaysStr); // Parse JSON string into an array
+    return weekdaysArray.join(", "); // Convert array to CSV format
+  } catch (error) {
+    return weekdaysStr; // Return the original string if parsing fails
+  }
+}
