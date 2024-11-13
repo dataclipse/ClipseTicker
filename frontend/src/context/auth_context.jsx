@@ -11,41 +11,42 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null)
     const navigate = useNavigate();
     
-    // Login function to set user data and store credentials in localStorage
-    const login = (token, role, username ) => {
-        // Update user state with token, role, and username
-        setUser({ token, role, username });
-
+    // Function to handle setting user data and localStorage
+    const setUserData = (token, role, username) => {
+        const userData = { token, role, username };
+        setUser(userData);
         // Store user data in localStorage for persistent authentication
-        localStorage.setItem("auth_token", token);
-        localStorage.setItem("auth_role", role);
-        localStorage.setItem("auth_username", username);
+        Object.entries(userData).forEach(([key, value]) => {
+            localStorage.setItem(`auth_${key}`, value);
+        });
     };
 
-    // Logout function to clear user data and navigate to the login page
+    // Login function
+    const login = (token, role, username) => {
+        setUserData(token, role, username);
+    };
+
+    // Logout function
     const logout = () => {
-        // Clear user state
         setUser(null);
-
-        // Remove user data from localStorage to end the session
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_role");
-        localStorage.removeItem("auth_username");
-
-        // Redirect to the login page
+        // Remove user data from localStorage
+        ["token", "role", "username"].forEach(key => {
+            localStorage.removeItem(`auth_${key}`);
+        });
         navigate("/login");
-    }; 
+    };
 
     // useEffect to check for stored user data in localStorage on initial load
     useEffect(() => {
-        // Retrieve stored authentication data
-        const storedToken = localStorage.getItem("auth_token");
-        const storedRole = localStorage.getItem("auth_role");
-        const storedUsername = localStorage.getItem("auth_username");
+        const storedUser = {
+            token: localStorage.getItem("auth_token"),
+            role: localStorage.getItem("auth_role"),
+            username: localStorage.getItem("auth_username"),
+        };
         
         // Set user state if token is found, restoring the session
-        if (storedToken) {
-            setUser({ token: storedToken, role: storedRole, username: storedUsername });
+        if (storedUser.token) {
+            setUser(storedUser);
         }        
     }, []);
 
