@@ -2,7 +2,7 @@
 import { Box, useTheme, Typography, Stack } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../components/header";
 import { Link, useNavigate } from "react-router-dom";
 import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components/helper";
@@ -17,7 +17,7 @@ const Stocks = () => {
   const [loading, setLoading] = useState(true);
 
   // Column definitions for DataGrid
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: "ticker_symbol",
       renderHeader: () => (
@@ -88,11 +88,11 @@ const Stocks = () => {
       ),
       flex: 1,
     },
-  ];
+  ], [colors]);
 
   // fetchData - Fetches the latest stock data from the API.
-  // - Updates stock data every 10 seconds.
   const fetchData = useCallback(async () => {
+    setLoading(true); // Set loading to true before fetching
     try {
       const token = localStorage.getItem("auth_token");
       const response = await fetch("/api/stocks", {
@@ -103,15 +103,12 @@ const Stocks = () => {
         },
       });
 
-      if (response.status === 401 ) {
-        // Unauthorized, redirect to login page
+      if (response.status === 401) {
         navigate("/login");
         return;
       }
 
       const data = await response.json();
-
-      // Format data for DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
         ticker_symbol: stock.ticker_symbol,
@@ -125,14 +122,14 @@ const Stocks = () => {
     } catch (error) {
       console.error("Error fetching Stocks data:", error);
     } finally {
-      setLoading(false);
+      setLoading(false); // Set loading to false after fetching
     }
-  },[navigate]);
+  }, [navigate]);
 
-  // Set interval to refetch data every 10 seconds
+  // Set interval to refetch data every 30 seconds
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 10000);
+    const intervalId = setInterval(fetchData, 30000);
     return () => clearInterval(intervalId);
   }, [fetchData]);
 
