@@ -194,12 +194,12 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     }, [formState.dataFetchType]); // Dependency array includes formState.dataFetchType
 
     // Handlers for date changes
-    const handleDateChange = (field, value, validateFunc) => {
+    const handleDateChange = useCallback((field, value, validateFunc) => {
         updateFormState(field, value);
         validateFunc(value, formState[field === 'scheduledStartDate' ? 'scheduledEndDate' : 'scheduledStartDate'], (error) => {
             updateFormState(field === 'scheduledStartDate' ? 'dateError' : 'dataFetchDateError', error);
         }, true);
-    };
+    }, [formState]);
 
     const handleStartDateChange = (e) => handleDateChange('scheduledStartDate', e.target.value, validateDateRange);
     const handleEndDateChange = (e) => handleDateChange('scheduledEndDate', e.target.value, validateDateRange);
@@ -207,7 +207,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     const handleDataFetchEndDateChange = (e) => handleDateChange('dataFetchEndDate', e.target.value, validateDateRange);
 
     // Handle checkbox changes for day selection
-    const handleCheckboxChange = (day) => {
+    const handleCheckboxChange = useCallback((day) => {
         setFormState(prevState => {
             const newSelectedDays = prevState.selectedDays.includes(day)
                 ? prevState.selectedDays.filter((d) => d !== day) // Remove day if already selected
@@ -218,7 +218,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 selectedDays: newSelectedDays, // Update selectedDays in formState
             };
         });
-    };
+    }, []);
 
     // Handle submission of the form data to the backend API
     const handleFetch = () => {
