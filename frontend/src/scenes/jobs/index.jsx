@@ -1,5 +1,5 @@
 // src/scenes/jobs/index.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Button, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
@@ -26,14 +26,58 @@ const Jobs = () => {
   const [Jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openScheduleJobDialog, setOpenScheduleJobDialog] = useState(false)
-  const [expanded1, setExpanded1] = useState(false);
-  const [expanded2, setExpanded2] = useState(false);
-  const [expanded3, setExpanded3] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState({
+    Running: false,
+    Scheduled: false,
+    Complete: false,
+  });
 
   // Opens and closes the modals for adding or scheduling jobs
   const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
   const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
   const { user } = useAuth();
+
+  const AccordionComponent = ({ title, filterCondition }) => (
+    <Accordion 
+      expanded={expandedPanels[filterCondition]}
+      onChange={() => setExpandedPanels(prev => ({ ...prev, [filterCondition]: !prev[filterCondition] }))}
+      m="40px 0 0 0"
+      display="flex"
+      sx={{
+        "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+              backgroundColor: colors.primary[500]
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiPaginationItem-root": {
+              borderTop: "none",
+              backgroundColor: `${colors.blueAccent[700]} !important`,
+            },
+            backgroundColor: colors.primary[500]
+      }}
+    >
+      <AccordionSummary aria-controls={`${filterCondition}-content`} id={`${filterCondition}-header`}>
+        <Typography sx={{ fontWeight: "bold" }}>{title}</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <DataGrid
+          rows={Jobs.filter((job) => job.status === filterCondition)}
+          columns={columns}
+          loading={loading}
+        />
+      </AccordionDetails>
+    </Accordion>
+  );
 
   const Accordion = styled((props) => (
     <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -85,7 +129,7 @@ const Jobs = () => {
     return date.toLocaleString(); 
   };
 
-  const columns = [
+  const columns = useMemo(() =>[
     {
       field: "job_type",
       renderHeader: () => (
@@ -201,7 +245,7 @@ const Jobs = () => {
       ),
       flex: 0.5,
     }
-  ];
+  ], [colors.redAccent]);
 
   function formatString(inputString) {
     return inputString.replace(/_/g, ' ').toLowerCase().replace(/\b\w+\b/g, word => word === 'api' ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)); 
@@ -250,9 +294,6 @@ const Jobs = () => {
         updated_at: jobs.updated_at,
       }));
       setJobs(formattedData);
-      setExpanded1(formattedData.some((job) => job.status === "Running"));
-      setExpanded2(formattedData.some((job) => job.status === "Scheduled"));
-      setExpanded3(formattedData.some((job) => job.status === "Complete" || job.status === "Failed"));
     } catch (error) {
       console.error("Error fetching Jobs data:", error);
     } finally {
@@ -264,18 +305,14 @@ const Jobs = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleAccordionChange1 = (panel) => (isExpanded) => {
-    setExpanded1(isExpanded ? panel === 'panel1' && expanded1 === false : false)
-  };
-  
-  const handleAccordionChange2 = (panel) => (isExpanded) => {
-    setExpanded2(isExpanded ? panel === 'panel2' && expanded2 === false : false)
-  };
-  
-  const handleAccordionChange3 = (panel) => (isExpanded) => {
-    setExpanded3(isExpanded ? panel === 'panel3' && expanded3 === false : false)
-  };
-  
+  useEffect(() => {
+    setExpandedPanels({
+      Running: Jobs.filter(job => job.status === "Running").length > 0,
+      Scheduled: Jobs.filter(job => job.status === "Scheduled").length > 0,
+      Complete: Jobs.filter(job => job.status === "Complete").length > 0,
+    });
+  }, [Jobs]);
+
 
   return (
     <Box m="20px">
@@ -307,136 +344,11 @@ const Jobs = () => {
       </Box>
 
       {/* Modal Components */}
-      <ScheduleJobDialog
-        open={openScheduleJobDialog}
-        onClose={handleCloseScheduleJobDialog}
-      />
-        <Accordion 
-          expanded={expanded1 === true}
-          onChange={handleAccordionChange1('panel1')}
-          m="40px 0 0 0"
-          display="flex"
-          sx={{
-            "& .MuiDataGrid-root": {
-              border: "none",
-            },
-            "& .MuiDataGrid-cell": {
-              borderBottom: "none",
-              backgroundColor: colors.primary[500]
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              borderBottom: "none",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-virtualScroller": {
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiPaginationItem-root": {
-              borderTop: "none",
-              backgroundColor: `${colors.blueAccent[700]} !important`,
-            },
-            backgroundColor: colors.primary[500]
-          }}
-        >
-          <AccordionSummary
-            aria-controls="panel1a-content"
-            id="panel1a-header"
-          >
-            <Typography sx={{ fontWeight: "bold" }}>Running Jobs</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <DataGrid
-              rows={Jobs.filter((job) => job.status === "Running")}
-              columns={columns}
-              loading={loading}
-            />
-          </AccordionDetails>
-        </Accordion>
-        <Accordion 
-          expanded={expanded2 === true}
-          onChange={handleAccordionChange2('panel2')}
-          m="40px 0 0 0"
-          display="flex"
-          sx={{
-            "& .MuiDataGrid-root": {
-              border: "none",
-            },
-            "& .MuiDataGrid-cell": {
-              borderBottom: "none",
-              backgroundColor: colors.primary[500]
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              borderBottom: "none",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-virtualScroller": {
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiPaginationItem-root": {
-              borderTop: "none",
-              backgroundColor: `${colors.blueAccent[700]} !important`,
-            },
-            backgroundColor: colors.primary[500]
-          }}
-        >
-          <AccordionSummary
-            aria-controls="panel2a-content"
-            id="panel2a-header"
-          >
-            <Typography sx={{ fontWeight: "bold" }}>Scheduled Jobs</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <DataGrid
-              rows={Jobs.filter((job) => job.status === "Scheduled")}
-              columns={columns}
-              loading={loading}
-            />
-          </AccordionDetails>
-        </Accordion>
-        <Accordion 
-          expanded={expanded3 === true}
-          onChange={handleAccordionChange3('panel3')}
-          m="40px 0 0 0"
-          display="flex"
-          sx={{
-            "& .MuiDataGrid-root": {
-              border: "none",
-            },
-            "& .MuiDataGrid-cell": {
-              borderBottom: "none",
-              backgroundColor: colors.primary[500]
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              borderBottom: "none",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-virtualScroller": {
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiPaginationItem-root": {
-              borderTop: "none",
-              backgroundColor: `${colors.blueAccent[700]} !important`,
-            },
-            backgroundColor: colors.primary[500]
-          }}
-        >
-          <AccordionSummary
-            aria-controls="panel3a-content"
-            id="panel3a-header"
-          >
-            <Typography sx={{ fontWeight: "bold" }}>Completed Jobs</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <DataGrid
-              rows={Jobs.filter((job) => job.status === "Complete" || job.status === "Failed")}
-              columns={columns}
-              loading={loading}
-            />
-          </AccordionDetails>
-        </Accordion>
+      <ScheduleJobDialog open={openScheduleJobDialog} onClose={handleCloseScheduleJobDialog} />
+
+      <AccordionComponent title="Running Jobs" filterCondition="Running" />
+      <AccordionComponent title="Scheduled Jobs" filterCondition="Scheduled" />
+      <AccordionComponent title="Completed Jobs" filterCondition="Complete" />
     </Box>
   );
 };
