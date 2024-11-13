@@ -2,7 +2,7 @@
 import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactECharts from "echarts-for-react";
@@ -21,17 +21,16 @@ const Stocks = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const [stockDetails, setStockDetails] = useState([]);
-  const [stockDetailsChartData, setStockDetailsChartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stockData, setStockData] = useState({ details: [], chartData: [] });
   const options = getCandlestickChartOptions(
     ticker,
-    stockDetailsChartData,
+    stockData.chartData,
     colors
   );
 
   // Column definitions for the DataGrid
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: "ticker_symbol",
       renderHeader: () => (
@@ -83,7 +82,7 @@ const Stocks = () => {
       flex: 1,
       type: "dateTime",
     },
-  ];
+  ], []);
 
   // fetchData - Fetches stock details and formats data for both chart and table.
   // - Data is updated periodically with an interval of 30 seconds.
@@ -126,8 +125,11 @@ const Stocks = () => {
         lowest_price: formatCurrency(stock.lowest_price),
         timestamp_end: formatDate(stock.timestamp_end),
       }));
-      setStockDetails(formattedData);
-      setStockDetailsChartData(chart_data);
+      // Combine state updates
+      setStockData({
+        details: formattedData,
+        chartData: chart_data,
+      });
     } catch (error) {
       console.error("Error fetching Stocks data:", error);
     } finally {
@@ -182,7 +184,7 @@ const Stocks = () => {
         
         {/* DataGrid */}
         <DataGrid
-          rows={stockDetails}
+          rows={stockData.details}
           columns={columns}
           loading={loading}
           initialState={{
@@ -190,7 +192,7 @@ const Stocks = () => {
               sortModel: [{ field: "timestamp_end", sort: "desc" }],
             },
           }}
-        />
+      />
       </Box>
     </Box>
   );
