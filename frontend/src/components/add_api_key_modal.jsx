@@ -13,8 +13,7 @@ import { useTheme } from "@mui/material/styles";
 
 const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
   // State hooks for service name and API key input fields
-  const [service, setService] = useState("");
-  const [api_key, setApiKey] = useState("");
+  const [formData, setFormData] = useState({ service: "", api_key: "" });
 
   // Get the theme and color tokens
   const theme = useTheme();
@@ -23,9 +22,14 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
   // Handler for submitting the API key
   const handleSubmit = () => {
     // Only submit if both fields are filled
-    if (service && api_key) {
-      onSubmit(service, api_key); // Trigger the onSubmit function passed as a prop
+    if (formData.service && formData.api_key) {
+      onSubmit(formData.service, formData.api_key); // Trigger the onSubmit function passed as a prop
     }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -37,8 +41,8 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
         <TextField
           fullWidth
           label="Service"
-          value={service}
-          onChange={(e) => setService(e.target.value)}
+          value={formData.service}
+          onChange={handleInputChange}
           margin="normal"
           color={colors.redAccent[500]}
         />
@@ -46,8 +50,8 @@ const AddApiKeyModal = ({ open, onClose, onSubmit }) => {
         <TextField
           fullWidth
           label="API Key"
-          value={api_key}
-          onChange={(e) => setApiKey(e.target.value)}
+          value={formData.api_key}
+          onChange={handleInputChange}
           margin="normal"
           color={colors.redAccent[500]}
         />
