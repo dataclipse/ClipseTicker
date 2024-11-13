@@ -2,7 +2,7 @@
 import { Box, Stack, useTheme, Typography, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../components/header";
 import AddApiKeyModal from "../../components/add_api_key_modal";
 import EditApiKeyModal from "../../components/edit_api_key_modal";
@@ -31,8 +31,111 @@ const ApiKeys = () => {
   };
   const handleCloseEditModal = () => setOpenEditModal(false);
 
+  const fetchData = useCallback(async () => {
+    const fetchWithAuth = async (url, options) => {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 401) {
+        navigate("/login");
+        throw new Error("Unauthorized");
+      }
+      return response;
+    };
+
+    try {
+      const response = await fetchWithAuth("/api/keys", { method: "GET" });
+      const data = await response.json();
+      const formattedData = data.map((api, index) => ({
+        id: index,
+        service: api.service,
+        api_key: api.api_key,
+        created_at: api.created_at,
+        updated_at: api.updated_at,
+      }));
+      setApiKeys(formattedData);
+    } catch (error) {
+      console.error("Error fetching API keys:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]); 
+
+  const handleAddApiKey = useCallback(async (newApiKey) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/keys`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newApiKey),
+      });
+
+      if (response.ok) {
+        fetchData(); // Refresh the API keys list
+        handleCloseApiKeyModal(); // Close the modal after adding
+      } else {
+        console.error("Error adding API key:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error adding API key:", error);
+    }
+  }, [fetchData]);
+
+  const handleUpdateApiKey = useCallback(async (service, updatedApiKey) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/keys/${service}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedApiKey),
+      });
+
+      if (response.ok) {
+        fetchData(); // Refresh the API keys list
+        handleCloseEditModal(); // Close the modal after updating
+      } else {
+        console.error("Error updating API key:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating API key:", error);
+    }
+  }, [fetchData]);
+
+  const handleDeleteApiKey = useCallback(async (service) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`/api/keys/${service}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        fetchData();
+      } else {
+        console.error("Error deleting API key:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting API key:", error);
+    }
+  }, [fetchData]);
+  
   // Column definitions for the DataGrid
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: "service",
       renderHeader: () => (
@@ -92,109 +195,9 @@ const ApiKeys = () => {
       ),
       flex: 0.5,
     },
-  ];
+  ], [colors.redAccent, handleDeleteApiKey]);
 
-  // Fetch API keys from the server
-  const fetchData = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/keys", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.status === 401) {
-        // Unauthorized, redirect to login page
-        navigate("/login");
-        return;
-      }
-      const data = await response.json();
-      const formattedData = data.map((api, index) => ({
-        id: index,
-        service: api.service,
-        api_key: api.api_key,
-        created_at: api.created_at,
-        updated_at: api.updated_at,
-      }));
-      setApiKeys(formattedData);
-    } catch (error) {
-      console.error("Error fetching Jobs data:", error);
-    } finally {
-      setLoading(false);
-    }
-  },[navigate]);
 
-  // Add API key handler
-  const handleAddApiKey = async (service, api_key) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/keys", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ service, api_key }),
-      });
-
-      if (response.ok) {
-        fetchData();
-        handleCloseApiKeyModal();
-      } else {
-        console.error("Error adding API key:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error adding API key:", error);
-    }
-  };
-
-  // Update API key handler
-  const handleUpdateApiKey = async (service, api_key) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/keys/${service}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ api_key }),
-      });
-
-      if (response.ok) {
-        fetchData();
-        handleCloseEditModal();
-      } else {
-        console.error("Error updating API key:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error updating API key:", error);
-    }
-  };
-
-  // Delete API key handler
-  const handleDeleteApiKey = async (service) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/keys/${service}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        fetchData();
-      } else {
-        console.error("Error deleting API key:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error deleting API key:", error);
-    }
-  };
 
   // Fetch data on component mount and refresh every 30 seconds
   useEffect(() => {
