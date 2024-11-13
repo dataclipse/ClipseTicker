@@ -1,5 +1,5 @@
 // src/scenes/login/index.jsx
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../../context/auth_context.jsx";
 import { useNavigate } from "react-router-dom";
 import { Button, TextField, Typography } from "@mui/material";
@@ -16,6 +16,7 @@ function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -23,8 +24,9 @@ function Login() {
     // Handles form submission, sends login request, and processes response.
     // - On success: calls login function, stores token, and redirects to dashboard.
     // - On failure: displays error and clears password field.
-    const handleSubmit = async (e) => {
+    const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
+        setError(""); // Reset error on submit
         try {
             const response = await fetch("/api/login", {
                 method: "POST",
@@ -34,20 +36,20 @@ function Login() {
             const data = await response.json();
 
             if (response.ok && data.token) {
-                login(data.token, data.role, data.username ); // Set auth token
+                login(data.token, data.role, data.username); // Set auth token
                 localStorage.setItem("auth_token", data.token);
                 navigate("/"); // redirect to dashboard
             } else {
-                alert("Login failed: " + data.error);
+                setError("Login failed: " + data.error); // Set error message
                 setPassword('');
                 console.error(data.error);
             }
         } catch (error) {
             console.error("Error: ", error);
-            alert("Login failed due to network issues.");
+            setError("Login failed due to network issues."); // Set error message
             setPassword('');
         }
-    };
+    }, [login, navigate, username, password]);
 
     return (
         <Card sx={{
@@ -81,6 +83,7 @@ function Login() {
                     <Typography variant="h3" sx={{ mb: '20px', fontWeight: 'bold' }}>
                     Login
                     </Typography>
+                        {error && <Typography color="error">{error}</Typography>}
                         <TextField 
                             sx= {{ mb: '10px '}}
                             label="Username" 

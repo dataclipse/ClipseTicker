@@ -96,7 +96,7 @@ const Jobs = () => {
         renderHeader: () => (
           <Typography sx={{ fontWeight: "bold" }}>{"Frequency"}</Typography>
         ),
-        flex: 0.6,
+        flex: 0.4,
       },
       {
         field: "scheduled_start_date",
