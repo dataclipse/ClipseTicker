@@ -98,40 +98,26 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
         try {
             // Basic schema check for valid strings
             dateSchema.parse({ start_date: start, end_date: end });
-
-            const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-
-            // If future dates are allowed, check that start is today or in the future
-            if (allowFutureDates && start < today) {
-                setError("Start date must be today or in the future.");
-                return false;
+    
+            const today = new Date();
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+    
+            // Check for future dates if allowed
+            if (allowFutureDates) {
+                if (startDate < today) setError("Start date must be today or in the future.");
+                if (endDate < today && end !== '') setError("End date must be today or in the future.");
+            } else {
+                if (startDate >= today) setError("Start date must be before today.");
+                if (endDate >= today) setError("End date must be before today.");
             }
-
-            // If future dates are allowed, check that end is today or in the future
-            if (allowFutureDates && end < today && end !== '') {
-                setError("End date must be today or in the future.");
-                return false;
-            }
-            
-            // If future dates are allowed, check that start is before today
-            if (!allowFutureDates && start >= today) {
-                setError("Start date must be before today.");
-                return false;
-            }
-
-            // If future dates are allowed, check that end is before today
-            if (!allowFutureDates && end >= today) {
-                console.log(end) // Debugging line to check the value of end date
-                setError("End date must be before today.");
-                return false;
-            }
-
+    
             // Ensure start date is before or equal to end date
-            if (new Date(start) > new Date(end)) {
+            if (startDate > endDate) {
                 setError("Start date must be before or equal to the end date.");
                 return false;
             }
-
+    
             setError(""); // Clear error if validation passes
             return true;
         } catch (error) {
@@ -156,23 +142,32 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     };
 
     const clearFields = (excludedFields = []) => {
-        // Reset each field only if it is not included in excludedFields
-        if (!excludedFields.includes("jobType")) setJobType('');
-        if (!excludedFields.includes("service")) setService('');
-        if (!excludedFields.includes("owner")) setOwner(user?.username);
-        if (!excludedFields.includes("dataFetchStartDate")) setDataFetchStartDate('');
-        if (!excludedFields.includes("dataFetchEndDate")) setDataFetchEndDate('');
-        if (!excludedFields.includes("scheduledStartDate")) setScheduledStartDate('');
-        if (!excludedFields.includes("scheduledEndDate")) setScheduledEndDate('');
-        if (!excludedFields.includes("scheduledStartTime")) setScheduledStartTime('');
-        if (!excludedFields.includes("scheduledEndTime")) setScheduledEndTime('');
-        if (!excludedFields.includes("jobInterval")) setJobInterval('');
-        if (!excludedFields.includes("frequency")) setFrequency('');
-        if (!excludedFields.includes("customInterval")) setCustomInterval('');
-        if (!excludedFields.includes("dataFetchType")) setDataFetchType('');
-        if (!excludedFields.includes("selectedDays")) setSelectedDays([]);
-        if (!excludedFields.includes("dateError")) setDateError('');
-        if (!excludedFields.includes("dataFetchDateError")) setDataFetchDateError('');
+        // Array of state variables to clear
+        const fieldsToClear = [
+            { name: "jobType", setter: setJobType },
+            { name: "service", setter: setService },
+            { name: "owner", setter: setOwner, defaultValue: user?.username },
+            { name: "dataFetchStartDate", setter: setDataFetchStartDate },
+            { name: "dataFetchEndDate", setter: setDataFetchEndDate },
+            { name: "scheduledStartDate", setter: setScheduledStartDate },
+            { name: "scheduledEndDate", setter: setScheduledEndDate },
+            { name: "scheduledStartTime", setter: setScheduledStartTime },
+            { name: "scheduledEndTime", setter: setScheduledEndTime },
+            { name: "jobInterval", setter: setJobInterval },
+            { name: "frequency", setter: setFrequency },
+            { name: "customInterval", setter: setCustomInterval },
+            { name: "dataFetchType", setter: setDataFetchType },
+            { name: "selectedDays", setter: setSelectedDays, defaultValue: [] },
+            { name: "dateError", setter: setDateError },
+            { name: "dataFetchDateError", setter: setDataFetchDateError },
+        ];
+
+        // Clear each field only if it is not included in excludedFields
+        fieldsToClear.forEach(({ name, setter, defaultValue }) => {
+            if (!excludedFields.includes(name)) {
+                setter(defaultValue !== undefined ? defaultValue : '');
+            }
+        });
     };
 
     const calculateDataFetchDates = useCallback(() => {
