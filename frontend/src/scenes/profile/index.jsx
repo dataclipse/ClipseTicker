@@ -20,9 +20,12 @@ const Profile = () => {
     const [username, setUsername] = useState("");
     const [dialogOpen, setDialogOpen] = useState(false);
     const [fieldToEdit, setFieldToEdit] = useState("");
-    const [newValue, setNewValue] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+    const [dialogData, setDialogData] = useState({
+        field: "",
+        value: "",
+        newPassword: "",
+        newPasswordConfirm: ""
+    });
 
     // Fetches the user's profile data from the API and updates the state with the user's information.
     const fetchUserProfile = useCallback(async () => {
@@ -68,16 +71,12 @@ const Profile = () => {
 
     // Opens a dialog for editing a specific field (username, password, or email) by setting relevant state variables.
     const handleOpenDialog = (field) => {
-        setFieldToEdit(field);
-        if (field === "Username") {
-            setNewValue(username);
-        } else if (field === "Email") {
-            setNewValue(email);
-        } else {
-            setNewValue("");  
-        }
-        setNewPassword("");
-        setNewPasswordConfirm("");
+        setDialogData({
+            field,
+            value: field === "Username" ? username : field === "Email" ? email : "",
+            newPassword: "",
+            newPasswordConfirm: ""
+        });
         setDialogOpen(true);
     };
 
@@ -87,30 +86,23 @@ const Profile = () => {
         setFieldToEdit("");
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setDialogData(prev => ({ ...prev, [name]: value }));
+    };
     // Handles saving changes for the selected field, validates passwords, and makes an API request to update the user profile.
     const handleSave = useCallback(async () => {
         const payload = {
             username,
+            new_username: dialogData.field === "Username" ? dialogData.value : undefined,
+            new_password: dialogData.field === "Password" && dialogData.newPassword === dialogData.newPasswordConfirm ? dialogData.newPassword : undefined,
+            new_email: dialogData.field === "Email" ? dialogData.value : undefined,
+            new_currency: dialogData.field === "Currency" ? currency : undefined,
+            new_theme: dialogData.field === "Theme" ? themePreference : undefined,
         };
-        if (fieldToEdit === "Username") {
-            payload.new_username = newValue;
-        } else if (fieldToEdit === "Password") {
-            if (newPassword !== newPasswordConfirm) {
-                alert("Passwords do not match.");
-                return;
-            }
-            payload.new_password = newPassword;
-        } else if (fieldToEdit === "Email") {
-            payload.new_email = newValue;
-        } else if (fieldToEdit === "Currency") {
-            payload.new_currency = currency;
-        } else if (fieldToEdit === "Theme") {
-            payload.new_theme = themePreference;
-        }
-
+    
         try {
             const token = localStorage.getItem("auth_token");
-            // Make the API call to update the user using fetch
             const response = await fetch("/api/user", {
                 method: "PUT",
                 headers: {
@@ -119,24 +111,19 @@ const Profile = () => {
                 },
                 body: JSON.stringify(payload),
             });
-
+    
             if (!response.ok) {
                 throw new Error("Network response was not ok");
             }
-
-            // Optionally, update local state to reflect changes immediately
+    
             handleCloseDialog();
-            if (fieldToEdit === "Currency") setCurrency(currency);
-            if (fieldToEdit === "Theme") setThemePreference(themePreference);;
-            // Show success message or refresh user context as necessary
+            fetchUserProfile();
             console.log("User updated successfully.");
         } catch (error) {
             console.error("Error updating user:", error);
-            // Handle error (e.g., show an alert or notification)
             alert("Failed to update user data. Please try again.");
         }
-        fetchUserProfile();
-    }, [username, fieldToEdit, newValue, newPassword, newPasswordConfirm, currency, themePreference, fetchUserProfile]);
+    }, [username, dialogData, currency, themePreference, fetchUserProfile]);
 
     // Automatically saves changes when either currency or theme preference is updated by the user.
     useEffect(() => {
@@ -148,6 +135,8 @@ const Profile = () => {
     useEffect(() => {
         fetchUserProfile();
     }, [fetchUserProfile, theme.palette.mode]);
+
+    
 
     return (
         <Box m="20px">
@@ -179,13 +168,16 @@ const Profile = () => {
                     {/* Email Field */}
                     <Typography variant="h6" sx={{ mt: 3 }}>Password</Typography>
                     <TextField
-                        fullWidth
-                        disabled
-                        value={"**********"}
-                        variant="outlined"
+                        autoFocus
                         margin="dense"
-                        sx={{ mb: 1 }}
+                        label={dialogData.field}
+                        type={dialogData.field === "Password" ? "password" : "text"}
+                        fullWidth
+                        variant="outlined"
+                        value={dialogData.field === "Password" ? dialogData.newPassword : dialogData.value}
                         color={colors.redAccent[500]}
+                        onChange={handleInputChange} // Capture new value
+                        name={dialogData.field === "Password" ? "newPassword" : "value"} // Set name for input
                     />
                     <Box textAlign="right">
                         <Link color="secondary" component="button" variant="body2" onClick={() => handleOpenDialog("Password")}>
@@ -250,35 +242,29 @@ const Profile = () => {
                         <>
                             <Typography variant="h6" sx={{ mt: 3 }}>New Password</Typography>
                             <TextField
-                            autoFocus
-                            margin="dense"
-                            label={fieldToEdit}
-                            type={fieldToEdit === "Password" ? "password" : "text" }
-                            fullWidth
-                            variant="outlined"
-                            color={colors.redAccent[500]}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    width: '50vh', // Increase height
-                                },
-                            }}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                                autoFocus
+                                margin="dense"
+                                label={fieldToEdit}
+                                type="password"
+                                fullWidth
+                                variant="outlined"
+                                color={colors.redAccent[500]}
+                                value={dialogData.newPassword} // Use dialogData for newPassword
+                                onChange={handleInputChange} // Capture new value
+                                name="newPassword" // Set name for input
                             />
                             <Typography variant="h6" sx={{ mt: 3 }}>Reenter Password</Typography>
                             <TextField 
                                 autoFocus
                                 margin="dense"
                                 label="Reenter Password"
-                                type={fieldToEdit === "Password" ? "password" : "text" }
+                                type="password"
                                 fullWidth
                                 variant="outlined"
                                 color={colors.redAccent[500]}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        width: '50vh', // Increase height
-                                    },
-                                }}
-                                onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                                value={dialogData.newPasswordConfirm} // Use dialogData for newPasswordConfirm
+                                onChange={handleInputChange} // Capture new value
+                                name="newPasswordConfirm" // Set name for input
                             />
                         </>
                     )}
@@ -290,14 +276,10 @@ const Profile = () => {
                             type="text"
                             fullWidth
                             variant="outlined"
-                            value={newValue}
+                            value={dialogData.value}
                             color={colors.redAccent[500]}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    width: '50vh', // Increase height
-                                },
-                            }}
-                            onChange={(e) => setNewValue(e.target.value)} // Capture new value
+                            onChange={handleInputChange} // Capture new value
+                            name="value" // Set name for input
                         />
                     )}
                 </DialogContent>
