@@ -23,13 +23,13 @@ const ApiKeys = () => {
   const [selectedApiKey, setSelectedApiKey] = useState(null);
   const navigate = useNavigate();
   // Handlers for opening and closing Add and Edit modals
-  const handleOpenApiKeyModal = () => setOpenApiKeyModal(true);
-  const handleCloseApiKeyModal = () => setOpenApiKeyModal(false);
-  const handleOpenEditModal = (apiKey) => {
+  const handleOpenApiKeyModal = useCallback(() => setOpenApiKeyModal(true), []);
+  const handleCloseApiKeyModal = useCallback(() => setOpenApiKeyModal(false), []);
+  const handleOpenEditModal = useCallback((apiKey) => {
     setSelectedApiKey(apiKey);
     setOpenEditModal(true);
-  };
-  const handleCloseEditModal = () => setOpenEditModal(false);
+  }, []);
+  const handleCloseEditModal = useCallback(() => setOpenEditModal(false), []);
 
   const fetchWithAuth = useCallback(async (url, options) => {
     const token = localStorage.getItem("auth_token");
