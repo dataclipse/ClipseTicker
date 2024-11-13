@@ -33,101 +33,9 @@ const Jobs = () => {
   });
 
   // Opens and closes the modals for adding or scheduling jobs
-  const handleOpenScheduleJobDialog = () => setOpenScheduleJobDialog(true)
-  const handleCloseScheduleJobDialog = () => setOpenScheduleJobDialog(false)
+  const handleOpenScheduleJobDialog = useCallback(() => setOpenScheduleJobDialog(true), []);
+  const handleCloseScheduleJobDialog = useCallback(() => setOpenScheduleJobDialog(false), []);
   const { user } = useAuth();
-
-  const AccordionComponent = ({ title, filterCondition }) => (
-    <Accordion 
-      expanded={expandedPanels[filterCondition]}
-      onChange={() => setExpandedPanels(prev => ({ ...prev, [filterCondition]: !prev[filterCondition] }))}
-      m="40px 0 0 0"
-      display="flex"
-      sx={{
-        "& .MuiDataGrid-root": {
-              border: "none",
-            },
-            "& .MuiDataGrid-cell": {
-              borderBottom: "none",
-              backgroundColor: colors.primary[500]
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: colors.blueAccent[700],
-              borderBottom: "none",
-              fontWeight: "bold",
-            },
-            "& .MuiDataGrid-virtualScroller": {
-              backgroundColor: colors.primary[400],
-            },
-            "& .MuiPaginationItem-root": {
-              borderTop: "none",
-              backgroundColor: `${colors.blueAccent[700]} !important`,
-            },
-            backgroundColor: colors.primary[500]
-      }}
-    >
-      <AccordionSummary aria-controls={`${filterCondition}-content`} id={`${filterCondition}-header`}>
-        <Typography sx={{ fontWeight: "bold" }}>{title}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <DataGrid
-          rows={Jobs.filter((job) => job.status === filterCondition)}
-          columns={columns}
-          loading={loading}
-        />
-      </AccordionDetails>
-    </Accordion>
-  );
-
-  const Accordion = styled((props) => (
-    <MuiAccordion disableGutters elevation={0} square {...props} />
-  ))(({ theme }) => ({
-    border: `1px solid ${theme.palette.divider}`,
-    '&:not(:last-child)': {
-      borderBottom: 0,
-    },
-    '&::before': {
-      display: 'none',
-    },
-  }));
-
-  const AccordionSummary = styled((props) => (
-    <MuiAccordionSummary
-      expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
-      {...props}
-    />
-  ))(({ theme }) => ({
-
-    flexDirection: 'row-reverse',
-    '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
-      transform: 'rotate(90deg)',
-    },
-    '& .MuiAccordionSummary-content': {
-      marginLeft: theme.spacing(1),
-    },
-  }));
-
-  const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
-    padding: theme.spacing(2),
-    borderTop: '1px solid rgba(0, 0, 0, .125)',
-  }));
-
-  // Converts UTC date string to local timezone string
-  const convertToLocalTime = (utcDateString) => {
-    // Check if the date string is valid
-    if (!utcDateString) return "";
-
-    // Attempt to create a date object from the UTC string
-    const date = new Date(utcDateString);
-
-    // Check if the date is valid
-    if (isNaN(date.getTime())) {
-      return ""; // Return fallback if date parsing fails
-    }
-
-    // Convert to local timezone string if valid
-    return date.toLocaleString(); 
-  };
 
   const columns = useMemo(() =>[
     {
@@ -247,6 +155,101 @@ const Jobs = () => {
     }
   ], [colors.redAccent]);
 
+  const AccordionComponent = ({ title, filterCondition }) => (
+    <Accordion 
+      expanded={expandedPanels[filterCondition]}
+      onChange={() => setExpandedPanels(prev => ({ ...prev, [filterCondition]: !prev[filterCondition] }))}
+      m="40px 0 0 0"
+      display="flex"
+      sx={{
+        "& .MuiDataGrid-root": {
+              border: "none",
+            },
+            "& .MuiDataGrid-cell": {
+              borderBottom: "none",
+              backgroundColor: colors.primary[500]
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: colors.blueAccent[700],
+              borderBottom: "none",
+              fontWeight: "bold",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              backgroundColor: colors.primary[400],
+            },
+            "& .MuiPaginationItem-root": {
+              borderTop: "none",
+              backgroundColor: `${colors.blueAccent[700]} !important`,
+            },
+            backgroundColor: colors.primary[500]
+      }}
+    >
+      <AccordionSummary aria-controls={`${filterCondition}-content`} id={`${filterCondition}-header`}>
+        <Typography sx={{ fontWeight: "bold" }}>{title}</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <DataGrid
+          rows={Jobs.filter((job) => job.status === filterCondition)}
+          columns={columns}
+          loading={loading}
+        />
+      </AccordionDetails>
+    </Accordion>
+  );
+
+  // Memoize AccordionComponent to prevent unnecessary re-renders
+  const MemoizedAccordionComponent = useCallback(AccordionComponent, [Jobs, loading, colors.blueAccent, colors.primary, columns, expandedPanels]);
+
+  const Accordion = styled((props) => (
+    <MuiAccordion disableGutters elevation={0} square {...props} />
+  ))(({ theme }) => ({
+    border: `1px solid ${theme.palette.divider}`,
+    '&:not(:last-child)': {
+      borderBottom: 0,
+    },
+    '&::before': {
+      display: 'none',
+    },
+  }));
+
+  const AccordionSummary = styled((props) => (
+    <MuiAccordionSummary
+      expandIcon={<ArrowForwardIosSharpIcon sx={{ fontSize: '0.9rem' }} />}
+      {...props}
+    />
+  ))(({ theme }) => ({
+
+    flexDirection: 'row-reverse',
+    '& .MuiAccordionSummary-expandIconWrapper.Mui-expanded': {
+      transform: 'rotate(90deg)',
+    },
+    '& .MuiAccordionSummary-content': {
+      marginLeft: theme.spacing(1),
+    },
+  }));
+
+  const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
+    padding: theme.spacing(2),
+    borderTop: '1px solid rgba(0, 0, 0, .125)',
+  }));
+
+  // Converts UTC date string to local timezone string
+  const convertToLocalTime = (utcDateString) => {
+    // Check if the date string is valid
+    if (!utcDateString) return "";
+
+    // Attempt to create a date object from the UTC string
+    const date = new Date(utcDateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return ""; // Return fallback if date parsing fails
+    }
+
+    // Convert to local timezone string if valid
+    return date.toLocaleString(); 
+  };
+
   function formatString(inputString) {
     return inputString.replace(/_/g, ' ').toLowerCase().replace(/\b\w+\b/g, word => word === 'api' ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)); 
   };
@@ -306,13 +309,12 @@ const Jobs = () => {
   }, [fetchData]);
 
   useEffect(() => {
-    setExpandedPanels({
-      Running: Jobs.filter(job => job.status === "Running").length > 0,
-      Scheduled: Jobs.filter(job => job.status === "Scheduled").length > 0,
-      Complete: Jobs.filter(job => job.status === "Complete").length > 0,
-    });
-  }, [Jobs]);
+    const runningJobs = Jobs.filter(job => job.status === "Running").length > 0;
+    const scheduledJobs = Jobs.filter(job => job.status === "Scheduled").length > 0;
+    const completeJobs = Jobs.filter(job => job.status === "Complete").length > 0;
 
+    setExpandedPanels({ Running: runningJobs, Scheduled: scheduledJobs, Complete: completeJobs });
+  }, [Jobs]);
 
   return (
     <Box m="20px">
@@ -346,9 +348,9 @@ const Jobs = () => {
       {/* Modal Components */}
       <ScheduleJobDialog open={openScheduleJobDialog} onClose={handleCloseScheduleJobDialog} />
 
-      <AccordionComponent title="Running Jobs" filterCondition="Running" />
-      <AccordionComponent title="Scheduled Jobs" filterCondition="Scheduled" />
-      <AccordionComponent title="Completed Jobs" filterCondition="Complete" />
+      <MemoizedAccordionComponent title="Running Jobs" filterCondition="Running" />
+      <MemoizedAccordionComponent title="Scheduled Jobs" filterCondition="Scheduled" />
+      <MemoizedAccordionComponent title="Completed Jobs" filterCondition="Complete" />
     </Box>
   );
 };
