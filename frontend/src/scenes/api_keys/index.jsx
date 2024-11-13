@@ -31,24 +31,24 @@ const ApiKeys = () => {
   };
   const handleCloseEditModal = () => setOpenEditModal(false);
 
-  const fetchData = useCallback(async () => {
-    const fetchWithAuth = async (url, options) => {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.status === 401) {
-        navigate("/login");
-        throw new Error("Unauthorized");
-      }
-      return response;
-    };
+  const fetchWithAuth = useCallback(async (url, options) => {
+    const token = localStorage.getItem("auth_token");
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    if (response.status === 401) {
+      navigate("/login");
+      throw new Error("Unauthorized");
+    }
+    return response;
+  }, [navigate]);
 
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetchWithAuth("/api/keys", { method: "GET" });
       const data = await response.json();
@@ -65,20 +65,15 @@ const ApiKeys = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]); 
+  }, [fetchWithAuth]); 
 
   const handleAddApiKey = useCallback(async (newApiKey) => {
     try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/keys`, {
+      const response = await fetchWithAuth(`/api/keys`, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(newApiKey),
       });
-
+  
       if (response.ok) {
         fetchData(); // Refresh the API keys list
         handleCloseApiKeyModal(); // Close the modal after adding
@@ -88,20 +83,15 @@ const ApiKeys = () => {
     } catch (error) {
       console.error("Error adding API key:", error);
     }
-  }, [fetchData]);
+  }, [fetchData, fetchWithAuth]);
 
   const handleUpdateApiKey = useCallback(async (service, updatedApiKey) => {
     try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/keys/${service}`, {
+      const response = await fetchWithAuth(`/api/keys/${service}`, {
         method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(updatedApiKey),
       });
-
+  
       if (response.ok) {
         fetchData(); // Refresh the API keys list
         handleCloseEditModal(); // Close the modal after updating
@@ -111,19 +101,14 @@ const ApiKeys = () => {
     } catch (error) {
       console.error("Error updating API key:", error);
     }
-  }, [fetchData]);
+  }, [fetchData, fetchWithAuth]);
 
   const handleDeleteApiKey = useCallback(async (service) => {
     try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/keys/${service}`, {
+      const response = await fetchWithAuth(`/api/keys/${service}`, {
         method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
       });
-
+  
       if (response.ok) {
         fetchData();
       } else {
@@ -132,7 +117,7 @@ const ApiKeys = () => {
     } catch (error) {
       console.error("Error deleting API key:", error);
     }
-  }, [fetchData]);
+  }, [fetchData, fetchWithAuth]);
   
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
@@ -196,8 +181,6 @@ const ApiKeys = () => {
       flex: 0.5,
     },
   ], [colors.redAccent, handleDeleteApiKey]);
-
-
 
   // Fetch data on component mount and refresh every 30 seconds
   useEffect(() => {
