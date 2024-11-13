@@ -6,14 +6,9 @@ function ProtectedRoute({ children, required_role }) {
     // Use the custom hook useAuth() to retrieve the authenticated user information
     const { user } = useAuth();
 
-    // Redirect to the login page if the user is not authenticated
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    // Redirect to the home page if the user does not have the required role
-    if ( required_role && user.role !== required_role ) {
-        return <Navigate to="/" replace />;
+    // If user is not authenticated or does not have the required role, redirect to home or login based on authentication
+    if (!user || (required_role && user.role !== required_role)) {
+        return <Navigate to={user ? "/" : "/login"} replace />;
     }
 
     // Render the children components if user is authenticated and has the required role
