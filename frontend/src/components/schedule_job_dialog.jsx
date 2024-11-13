@@ -19,8 +19,9 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { tokens } from "../theme";
-import { z } from "zod";
+// import { z } from "zod";
 import { useAuth } from "../context/auth_context";
+import { validateDateRange, updateFormState, calculateDataFetchDates } from '../components/helper';
 
 
 const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
@@ -52,19 +53,6 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
 
     // Define days of the week for selection
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-    const updateFormState = (field, value) => {
-        setFormState(prevState => ({
-            ...prevState,
-            [field]: value,
-        }));
-    };
-
-    // Simple Zod schema to validate that dates are strings
-    const dateSchema = z.object({
-        start_date: z.string(),
-        end_date: z.string()
-    });
 
     const checkJobScheduleExists = async () => {
         // Retrieve authentication token from local storage
@@ -103,39 +91,6 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
         }
     };
 
-    // Custom function to check the date order
-    const validateDateRange = (start, end, setError, allowFutureDates = false) => {
-        try {
-            // Basic schema check for valid strings
-            dateSchema.parse({ start_date: start, end_date: end });
-    
-            const today = new Date();
-            const startDate = new Date(start);
-            const endDate = new Date(end);
-    
-            // Check for future dates if allowed
-            if (allowFutureDates) {
-                if (startDate < today) setError("Start date must be today or in the future.");
-                if (endDate < today && end !== '') setError("End date must be today or in the future.");
-            } else {
-                if (startDate >= today) setError("Start date must be before today.");
-                if (endDate >= today) setError("End date must be before today.");
-            }
-    
-            // Ensure start date is before or equal to end date
-            if (startDate > endDate) {
-                setError("Start date must be before or equal to the end date.");
-                return false;
-            }
-    
-            setError(""); // Clear error if validation passes
-            return true;
-        } catch (error) {
-            setError("Invalid date format.");
-            return false;
-        }
-    };
-
     const canSchedule = () => {
         // Array of all conditions that need to be true
         const conditions = [
@@ -167,31 +122,6 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
             return newState; // Return the updated state
         });
     };
-
-    const calculateDataFetchDates = useCallback(() => {
-        const today = new Date();
-        let startDate, endDate;
-
-        // Set endDate to yesterday
-        endDate = new Date(today);
-        endDate.setDate(today.getDate() - 1); // Subtract 1 day from today's date
-
-        if (formState.dataFetchType === "2yrs_data") {
-            startDate = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
-            startDate.setDate(startDate.getDate() + 1);
-            // Format dates as needed
-            updateFormState('dataFetchStartDate', startDate.toISOString().split('T')[0]); // Set start date for data fetch
-            updateFormState('dataFetchEndDate', endDate.toISOString().split('T')[0]); // Set end date for data fetch
-        } else if (formState.dataFetchType === "2wk_data") {
-            startDate = new Date(endDate);
-            startDate.setDate(endDate.getDate() - 15);
-            // Format dates and set
-            updateFormState('dataFetchStartDate', startDate.toISOString().split('T')[0]); // Set start date for data fetch
-            updateFormState('dataFetchEndDate', endDate.toISOString().split('T')[0]); // Set end date for data fetch
-        } else {
-            return;
-        }
-    }, [formState.dataFetchType]); // Dependency array includes formState.dataFetchType
 
     // Handlers for date changes
     const handleDateChange = useCallback((field, value, validateFunc) => {
@@ -287,9 +217,9 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     // Ensure the dates are calculated correctly if the datatype changes
     useEffect(() => {
         if (formState.dataFetchType) {
-            calculateDataFetchDates(); // Calculate data fetch dates when dataFetchType changes
+            calculateDataFetchDates(formState.dataFetchType, updateFormState); // Calculate data fetch dates when dataFetchType changes
         }
-    }, [formState.dataFetchType, calculateDataFetchDates]); 
+    }, [formState.dataFetchType]); 
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
