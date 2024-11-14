@@ -2,12 +2,11 @@
 import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../../theme";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactECharts from "echarts-for-react";
-import { getCandlestickChartOptions } from "../../../components/echart_options";
-import { formatCurrency, formatCurrencyChart, formatDate, formatDateChart } from "../../../components/helper";
+import { formatCurrency, formatDate, convertTimestamp } from "../../../components/helper";
+import { createChart } from 'lightweight-charts';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 // - Shows stock data in both a candlestick chart and a data grid.
@@ -18,11 +17,96 @@ const Stocks = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stockData, setStockData] = useState({ details: [], chartData: [] });
-  const options = getCandlestickChartOptions(
-    ticker,
-    stockData.chartData,
-    colors
-  );
+  const chartContainerRef = useRef();
+
+  useEffect(() => {
+    try {
+      const handleResize = () => {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      };
+      const chart = createChart(chartContainerRef.current, {
+        layout: {
+          background: {
+            color: colors.primary[500]
+          },
+          attributionLogo: false,
+          textColor: colors.grey[100],
+        },
+        grid: {
+          vertLines: { color: colors.grey[700] },
+          horzLines: { color: colors.grey[700] }
+        },
+        width: chartContainerRef.current.clientWidth,
+        height: 400,
+      });
+
+      const candlestickSeries = chart.addCandlestickSeries({
+        upColor: colors.greenAccent[500],
+        downColor: colors.redAccent[500],
+        borderUpColor: colors.greenAccent[500],
+        borderDownColor: colors.redAccent[500],
+        wickUpColor: colors.greenAccent[500],
+        wickDownColor: colors.redAccent[500],
+        borderColor: colors.grey[500],
+      })
+      const sortedChartData = stockData.chartData.sort((a, b) => a.time - b.time);
+      candlestickSeries.setData(sortedChartData);
+      candlestickSeries.priceScale().applyOptions({
+        autoScale: true, // disables auto scaling based on visible content
+        scaleMargins: {
+          top: 0.1,
+          bottom: .6,
+        },
+        textColor: colors.grey[100],
+        borderColor: colors.grey[700],
+      });
+
+      // Get the current users primary locale
+      const currentLocale = window.navigator.languages[0];
+
+      // Create a number format using Intl.NumberFormat
+      const myPriceFormatter = Intl.NumberFormat(currentLocale, {
+        style: "currency",
+        currency: "USD", // Currency for data points
+        currencyDisplay: "symbol",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format;
+
+      const customPriceFormatter = (value) => {
+        const formattedValue = myPriceFormatter(value);
+        return formattedValue.replace(/([^\d.,]+)(\d)/, '$1 $2');
+      };
+
+      // Apply the custom priceFormatter to the chart
+      chart.applyOptions({
+        localization: {
+          priceFormatter: customPriceFormatter,
+        },
+      });
+
+      // Setting the border color for the horizontal axis
+      chart.timeScale().applyOptions({
+        borderColor: colors.grey[700],
+        textColor: colors.grey[100],
+        timeVisible: true,
+        secondsVisible: false,
+        visible: true,
+        barSpacing: 20,
+      });
+
+      chart.timeScale().fitContent();
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chart.remove();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [colors, stockData.chartData]);
 
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
@@ -91,25 +175,23 @@ const Stocks = () => {
           "Content-Type": "application/json",
         },
       });
-      if (response.status === 401 ) {
+      if (response.status === 401) {
         // Unauthorized, redirect to login page
         navigate("/login");
         return;
       }
       const data = await response.json();
-      
+
       // Format data for the chart
       const chart_data = data
         .map((stock) => ({
-          timestamp_end: formatDateChart(stock.timestamp_end),
-          open: formatCurrencyChart(stock.open_price),
-          high: formatCurrencyChart(stock.highest_price),
-          low: formatCurrencyChart(stock.lowest_price),
-          close: formatCurrencyChart(stock.close_price),
+          time: convertTimestamp(stock.timestamp_end),
+          open: stock.open_price,
+          high: stock.highest_price,
+          low: stock.lowest_price,
+          close: stock.close_price,
         }))
-        .filter((stock) => stock.timestamp_end)
-        .sort((a, b) => b.timestamp_end - a.timestamp_end);
-
+      console.log(chart_data)
       // Format data for the DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
@@ -134,20 +216,19 @@ const Stocks = () => {
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
-    fetchData();
-    const intervalId = setInterval(fetchData, 30000);
-    return () => clearInterval(intervalId);
+    try{
+      fetchData();
+      const intervalId = setInterval(fetchData, 30000);
+      return () => clearInterval(intervalId);
+    } catch (error) {
+      console.error(error);
+    }
   }, [fetchData]);
 
   return (
     <Box m="20px">
       <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
-
-      {/* ECharts Candlestick Chart */}
-      <ReactECharts
-        option={options}
-        style={{ height: "500px", width: "100%" }}
-      />
+      <div ref={chartContainerRef}></div>
       <Box
         m="40px 0 0 0"
         display="flex"
@@ -176,7 +257,7 @@ const Stocks = () => {
           },
         }}
       >
-        
+
         {/* DataGrid */}
         <DataGrid
           rows={stockData.details}
@@ -187,7 +268,7 @@ const Stocks = () => {
               sortModel: [{ field: "timestamp_end", sort: "desc" }],
             },
           }}
-      />
+        />
       </Box>
     </Box>
   );

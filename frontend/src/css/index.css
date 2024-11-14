@@ -39,3 +39,7 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   filter: invert(1); 
 }
+
+body > iframe {
+  display: none;
+}

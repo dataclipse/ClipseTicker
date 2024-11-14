@@ -104,6 +104,13 @@ export const formatDate = (unix_timestamp) => {
   return date;
 };
 
+export const formatDateTimestamp = (unix_timestamp) => {
+  // Convert Unix timestamp to milliseconds if it's less than 10 digits
+  const timestamp =
+    unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
+  return timestamp;
+};
+
 // Format a Unix timestamp specifically for chart data
 export const formatDateChart = (unix_timestamp) => {
   const timestamp =
@@ -150,12 +157,28 @@ export const formatDateLocal = (unix_timestamp) => {
 
   // Create a new Date object in the user's local timezone
   const local_date = new Date(date.getTime() + tz_offset_minutes * 60 * 1000);
-
+  
   // Convert the Date object to a string in the user's local timezone
-  return local_date.toLocaleString();
+  return local_date.toLocaleString('default', {  
+    year: 'numeric', 
+    month: 'short', 
+    day: '2-digit', 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit', 
+    hour12: true 
+  });
 };
 
 export function formatPE(value) {
   if (value === 0) return undefined;
   return parseFloat(value).toFixed(2);
 };
+
+export function convertTimestamp(timestamp){
+
+  // Get the new timestamp without milliseconds
+  const newTimestamp = Math.floor(timestamp / 1000);
+
+  return newTimestamp;
+}
