@@ -151,7 +151,7 @@ const Sidebar = () => {
                   color: colors.grey[100] }} 
                   button 
                   component={Link} 
-                  to="/stocks/screener"
+                  to="/stocks/stock_screener"
                   onClick={() => setSelected("Stocks")} 
                 >
                   <ListItemText primary="Stock Screener" />

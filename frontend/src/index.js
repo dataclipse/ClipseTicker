@@ -13,19 +13,13 @@ import { AuthProvider } from './context/auth_context';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-
     {/* BrowserRouter enables routing for the application */}
     <BrowserRouter>
-
       {/* AuthProvider provides authentication context to the app */}
       <AuthProvider>
-
         {/* Main App component containing the application structure */}
         <App />
-
       </AuthProvider>
-
     </BrowserRouter>
-    
   </React.StrictMode>
 );

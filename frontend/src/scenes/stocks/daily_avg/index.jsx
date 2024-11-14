@@ -135,7 +135,7 @@ const Stocks = () => {
 
   return (
     <Box m="20px">
-      <Header title="NYSE" subtitle="Most Recent OHLC Data" />
+      <Header title="NYSE" subtitle="Most Recent Daily Aggregated Average OHLC Data" />
       <Box
         m="40px 0 0 0"
         display="flex"

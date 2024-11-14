@@ -135,3 +135,27 @@ export function parseWeekdays(weekdaysStr) {
     return weekdaysStr; // Return the original string if parsing fails
   }
 }
+// Format a Unix timestamp into a JavaScript Date object in the user's local timezone
+// Format a Unix timestamp into a JavaScript Date object in the user's local timezone
+export const formatDateLocal = (unix_timestamp) => {
+  // Convert Unix timestamp to milliseconds if it's less than 10 digits
+  const timestamp =
+    unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
+
+  // Create a new Date object
+  const date = new Date(timestamp);
+
+  // Get the user's local timezone offset in minutes
+  const tz_offset_minutes = date.getTimezoneOffset();
+
+  // Create a new Date object in the user's local timezone
+  const local_date = new Date(date.getTime() + tz_offset_minutes * 60 * 1000);
+
+  // Convert the Date object to a string in the user's local timezone
+  return local_date.toLocaleString();
+};
+
+export function formatPE(value) {
+  if (value === 0) return undefined;
+  return parseFloat(value).toFixed(2);
+};

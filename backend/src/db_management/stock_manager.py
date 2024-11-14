@@ -249,7 +249,6 @@ class StockManager:
                 .group_by(self.stocks_scrape.c.ticker_symbol)
                 .subquery()
             )
-            
             # Define the main query to get stock scrape data with the most recent timestamp for each ticker
             query = select(
                 self.stocks_scrape.c.ticker_symbol,
@@ -266,10 +265,8 @@ class StockManager:
                 (self.stocks_scrape.c.ticker_symbol == subquery.c.ticker_symbol)
                 & (self.stocks_scrape.c.timestamp == subquery.c.max_timestamp),
             )
-            
             # Execute the query to retrieve the latest stock scrape data for each ticker
             result = session.execute(query)
-            
             # Convert each row of result into a dictionary and store it in a list
             stocks_data = [
                 {
@@ -284,7 +281,6 @@ class StockManager:
                 }
                 for row in result
             ]
-            
             return stocks_data
         except Exception as e:
             logger.error(f"Error retrieving recent stock scrape data: {e}")
