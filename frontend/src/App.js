@@ -6,9 +6,9 @@ import Topbar from "./scenes/global/topbar";
 import Sidebar from "./scenes/global/sidebar";
 import Dashboard from "./scenes/dashboard";
 import Jobs from "./scenes/jobs";
-import Stocks from "./scenes/stocks";
+import DailyAvg from "./scenes/stocks/daily_avg";
 import ApiKeys from "./scenes/api_keys";
-import StockDetails from "./scenes/stock_details";
+import DailyAvgDetails from "./scenes/stock_details/daily_avg";
 import Login from "./scenes/login";
 import Profile from "./scenes/profile";
 import ProtectedRoute from "./components/protected_route";
@@ -29,8 +29,8 @@ function App() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/stocks" element={<ProtectedRoute><Stocks /></ProtectedRoute>} />
-      <Route path="/stocks/:ticker" element={<ProtectedRoute><StockDetails /></ProtectedRoute>} />
+      <Route path="/stocks/daily_avg" element={<ProtectedRoute><DailyAvg /></ProtectedRoute>} />
+      <Route path="/stock_details/daily_avg/:ticker" element={<ProtectedRoute><DailyAvgDetails /></ProtectedRoute>} />
       <Route path="/api_keys" element={<ProtectedRoute required_role="Admin"><ApiKeys /></ProtectedRoute>} />
     </>
   ), []);

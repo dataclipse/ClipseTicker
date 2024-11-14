@@ -1,49 +1,37 @@
-// src/scenes/stocks/index.jsx
-import { Box, useTheme, Typography, Stack } from "@mui/material";
+// src/scenes/stock_details/index.jsx
+import { Box, useTheme, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { tokens } from "../../theme";
+import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Header from "../../components/header";
-import { Link, useNavigate } from "react-router-dom";
-import { QuickSearchToolbar, formatCurrency, formatDate } from "../../components/helper";
+import Header from "../../../components/header";
+import { useParams, useNavigate } from "react-router-dom";
+import ReactECharts from "echarts-for-react";
+import { getCandlestickChartOptions } from "../../../components/echart_options";
+import { formatCurrency, formatCurrencyChart, formatDate, formatDateChart } from "../../../components/helper";
 
-// Stocks Component - Displays the latest stock data in a DataGrid format
-// - Shows most recent OHLC (Open, High, Low, Close) data for stocks in NYSE.
+// Stocks Component - Displays detailed stock information for a selected ticker.
+// - Shows stock data in both a candlestick chart and a data grid.
 const Stocks = () => {
+  const { ticker } = useParams();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const navigate = useNavigate();
-  const [stocksData, setStocksData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stockData, setStockData] = useState({ details: [], chartData: [] });
+  const options = getCandlestickChartOptions(
+    ticker,
+    stockData.chartData,
+    colors
+  );
 
-  // Column definitions for DataGrid
+  // Column definitions for the DataGrid
   const columns = useMemo(() => [
     {
       field: "ticker_symbol",
       renderHeader: () => (
         <Typography sx={{ fontWeight: "bold" }}>{"Ticker"}</Typography>
       ),
-      renderCell: (params) => (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems={"center"}
-          height={"100%"}
-        >
-          <Link
-            to={`/stocks/${params.value}`}
-            style={{
-              textDecoration: "none",
-              color: colors.greenAccent[500],
-              mx: "0.5",
-            }}
-          >
-            <Typography sx={{ fontWeight: "bold", mx: "0.5" }}>
-              {params.value}
-            </Typography>
-          </Link>
-        </Stack>
-      ),
+      flex: 1,
     },
     {
       field: "open_price",
@@ -87,28 +75,42 @@ const Stocks = () => {
         <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
       ),
       flex: 1,
+      type: "dateTime",
     },
-  ], [colors]);
+  ], []);
 
-  // fetchData - Fetches the latest stock data from the API.
+  // fetchData - Fetches stock details and formats data for both chart and table.
+  // - Data is updated periodically with an interval of 30 seconds.
   const fetchData = useCallback(async () => {
-    setLoading(true); // Set loading to true before fetching
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/stocks", {
+      const response = await fetch(`/api/stocks/${ticker}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-
-      if (response.status === 401) {
+      if (response.status === 401 ) {
+        // Unauthorized, redirect to login page
         navigate("/login");
         return;
       }
-
       const data = await response.json();
+      
+      // Format data for the chart
+      const chart_data = data
+        .map((stock) => ({
+          timestamp_end: formatDateChart(stock.timestamp_end),
+          open: formatCurrencyChart(stock.open_price),
+          high: formatCurrencyChart(stock.highest_price),
+          low: formatCurrencyChart(stock.lowest_price),
+          close: formatCurrencyChart(stock.close_price),
+        }))
+        .filter((stock) => stock.timestamp_end)
+        .sort((a, b) => b.timestamp_end - a.timestamp_end);
+
+      // Format data for the DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
         ticker_symbol: stock.ticker_symbol,
@@ -118,13 +120,17 @@ const Stocks = () => {
         lowest_price: formatCurrency(stock.lowest_price),
         timestamp_end: formatDate(stock.timestamp_end),
       }));
-      setStocksData(formattedData);
+      // Combine state updates
+      setStockData({
+        details: formattedData,
+        chartData: chart_data,
+      });
     } catch (error) {
       console.error("Error fetching Stocks data:", error);
     } finally {
-      setLoading(false); // Set loading to false after fetching
+      setLoading(false);
     }
-  }, [navigate]);
+  }, [ticker, navigate]);
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
@@ -135,7 +141,13 @@ const Stocks = () => {
 
   return (
     <Box m="20px">
-      <Header title="NYSE" subtitle="Most Recent OHLC Data" />
+      <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
+
+      {/* ECharts Candlestick Chart */}
+      <ReactECharts
+        option={options}
+        style={{ height: "500px", width: "100%" }}
+      />
       <Box
         m="40px 0 0 0"
         display="flex"
@@ -164,15 +176,18 @@ const Stocks = () => {
           },
         }}
       >
+        
+        {/* DataGrid */}
         <DataGrid
-          localeText={{
-            toolbarQuickFilterPlaceholder: "Search for Ticker...",
-          }}
-          slots={{ toolbar: QuickSearchToolbar }}
-          rows={stocksData}
+          rows={stockData.details}
           columns={columns}
           loading={loading}
-        />
+          initialState={{
+            sorting: {
+              sortModel: [{ field: "timestamp_end", sort: "desc" }],
+            },
+          }}
+      />
       </Box>
     </Box>
   );

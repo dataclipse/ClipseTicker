@@ -35,7 +35,7 @@ class DBManager:
         self.Session = sessionmaker(bind=self.engine)
         self.job_manager = JobManager(self.Session, self.jobs, self.jobs_schedule)
         self.api_key_manager = ApiKeyManager(self.Session, self.api_keys, self.cipher)
-        self.stock_manager = StockManager(self.Session, self.stocks)
+        self.stock_manager = StockManager(self.Session, self.stocks, self.stocks_scrape)
         self.user_manager = UserManager(self.Session, self.users)
         self.scrape_manager = ScrapeManager(self.Session, self.stocks_scrape)
         

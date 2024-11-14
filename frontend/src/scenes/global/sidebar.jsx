@@ -1,14 +1,5 @@
 // src/scenes/global/sidbar.jsx
-import {
-  Box,
-  Typography,
-  useTheme,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
+import { Box, Typography, useTheme, Drawer, List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import { Link } from "react-router-dom";
 import { tokens } from "../../theme";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
@@ -17,30 +8,9 @@ import WorkIcon from "@mui/icons-material/Work";
 import KeyIcon from "@mui/icons-material/Key";
 import { useState } from "react";
 import { useAuth } from "../../context/auth_context";
-
-// Sidebar item component for a clickable navigation link.
-// Changes color when selected and navigates to the specified route.
-const Item = ({ title, to, icon, selected, setSelected }) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  return (
-    <ListItem
-      button
-      component={Link}
-      to={to}
-      onClick={() => setSelected(title)}
-    >
-      <ListItemIcon
-        style={{
-          color: selected === title ? colors.blueAccent[700] : colors.grey[100],
-        }}
-      >
-        {icon}
-      </ListItemIcon>
-      <ListItemText primary={title} style={{ color: colors.grey[100] }} />
-    </ListItem>
-  );
-};
+import { Collapse } from "@mui/material";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 
 // Sidebar component for application navigation.
 // Displays links to different pages based on user role and allows for role-based menu items.
@@ -49,13 +19,11 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [selected, setSelected] = useState("Dashboard");
   const { user } = useAuth();
+  const [openStocks, setOpenStocks] = useState(false);
 
-  // Define sidebar items
-  const sidebarItems = [
-    { title: "Dashboard", to: "/", icon: <HomeOutlinedIcon /> },
-    { title: "Stocks", to: "/stocks", icon: <ShowChartIcon /> },
-    { title: "Job Scheduler", to: "/jobs", icon: <WorkIcon /> },
-  ];
+  const handleStocksClick = () => {
+    setOpenStocks(!openStocks); // Ensure this function is defined here
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -69,6 +37,7 @@ const Sidebar = () => {
           },
         }}
       >
+
         {/* Sidebar content */}
         <Box
           sx={{
@@ -78,6 +47,7 @@ const Sidebar = () => {
             height: "100%",
           }}
         >
+
           {/* Application title */}
           <Box mb="25px">
             <Typography
@@ -91,7 +61,12 @@ const Sidebar = () => {
           </Box>
 
           {/* User profile image */}
-          <Box mb="10px" display="flex" justifyContent="center" alignItems="center">
+          <Box
+            mb="10px"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
             <img
               alt="profile-user"
               width="50px"
@@ -103,7 +78,12 @@ const Sidebar = () => {
 
           {/* User name and role display */}
           <Box textAlign="center">
-            <Typography variant="h4" color={colors.grey[100]} fontWeight="bold" sx={{ m: "1px 0 0 0" }}>
+            <Typography
+              variant="h4"
+              color={colors.grey[100]}
+              fontWeight="bold"
+              sx={{ m: "1px 0 0 0" }}
+            >
               {user?.username}
             </Typography>
             <Typography variant="h5" color={colors.greenAccent[500]}>
@@ -113,16 +93,25 @@ const Sidebar = () => {
 
           {/* Sidebar navigation items */}
           <List sx={{ marginTop: "20px" }}>
-            <Item
-              title="Dashboard"
+            <ListItem
+              button
+              component={Link}
               to="/"
-              icon={<HomeOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
+              onClick={() => setSelected("Dashboard")}
+            >
+              <ListItemIcon
+                style={{
+                  color: selected === "Dashboard" ? colors.blueAccent[500] : colors.grey[100],
+                }}
+              >
+                <HomeOutlinedIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Dashboard" 
+                style={{ color: colors.grey[100] }} 
+              />
+            </ListItem>
           </List>
-
-          {/* Markets section header */}
           <Typography
             variant="h6"
             fontWeight={"bold"}
@@ -132,19 +121,44 @@ const Sidebar = () => {
             Markets
           </Typography>
           <List>
-            {sidebarItems.slice(1, 2).map((item) => ( // Only include "Stocks" here
-              <Item
-                key={item.title}
-                title={item.title}
-                to={item.to}
-                icon={item.icon}
-                selected={selected}
-                setSelected={setSelected}
-              />
-            ))}
+            <ListItem
+              button
+              onClick={handleStocksClick}
+            >
+              <ListItemIcon
+                style={{
+                  color: selected === "Stocks" ? colors.blueAccent[500] : colors.grey[100],
+                }}
+              >
+                <ShowChartIcon />
+              </ListItemIcon>
+              Stocks
+              {openStocks ? <ExpandLess /> : <ExpandMore />}
+            </ListItem>
+            <Collapse in={openStocks} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItem 
+                  style={{ marginLeft: '40px', color: colors.grey[100] }} 
+                  button 
+                  component={Link} 
+                  to="/stocks/daily_avg"
+                  onClick={() => setSelected("Stocks")}
+                >
+                  <ListItemText primary="Daily Avg Aggregates" />
+                </ListItem>
+                <ListItem 
+                  style={{ marginLeft: '40px', 
+                  color: colors.grey[100] }} 
+                  button 
+                  component={Link} 
+                  to="/stocks/screener"
+                  onClick={() => setSelected("Stocks")} 
+                >
+                  <ListItemText primary="Stock Screener" />
+                </ListItem>
+              </List>
+            </Collapse>
           </List>
-
-          {/* Data section header */}
           <Typography
             variant="h6"
             color={colors.grey[300]}
@@ -154,16 +168,24 @@ const Sidebar = () => {
             Data
           </Typography>
           <List>
-            {sidebarItems.slice(2).map((item) => ( // Only include "Job Scheduler" here
-              <Item
-                key={item.title}
-                title={item.title}
-                to={item.to}
-                icon={item.icon}
-                selected={selected}
-                setSelected={setSelected}
+            <ListItem
+              button
+              component={Link}
+              to="/jobs"
+              onClick={() => setSelected("Job Scheduler")}
+            >
+              <ListItemIcon
+                style={{
+                  color: selected === "Job Scheduler" ? colors.blueAccent[500] : colors.grey[100],
+                }}
+              >
+                <WorkIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Job Scheduler" 
+                style={{ color: colors.grey[100] }} 
               />
-            ))}
+            </ListItem>
           </List>
 
           {/* Settings section, only visible to Admin users */}
@@ -178,13 +200,24 @@ const Sidebar = () => {
                 Settings
               </Typography>
               <List>
-                <Item
-                  title="API Keys"
+                <ListItem
+                  button
+                  component={Link}
                   to="/api_keys"
-                  icon={<KeyIcon />}
-                  selected={selected}
-                  setSelected={setSelected}
-                />
+                  onClick={() => setSelected("API Keys")}
+                >
+                  <ListItemIcon
+                    style={{
+                      color: selected === "API Keys" ? colors.blueAccent[500] : colors.grey[100],
+                    }}
+                  >
+                    <KeyIcon />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="API Keys" 
+                    style={{ color: colors.grey[100] }} 
+                  />
+                </ListItem>
               </List>
             </>
           )}
@@ -195,3 +228,4 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
