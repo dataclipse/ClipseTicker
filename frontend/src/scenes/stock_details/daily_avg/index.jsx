@@ -1,12 +1,13 @@
 // src/scenes/stock_details/index.jsx
-import { Box, useTheme, Typography } from "@mui/material";
+import { Box, useTheme, Typography, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../../theme";
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatDate, convertTimestamp, customPriceFormatter  } from "../../../components/helper";
-import { createChart } from 'lightweight-charts';
+import { formatCurrency, formatDate, formatDateChart } from "../../../components/helper";
+import CandlestickChart from '../../../components/candlestick';
+
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 // - Shows stock data in both a candlestick chart and a data grid.
@@ -17,72 +18,8 @@ const Stocks = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stockData, setStockData] = useState({ details: [], chartData: [] });
-  const chartContainerRef = useRef();
-
-  useEffect(() => {
-    try {
-      const handleResize = () => {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-      };
-      const chart = createChart(chartContainerRef.current, {
-        layout: {
-          background: {
-            color: colors.primary[500]
-          },
-          attributionLogo: false,
-          textColor: colors.grey[100],
-        },
-        grid: {
-          vertLines: { color: colors.grey[700] },
-          horzLines: { color: colors.grey[700] }
-        },
-        width: chartContainerRef.current.clientWidth,
-        height: 400,
-      });
-      const candlestickSeries = chart.addCandlestickSeries({
-        upColor: colors.greenAccent[500],
-        downColor: colors.redAccent[500],
-        borderUpColor: colors.greenAccent[500],
-        borderDownColor: colors.redAccent[500],
-        wickUpColor: colors.greenAccent[500],
-        wickDownColor: colors.redAccent[500],
-        borderColor: colors.grey[500],
-      });
-      const sortedChartData = stockData.chartData.sort((a, b) => a.time - b.time);
-      candlestickSeries.setData(sortedChartData);
-      candlestickSeries.priceScale().applyOptions({
-        autoScale: true,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.2,
-        },
-        textColor: colors.grey[100],
-        borderColor: colors.grey[700],
-      });
-      // Apply the custom priceFormatter to the chart
-      chart.applyOptions({
-        localization: {
-          priceFormatter: customPriceFormatter,
-        },
-      });
-      // Setting the border color for the horizontal axis
-      chart.timeScale().applyOptions({
-        borderColor: colors.grey[700],
-        textColor: colors.grey[100],
-        timeVisible: true,
-        secondsVisible: false,
-        visible: true,
-        barSpacing: 20,
-      });
-      window.addEventListener('resize', handleResize);
-      return () => {
-        window.addEventListener('resize', handleResize);
-        chart.remove();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }, [colors, stockData]);
+  const [filteredChartData, setFilteredChartData] = useState(stockData.chartData);
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState('1m'); // Default to 1 month
 
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
@@ -161,7 +98,7 @@ const Stocks = () => {
       // Format data for the chart
       const chart_data = data
         .map((stock) => ({
-          time: convertTimestamp(stock.timestamp_end),
+          time: formatDateChart(stock.timestamp_end),
           open: stock.open_price,
           high: stock.highest_price,
           low: stock.lowest_price,
@@ -183,30 +120,92 @@ const Stocks = () => {
         details: formattedData,
         chartData: chart_data,
       });
+      // Set filteredChartData based on selectedTimeFrame
+      const now = new Date();
+      const filteredData = chart_data.filter((dataPoint) => {
+        const dataDate = new Date(dataPoint.time);
+        switch (selectedTimeFrame) {
+          case '1w':
+            return dataDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+          case '1m':
+            return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+          case 'YTD':
+            return dataDate >= new Date(now.getFullYear(), 0, 1);
+          case '1y':
+            return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          case '2y':
+            return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+          default:
+            return true;
+        }
+      });
+      setFilteredChartData(filteredData);
     } catch (error) {
       console.error("Error fetching Stocks data:", error);
     } finally {
       setLoading(false);
     }
-  }, [ticker, navigate]);
+  }, [ticker, navigate, selectedTimeFrame]);
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
     try {
       fetchData();
       const intervalId = setInterval(fetchData, 30000);
-      return () => clearInterval(intervalId);
+      
+      // Add event listener for window resize
+      const handleResize = () => {
+        fetchData(); // Reload graph data on resize
+      };
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        clearInterval(intervalId);
+        window.removeEventListener('resize', handleResize); // Clean up listener
+      };
     } catch (error) {
       console.error(error);
     }
   }, [fetchData]);
 
+  // Function to filter chart data based on selected time frame
+  const filterChartData = (timeFrame) => {
+    setSelectedTimeFrame(timeFrame);
+    const now = new Date();
+    const filteredData = stockData.chartData.filter((dataPoint) => {
+      const dataDate = new Date(dataPoint.time);
+      switch (timeFrame) {
+        case '1w':
+          return dataDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        case '1m':
+          return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        case 'YTD':
+          return dataDate >= new Date(now.getFullYear(), 0, 1);
+        case '1y':
+          return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        case '2y':
+          return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        default:
+          return true;
+      }
+    });
+    setFilteredChartData(filteredData);
+  };
+
   return (
     <Box m="20px">
       <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
-      <div ref={chartContainerRef}></div>
+      
+      {/* Buttons for filtering chart data */}
+      <Box display="flex">
+        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1, ml: 6.1 }} onClick={() => filterChartData('1w')}>Last 1 Week</Button>
+        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }} onClick={() => filterChartData('1m')}>Last 1 Month</Button>
+        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }} onClick={() => filterChartData('YTD')}>Year To Date</Button>
+        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }}  onClick={() => filterChartData('1y')}>Last 1 Year</Button>
+        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500] }}  onClick={() => filterChartData('2y')}>Last 2 Years</Button>
+      </Box>
+      <CandlestickChart data={filteredChartData} colors={colors}/>
       <Box
-        m="40px 0 0 0"
         display="flex"
         height={"75vh"}
         sx={{
