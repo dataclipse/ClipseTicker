@@ -182,6 +182,7 @@ const Stocks = () => {
         }
     }, [navigate]);
 
+    // Sets up periodic data fetching
     useEffect(() => {
         fetchData();
         const intervalId = setInterval(fetchData, 30000);

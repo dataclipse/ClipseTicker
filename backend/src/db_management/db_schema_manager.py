@@ -119,6 +119,13 @@ class DBSchemaManager:
             PrimaryKeyConstraint("ticker_symbol", "timestamp"),  # Composite primary key
         )
         
+        # Create an index on stocks for fast lookup by timestamp_end and ticker_symbol
+        Index(
+            "idx_stocks_timestamp_ticker",
+            stocks_scrape.c.ticker_symbol,
+            stocks_scrape.c.timestamp,
+        )
+        
         # Define the jobs_schedule table for managing scheduled jobs
         jobs_schedule = Table(
             "jobs_schedule",

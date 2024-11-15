@@ -184,11 +184,15 @@ const Stocks = () => {
         return () => clearInterval(intervalId);
     }, [fetchData]);
 
+    // Filter the chartData based on the button that is pressed
     const getFilteredChartData = useCallback(() => {
         const now = new Date();
         const data = [...stockData.chartData];
-        // Ensure data is sorted chronologically
+
+        // Ensure the data is sorted in chronological order (oldest to newest) based on the `time` property.
         data.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        // Use a switch statement to filter the data based on the selected `timeRange`.
         switch (timeRange) {
             case '1D':
                 const oneDayAgo = new Date(now.setDate(now.getDate() - 1));
