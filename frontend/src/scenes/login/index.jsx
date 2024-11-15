@@ -83,7 +83,6 @@ function Login() {
                     <Typography variant="h3" sx={{ mb: '20px', fontWeight: 'bold' }}>
                     Login
                     </Typography>
-                        {error && <Typography color="error">{error}</Typography>}
                         <TextField 
                             sx= {{ mb: '10px '}}
                             label="Username" 
@@ -101,7 +100,7 @@ function Login() {
                             fullWidth 
                             color={colors.redAccent[500]}
                         />
-                    
+                        {error && <Typography color="error">{error}</Typography>}
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'left' }}>
                     <Button type="submit" variant="contained" color="primary" sx= {{ ml: '10px '}} >LOG IN</Button>

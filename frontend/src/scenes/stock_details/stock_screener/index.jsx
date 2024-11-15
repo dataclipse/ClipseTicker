@@ -167,7 +167,7 @@ const Stocks = () => {
 
     return (
         <Box m="20px">
-            <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
+            <Header title="Stock Details" subtitle={`Full Stock Screener Data for ${ticker} polled ~every minute`} />
             <Box
                 m="40px 0 0 0"
                 display="flex"

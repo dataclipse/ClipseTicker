@@ -308,10 +308,13 @@ const Jobs = () => {
         subtitle="Status of Jobs to Fetch Stock Data"
       />
       {/* Button to open the modal */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box display="flex" justifyContent="left" alignItems="left" mb={2} >
         <Button
-          variant="outlined"
-          color="secondary"
+          variant="outlined" 
+          sx={{ 
+            borderColor: colors.greenAccent[500], 
+            color: colors.greenAccent[500] 
+          }}
           onClick={handleOpenScheduleJobDialog}
           startIcon={<AddCircleOutlineIcon />}
           disabled={user.role !== "Admin"}
@@ -321,10 +324,13 @@ const Jobs = () => {
         </Button>
         <Button
           variant="outlined"
-          color="secondary"
+          sx={{ 
+            borderColor: colors.greenAccent[500], 
+            color: colors.greenAccent[500], 
+            ml: 2
+          }}
           onClick={fetchData}
           startIcon={<RefreshIcon  />}
-          disabled={user.role !== "Admin"}
         >
           Refresh Job Schedule
         </Button>
