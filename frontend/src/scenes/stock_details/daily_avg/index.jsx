@@ -5,7 +5,7 @@ import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatDate, convertTimestamp } from "../../../components/helper";
+import { formatCurrency, formatDate, convertTimestamp, customPriceFormatter  } from "../../../components/helper";
 import { createChart } from 'lightweight-charts';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
@@ -39,7 +39,6 @@ const Stocks = () => {
         width: chartContainerRef.current.clientWidth,
         height: 400,
       });
-
       const candlestickSeries = chart.addCandlestickSeries({
         upColor: colors.greenAccent[500],
         downColor: colors.redAccent[500],
@@ -48,43 +47,24 @@ const Stocks = () => {
         wickUpColor: colors.greenAccent[500],
         wickDownColor: colors.redAccent[500],
         borderColor: colors.grey[500],
-      })
+      });
       const sortedChartData = stockData.chartData.sort((a, b) => a.time - b.time);
       candlestickSeries.setData(sortedChartData);
       candlestickSeries.priceScale().applyOptions({
-        autoScale: true, // disables auto scaling based on visible content
+        autoScale: true,
         scaleMargins: {
           top: 0.1,
-          bottom: .6,
+          bottom: 0.2,
         },
         textColor: colors.grey[100],
         borderColor: colors.grey[700],
       });
-
-      // Get the current users primary locale
-      const currentLocale = window.navigator.languages[0];
-
-      // Create a number format using Intl.NumberFormat
-      const myPriceFormatter = Intl.NumberFormat(currentLocale, {
-        style: "currency",
-        currency: "USD", // Currency for data points
-        currencyDisplay: "symbol",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format;
-
-      const customPriceFormatter = (value) => {
-        const formattedValue = myPriceFormatter(value);
-        return formattedValue.replace(/([^\d.,]+)(\d)/, '$1 $2');
-      };
-
       // Apply the custom priceFormatter to the chart
       chart.applyOptions({
         localization: {
           priceFormatter: customPriceFormatter,
         },
       });
-
       // Setting the border color for the horizontal axis
       chart.timeScale().applyOptions({
         borderColor: colors.grey[700],
@@ -94,19 +74,15 @@ const Stocks = () => {
         visible: true,
         barSpacing: 20,
       });
-
-      chart.timeScale().fitContent();
-
       window.addEventListener('resize', handleResize);
-
       return () => {
-        window.removeEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
         chart.remove();
       }
     } catch (error) {
       console.error(error);
     }
-  }, [colors, stockData.chartData]);
+  }, [colors, stockData]);
 
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
@@ -191,7 +167,7 @@ const Stocks = () => {
           low: stock.lowest_price,
           close: stock.close_price,
         }))
-      console.log(chart_data)
+
       // Format data for the DataGrid
       const formattedData = data.map((stock, index) => ({
         id: index,
@@ -216,7 +192,7 @@ const Stocks = () => {
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
-    try{
+    try {
       fetchData();
       const intervalId = setInterval(fetchData, 30000);
       return () => clearInterval(intervalId);

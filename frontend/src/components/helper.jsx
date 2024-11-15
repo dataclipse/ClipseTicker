@@ -182,3 +182,14 @@ export function convertTimestamp(timestamp){
 
   return newTimestamp;
 }
+const myPriceFormatter = Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  currencyDisplay: 'symbol',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+}).format;
+export const customPriceFormatter = (value) => {
+  const formattedValue = myPriceFormatter(value);
+  return formattedValue.replace(/([^\d.,]+)(\d)/, '$1 $2');
+};

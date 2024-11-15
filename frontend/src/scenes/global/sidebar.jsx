@@ -34,6 +34,7 @@ const Sidebar = () => {
             background: `${colors.primary[400]} !important`,
             width: 250,
             height: "100%",
+            overflowX: "hidden"
           },
         }}
       >
@@ -106,9 +107,9 @@ const Sidebar = () => {
               >
                 <HomeOutlinedIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary="Dashboard" 
-                style={{ color: colors.grey[100] }} 
+              <ListItemText
+                primary="Dashboard"
+                style={{ color: colors.grey[100] }}
               />
             </ListItem>
           </List>
@@ -137,22 +138,24 @@ const Sidebar = () => {
             </ListItem>
             <Collapse in={openStocks} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                <ListItem 
-                  style={{ marginLeft: '40px', color: colors.grey[100] }} 
-                  button 
-                  component={Link} 
+                <ListItem
+                  style={{ marginLeft: '55px', color: colors.grey[100] }}
+                  button
+                  component={Link}
                   to="/stocks/daily_avg"
                   onClick={() => setSelected("Stocks")}
                 >
                   <ListItemText primary="Daily Avg Aggregates" />
                 </ListItem>
-                <ListItem 
-                  style={{ marginLeft: '40px', 
-                  color: colors.grey[100] }} 
-                  button 
-                  component={Link} 
+                <ListItem
+                  style={{
+                    marginLeft: '55px',
+                    color: colors.grey[100]
+                  }}
+                  button
+                  component={Link}
                   to="/stocks/stock_screener"
-                  onClick={() => setSelected("Stocks")} 
+                  onClick={() => setSelected("Stocks")}
                 >
                   <ListItemText primary="Stock Screener" />
                 </ListItem>
@@ -181,9 +184,9 @@ const Sidebar = () => {
               >
                 <WorkIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary="Job Scheduler" 
-                style={{ color: colors.grey[100] }} 
+              <ListItemText
+                primary="Job Scheduler"
+                style={{ color: colors.grey[100] }}
               />
             </ListItem>
           </List>
@@ -213,9 +216,9 @@ const Sidebar = () => {
                   >
                     <KeyIcon />
                   </ListItemIcon>
-                  <ListItemText 
-                    primary="API Keys" 
-                    style={{ color: colors.grey[100] }} 
+                  <ListItemText
+                    primary="API Keys"
+                    style={{ color: colors.grey[100] }}
                   />
                 </ListItem>
               </List>
