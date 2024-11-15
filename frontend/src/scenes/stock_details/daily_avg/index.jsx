@@ -1,5 +1,5 @@
 // src/scenes/stock_details/index.jsx
-import { Box, useTheme, Typography, Button } from "@mui/material";
+import { Box, useTheme, Typography, Button, ButtonGroup, Stack } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -72,7 +72,20 @@ const Stocks = () => {
         <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
       ),
       flex: 1,
-      type: "dateTime",
+      renderCell: (params) => {
+        const date = params.value;
+        return (
+            <Stack
+                direction="row"
+                alignItems={"center"}
+                height={"100%"}
+            >
+                <Typography sx={{ fontSize: 12 }}>
+                    {date.toLocaleDateString()}
+                </Typography>
+            </Stack>
+        );
+      },
     },
   ], []);
 
@@ -152,7 +165,7 @@ const Stocks = () => {
     try {
       fetchData();
       const intervalId = setInterval(fetchData, 30000);
-      
+
       // Add event listener for window resize
       const handleResize = () => {
         fetchData(); // Reload graph data on resize
@@ -195,16 +208,32 @@ const Stocks = () => {
   return (
     <Box m="20px">
       <Header title="Stock Details" subtitle={`Full OHLC Data for ${ticker}`} />
-      
-      {/* Buttons for filtering chart data */}
-      <Box display="flex">
-        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1, ml: 6.1 }} onClick={() => filterChartData('1w')}>Last 1 Week</Button>
-        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }} onClick={() => filterChartData('1m')}>Last 1 Month</Button>
-        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }} onClick={() => filterChartData('YTD')}>Year To Date</Button>
-        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500], mr: 1 }}  onClick={() => filterChartData('1y')}>Last 1 Year</Button>
-        <Button variant="outlined" sx={{ borderColor: colors.greenAccent[500], color: colors.greenAccent[500] }}  onClick={() => filterChartData('2y')}>Last 2 Years</Button>
+
+      {/* Replace the individual Buttons with ButtonGroup */}
+      <Box mb={2}>
+        <ButtonGroup variant="contained" sx={{ ml: 6.1 }}>
+          {['1w', '1m', 'YTD', '1y', '2y'].map((range) => (
+            <Button
+              key={range}
+              onClick={() => filterChartData(range)}
+              sx={{
+                backgroundColor: selectedTimeFrame === range ? colors.blueAccent[700] : colors.blueAccent[800],
+                '&:hover': {
+                  backgroundColor: colors.blueAccent[600],
+                }
+              }}
+            >
+              {range === '1w' ? '1 Week' :
+                range === '1m' ? '1 Month' :
+                  range === 'YTD' ? 'Year To Date' :
+                    range === '1y' ? '1 Year' :
+                      '2 Years'}
+            </Button>
+          ))}
+        </ButtonGroup>
       </Box>
-      <CandlestickChart data={filteredChartData} colors={colors}/>
+
+      <CandlestickChart data={filteredChartData} colors={colors} />
       <Box
         display="flex"
         height={"75vh"}

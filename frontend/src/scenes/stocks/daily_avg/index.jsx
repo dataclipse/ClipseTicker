@@ -87,6 +87,20 @@ const Stocks = () => {
         <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
       ),
       flex: 1,
+      renderCell: (params) => {
+        const date = params.value;
+        return (
+            <Stack
+                direction="row"
+                alignItems={"center"}
+                height={"100%"}
+            >
+                <Typography sx={{ fontSize: 12 }}>
+                    {date.toLocaleDateString()}
+                </Typography>
+            </Stack>
+        );
+      },
     },
   ], [colors]);
 

@@ -1,14 +1,14 @@
 // src/scenes/stock_details/index.jsx
-import { Box, useTheme, Typography, Stack } from "@mui/material";
+import { Box, useTheme, Typography, Stack, ButtonGroup, Button } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatCurrencyChart, formatDateLocal, formatDateChart, formatPE } from "../../../components/helper";
+import { formatCurrency, formatDateLocal, formatPE } from "../../../components/helper";
+import { ScreenerLine } from '../../../components/screener_line';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
-// - Shows stock data in both a candlestick chart and a data grid.
 const Stocks = () => {
     const { ticker } = useParams();
     const theme = useTheme();
@@ -16,6 +16,7 @@ const Stocks = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [stockData, setStockData] = useState({ details: [], chartData: [] });
+    const [timeRange, setTimeRange] = useState('1D');
 
     // Column definitions for the DataGrid
     const columns = useMemo(() => [
@@ -97,9 +98,28 @@ const Stocks = () => {
         {
             field: "timestamp",
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Timestamp"}</Typography>
+                <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
             ),
             flex: 1,
+            renderCell: (params) => {
+                const date = params.value;
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const formattedTime = `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                return (
+                    <Stack
+                        direction="row"
+                        alignItems={"center"}
+                        justifyContent={'left'}
+                        height={"100%"}
+                    >
+                        <Typography sx={{ mt: .1, fontSize: 12 }}>
+                            {date.toLocaleDateString()} {formattedTime}
+                        </Typography>
+                    </Stack>
+                );
+            },
         },
     ], [colors]);
 
@@ -125,14 +145,13 @@ const Stocks = () => {
             // Format data for the chart
             const chart_data = data
                 .map((stock) => ({
-                    timestamp_end: formatDateChart(stock.timestamp_end),
-                    open: formatCurrencyChart(stock.open_price),
-                    high: formatCurrencyChart(stock.highest_price),
-                    low: formatCurrencyChart(stock.lowest_price),
-                    close: formatCurrencyChart(stock.close_price),
+                    time: stock.timestamp,
+                    price: stock.price,
+                    ticker_symbol: stock.ticker_symbol
                 }))
-                .filter((stock) => stock.timestamp_end)
-                .sort((a, b) => b.timestamp_end - a.timestamp_end);
+                .filter((stock) => stock.time)
+                .sort((a, b) => b.time - a.time);
+
 
             // Format data for the DataGrid
             const formattedData = data.map((stock, index) => ({
@@ -165,11 +184,57 @@ const Stocks = () => {
         return () => clearInterval(intervalId);
     }, [fetchData]);
 
+    const getFilteredChartData = useCallback(() => {
+        const now = new Date();
+        const data = [...stockData.chartData];
+        // Ensure data is sorted chronologically
+        data.sort((a, b) => new Date(a.time) - new Date(b.time));
+        switch (timeRange) {
+            case '1D':
+                const oneDayAgo = new Date(now.setDate(now.getDate() - 1));
+                return data.filter(item => new Date(item.time) >= oneDayAgo);
+            case '5D':
+                const fiveDaysAgo = new Date(now.setDate(now.getDate() - 5));
+                return data.filter(item => new Date(item.time) >= fiveDaysAgo);
+            case '1M':
+                const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                return data.filter(item => new Date(item.time) >= oneMonthAgo);
+            case 'YTD':
+                const startOfYear = new Date(now.getFullYear(), 0, 1);
+                return data.filter(item => new Date(item.time) >= startOfYear);
+            case '1Y':
+                const oneYearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
+                return data.filter(item => new Date(item.time) >= oneYearAgo);
+            default:
+                return data;
+        }
+    }, [timeRange, stockData.chartData]);
+
     return (
         <Box m="20px">
             <Header title="Stock Details" subtitle={`Full Stock Screener Data for ${ticker} polled ~every minute`} />
+
+            <Box mb={2}>
+                <ButtonGroup variant="contained" sx={{ ml: 6.1 }}>
+                    {['1D', '5D', '1M', 'YTD', '1Y'].map((range) => (
+                        <Button
+                            key={range}
+                            onClick={() => setTimeRange(range)}
+                            sx={{
+                                backgroundColor: timeRange === range ? colors.blueAccent[700] : colors.blueAccent[800],
+                                '&:hover': {
+                                    backgroundColor: colors.blueAccent[600],
+                                }
+                            }}
+                        >
+                            {range}
+                        </Button>
+                    ))}
+                </ButtonGroup>
+            </Box>
+
+            <ScreenerLine data={getFilteredChartData()} colors={colors} />
             <Box
-                m="40px 0 0 0"
                 display="flex"
                 height={"75vh"}
                 sx={{

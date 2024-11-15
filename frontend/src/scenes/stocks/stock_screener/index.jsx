@@ -120,9 +120,27 @@ const Stocks = () => {
         {
             field: "timestamp",
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Timestamp"}</Typography>
+                <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
             ),
             flex: 1,
+            renderCell: (params) => {
+                const date = params.value;
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const formattedTime = `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                return (
+                    <Stack
+                        direction="row"
+                        alignItems={"center"}
+                        height={"100%"}
+                    >
+                        <Typography sx={{ mt: .1, fontSize: 12 }}>
+                            {date.toLocaleDateString()} {formattedTime}
+                        </Typography>
+                    </Stack>
+                );
+            },
         },
     ], [colors]);
 
@@ -157,7 +175,6 @@ const Stocks = () => {
                 pe_ratio: formatPE(stock.pe_ratio),
                 timestamp: formatDateLocal(stock.timestamp),
             }));
-            console.log(formattedData)
             setStocksData(formattedData);
             setLoading(false);
         } catch (error) {

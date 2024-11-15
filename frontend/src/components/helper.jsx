@@ -159,15 +159,16 @@ export const formatDateLocal = (unix_timestamp) => {
   const local_date = new Date(date.getTime() + tz_offset_minutes * 60 * 1000);
   
   // Convert the Date object to a string in the user's local timezone
-  return local_date.toLocaleString('default', {  
-    year: 'numeric', 
-    month: 'short', 
-    day: '2-digit', 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit', 
-    hour12: true 
-  });
+  // return local_date.toLocaleString('default', {  
+  //   year: 'numeric', 
+  //   month: 'short', 
+  //   day: '2-digit', 
+  //   hour: '2-digit', 
+  //   minute: '2-digit', 
+  //   second: '2-digit', 
+  //   hour12: true 
+  // });
+  return local_date
 };
 
 export function formatPE(value) {

@@ -125,7 +125,6 @@ const Jobs = () => {
           <Typography sx={{ fontWeight: "bold" }}>{"Data Fetch End Date"}</Typography>
         ),
         flex: 0.5,
-        hide: true,
       },
       {
         field: "interval_days",
