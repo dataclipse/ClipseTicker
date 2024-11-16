@@ -42,11 +42,16 @@ export const validateDateRange = (start, end, setError, allowFutureDates = false
   }
 };
 
-export const updateFormState = (setFormState, field, value) => {
-  setFormState(prevState => ({
-      ...prevState,
-      [field]: value,
-  }));
+export const updateFormState = (field, value, setStateFunction) => {
+    if (typeof setStateFunction !== 'function') {
+        console.error('setStateFunction is not a function:', setStateFunction);
+        return;
+    }
+    
+    setStateFunction(prevState => ({
+        ...prevState,
+        [field]: value
+    }));
 };
 
 export const calculateDataFetchDates = (dataFetchType, updateFormState) => {

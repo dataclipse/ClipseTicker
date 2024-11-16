@@ -31,23 +31,23 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
 
     // State variables for managing form inputs
     const [formState, setFormState] = useState({
-        jobType: '', // Job type
-        service: '', // Service used for the job
-        owner: user?.username, // Job owner
-        dataFetchStartDate: '', // Start date for data fetching
-        dataFetchEndDate: '', // End date for data fetching
-        scheduledStartDate: '', // Job scheduled start date
-        scheduledEndDate: '', // Job scheduled end date
-        scheduledStartTime: '', // Job start time
-        scheduledEndTime: '', // Job end time
-        interval: '', // Interval between job runs
-        frequency: '', // Job frequency
-        customInterval: '', // Custom interval for scheduling
-        dataFetchType: '', // Type of data fetch
-        selectedDays: [], // Selected days for job scheduling
-        dateError: "", // Error message for date validation
-        dataFetchDateError: "", // Error message for date validation
-        primaryKeyFail: "", // Error message for date validation
+        jobType: '', 
+        service: '', 
+        owner: user?.username, 
+        dataFetchStartDate: '', 
+        dataFetchEndDate: '', 
+        scheduledStartDate: '', 
+        scheduledEndDate: '', 
+        scheduledStartTime: '', 
+        scheduledEndTime: '', 
+        interval: '', 
+        frequency: '', 
+        customInterval: '', 
+        dataFetchType: '', 
+        selectedDays: [], 
+        dateError: "", 
+        dataFetchDateError: "", 
+        primaryKeyFail: "", 
     });
 
     // Define days of the week for selection
@@ -124,9 +124,9 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
 
     // Handlers for date changes
     const handleDateChange = useCallback((field, value, validateFunc) => {
-        updateFormState(field, value);
+        updateFormState(field, value, setFormState);
         validateFunc(value, formState[field === 'scheduledStartDate' ? 'scheduledEndDate' : 'scheduledStartDate'], (error) => {
-            updateFormState(field === 'scheduledStartDate' ? 'dateError' : 'dataFetchDateError', error);
+            updateFormState(field === 'scheduledStartDate' ? 'dateError' : 'dataFetchDateError', error, setFormState);
         }, true);
     }, [formState]);
 
@@ -216,7 +216,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
     // Ensure the dates are calculated correctly if the datatype changes
     useEffect(() => {
         if (formState.dataFetchType) {
-            calculateDataFetchDates(formState.dataFetchType, updateFormState); // Calculate data fetch dates when dataFetchType changes
+            calculateDataFetchDates(formState.dataFetchType, (field, value) => updateFormState(field, value, setFormState));
         }
     }, [formState.dataFetchType]); 
 
@@ -227,7 +227,11 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 {/* Job Type Dropdown */}
                 <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                     <InputLabel>Job Type</InputLabel>
-                    <Select label="Job Type" value={formState.jobType} onChange={({ target: { value } }) => updateFormState('jobType', value)}>
+                    <Select 
+                        label="Job Type" 
+                        value={formState.jobType} 
+                        onChange={(e) => updateFormState('jobType', e.target.value, setFormState)}
+                    >
                         <MenuItem value="api_fetch">API Fetch</MenuItem>
                         <MenuItem value="data_scrape">Data Scrape</MenuItem>
                     </Select>
@@ -237,7 +241,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 {formState.jobType && (
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]} disabled={!formState.jobType}>
                         <InputLabel>Service</InputLabel>
-                        <Select label="Service" value={formState.service} onChange={({ target: { value } }) => updateFormState('service', value)}>
+                        <Select label="Service" value={formState.service} onChange={({ target: { value } }) => updateFormState('service', value, setFormState)}>
                             {formState.jobType === "api_fetch" && (
                                 <MenuItem value="polygon_io">Polygon.io</MenuItem>
                             )}
@@ -253,7 +257,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                     label="Owner" 
                     fullWidth
                     value={formState.owner}
-                    onChange={({ target: { value } }) => updateFormState('owner', value)}
+                    onChange={({ target: { value } }) => updateFormState('owner', value, setFormState)}
                     margin="normal" 
                     color={colors.redAccent[500]}
                 />
@@ -261,7 +265,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 {/* Frequency Dropdown */}
                 <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                     <InputLabel>Frequency</InputLabel>
-                    <Select value={formState.frequency} onChange={({ target: { value } }) => updateFormState('frequency', value)} label='Frequency'>
+                    <Select value={formState.frequency} onChange={({ target: { value } }) => updateFormState('frequency', value, setFormState)} label='Frequency'>
                         <MenuItem value="once">Once</MenuItem>
                         <MenuItem value="recurring_daily">Recurring Daily</MenuItem>
                         {formState.jobType !== "api_fetch" && (
@@ -274,7 +278,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 {formState.jobType === "api_fetch" && (
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Data Fetch Type</InputLabel>
-                        <Select value={formState.dataFetchType} onChange={({ target: { value } }) => updateFormState('dataFetchType', value)} label='Data Fetch Type'>
+                        <Select value={formState.dataFetchType} onChange={({ target: { value } }) => updateFormState('dataFetchType', value, setFormState)} label='Data Fetch Type'>
                             <MenuItem value="date_range">Custom Date Range</MenuItem>
                             <MenuItem value="2wk_data">Relative 2 Week Data Fetch</MenuItem>
                             <MenuItem value="2yrs_data">Max Data Fetch (2 Years Data, ~3 hour run time)</MenuItem>
@@ -357,7 +361,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                     type="time" 
                     fullWidth
                     value={formState.scheduledStartTime} 
-                    onChange={({ target: { value } }) => updateFormState('scheduledStartTime', value)} 
+                    onChange={({ target: { value } }) => updateFormState('scheduledStartTime', value, setFormState)} 
                     margin="normal" 
                     slotProps={{ inputLabel: { shrink: true } }} 
                     color={colors.redAccent[500]}
@@ -368,7 +372,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                         type="time" 
                         fullWidth
                         value={formState.scheduledEndTime}  
-                        onChange={({ target: { value } }) => updateFormState('scheduledEndTime', value)} 
+                        onChange={({ target: { value } }) => updateFormState('scheduledEndTime', value, setFormState)} 
                         margin="normal" 
                         slotProps={{ inputLabel: { shrink: true } }}  
                         color={colors.redAccent[500]}  
@@ -379,7 +383,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                 {formState.frequency === "custom_schedule" && (
                     <FormControl fullWidth margin="normal" color={colors.redAccent[500]}>
                         <InputLabel>Custom Interval</InputLabel>
-                        <Select value={formState.customInterval} onChange={({ target: { value } }) => updateFormState('customInterval', value)} label='Custom Interval'>
+                        <Select value={formState.customInterval} onChange={({ target: { value } }) => updateFormState('customInterval', value, setFormState)} label='Custom Interval'>
                             <MenuItem value="interval_days">Interval in Days</MenuItem>
                             <MenuItem value="weekdays">Specific Days of the Week</MenuItem>
                         </Select>
@@ -391,7 +395,7 @@ const ScheduleJobDialog = ({ open, onClose, onSubmit = () => {} }) => {
                         type="number" 
                         fullWidth
                         value={formState.interval} 
-                        onChange={({ target: { value } }) => updateFormState('interval', value)} 
+                        onChange={({ target: { value } }) => updateFormState('interval', value, setFormState)} 
                         margin="normal" 
                         color={colors.redAccent[500]}
                     />
