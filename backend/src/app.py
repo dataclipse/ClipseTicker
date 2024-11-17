@@ -143,6 +143,7 @@ def main():
     try:
         scheduler.start_scheduler()
         scheduler.schedule_existing_jobs()
+        scheduler.list_scheduled_jobs()
         #scrape_audit.fetch_and_convert()
         app.run(debug=True)
         

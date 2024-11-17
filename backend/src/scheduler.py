@@ -20,11 +20,11 @@ class Scheduler:
         self.db_manager = DBManager()
         self.polygon_fetcher = PolygonStockFetcher()
         self.sa_fetcher = StockAnalysisFetcher()
-    
+
     def parse_date(self, date_str):
         # Helper function for date conversion
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S") if isinstance(date_str, str) else date_str
-    
+
     def find_next_scheduled_day(self, current_time, days_list):
         for i in range(1, 8):  # Check the next 7 days
             # Calculate the next day by adding 'i' days to current_time
@@ -33,7 +33,7 @@ class Scheduler:
             if next_day.strftime("%a") in days_list:
                 return next_day  # Return the datetime object of the next matching day
         return None  # In case no matching day is found within 7 days
-    
+
     def calculate_next_run_time(self, datetime_obj, days_list):
         # Get the current day as a 3-letter string
         current_day = datetime_obj.strftime("%a")
@@ -193,7 +193,7 @@ class Scheduler:
                 weekdays=None
             )
             logger.info(f"Created new job schedule iteration: {create_new_schedule_iteration}")
-            
+
     def disable_interval(self, job_id, start_time):
         # Parse job ID to extract components
         status, prefix, job_type, service, frequency, timestamp = job_id.split('-')
@@ -265,7 +265,7 @@ class Scheduler:
                 weekdays=None
             )
             logger.info(f"Created new job schedule iteration")
-            
+
     def enable_interval(self, job_id):
         # Parse job ID to extract components
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
@@ -280,7 +280,7 @@ class Scheduler:
         self.db_manager.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
         
         # Schedule a recurring job to fetch data every minute
-        self.scheduler.add_job(self.fetch_scrape_data_task, 'interval', args=[job_id], minutes=1, id=enable_job_id, replace_existing=True)
+        self.scheduler.add_job(self.fetch_scrape_data_task, 'interval', args=[job_id], minutes=5, id=enable_job_id, replace_existing=True)
         logger.info(f"Enabled recurring data fetch task with job ID: {enable_job_id}")
         
         # Retrieve and process the scheduled end datetime
@@ -305,7 +305,7 @@ class Scheduler:
         disable_job_id = f"disable-{job_id}"
         self.scheduler.add_job(self.disable_interval, trigger=trigger_stop, args=[enable_job_id, start_time], id=disable_job_id, replace_existing = True)
         logger.info(f"Scheduled disable task for job ID: {disable_job_id} at {scheduled_end_datetime}")
-        
+
     def schedule_existing_jobs(self):
         # Start the scheduler if it's not already running
         if not self.scheduler.running:
@@ -316,6 +316,9 @@ class Scheduler:
         jobs = self.db_manager.job_manager.select_all_job_schedules()
         
         for job in jobs:
+            # Add detailed logging for each job being processed
+            logger.info(f"Processing job schedule: Type={job['job_type']}, Service={job['service']}, Frequency={job['frequency']}, Status={job['status']}")
+            
             # Convert to UTC datetime
             scheduled_start_datetime = job['scheduled_start_date']
             if isinstance(scheduled_start_datetime, str):
@@ -384,20 +387,56 @@ class Scheduler:
                     else:
                         self.scheduler.add_job(self.fetch_scrape_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
                         logger.info(f"Scheduled data scrape task with job ID: {job_id}")
-            
-            # Log a list of current Jobs for debug purposes
-            self.list_scheduled_jobs()
-            
+
     def start_scheduler(self):
         # Start the scheduler if it isn't running already
         if not self.scheduler.running:
             self.scheduler.start()
             logger.debug("APScheduler started.")
-        
+
     def stop_scheduler(self):
         # Stop the scheduler
         logger.debug("APScheduler Stopped.")
         self.scheduler.shutdown()
+
+    def inspect_job(self, job_id):
+        # Check scheduler
+        scheduled_job = self.scheduler.get_job(job_id)
+        logger.info(f"\nJob Inspection for {job_id}:")
+        logger.info("------------------------")
+        
+        if scheduled_job:
+            logger.info("Scheduler Status:")
+            logger.info(f"- Next Run Time: {scheduled_job.next_run_time}")
+            logger.info(f"- Trigger: {scheduled_job.trigger}")
+            logger.info(f"- Function: {scheduled_job.func.__name__}")
+        else:
+            logger.info("Job not found in scheduler")
+        
+        # Check database
+        try:
+            # Parse job ID to get components
+            parts = job_id.split('-')
+            if len(parts) >= 5:
+                job_type = parts[1]
+                service = parts[2]
+                frequency = parts[3]
+                timestamp = int(parts[4])
+                datetime_obj = datetime.fromtimestamp(timestamp, timezone.utc)
+                
+                db_job = self.db_manager.job_manager.select_job_schedule(
+                    job_type, service, frequency, datetime_obj
+                )
+                
+                if db_job:
+                    logger.info("\nDatabase Status:")
+                    logger.info(f"- Status: {db_job['status']}")
+                    logger.info(f"- Start Date: {db_job['scheduled_start_date']}")
+                    logger.info(f"- End Date: {db_job['scheduled_end_date']}")
+                else:
+                    logger.info("Job not found in database")
+        except Exception as e:
+            logger.error(f"Error inspecting database record: {e}")
 
 if __name__ == "__main__":
     logger.debug("Placeholder")

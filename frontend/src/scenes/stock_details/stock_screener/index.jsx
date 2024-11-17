@@ -216,7 +216,7 @@ const Stocks = () => {
 
     return (
         <Box m="20px">
-            <Header title="Stock Details" subtitle={`Full Stock Screener Data for ${ticker} polled ~every minute`} />
+            <Header title="Stock Details" subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} />
 
             <Box mb={2}>
                 <ButtonGroup variant="contained" sx={{ ml: 6.1 }}>
