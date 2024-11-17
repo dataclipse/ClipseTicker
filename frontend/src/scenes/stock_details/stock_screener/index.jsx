@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatCurrency, formatDateLocal, formatPE } from "../../../components/helper";
-import { ScreenerLine } from '../../../components/screener_line';
+import ScreenerLine from '../../../components/screener_line';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 const Stocks = () => {

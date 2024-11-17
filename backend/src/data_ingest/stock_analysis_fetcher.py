@@ -3,7 +3,7 @@ import requests
 from ..db_manager import DBManager
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class StockAnalysisFetcher:
                     "industry": stock.get("industry", ""),
                     "volume": stock.get("volume",0.0),
                     "pe_ratio": stock.get("peRatio",0.0),
-                    "timestamp": datetime.now()
+                    "timestamp": datetime.now(timezone.utc)
                 }
                 stock_data_list.append(stock_data)
                 
@@ -70,7 +70,7 @@ class StockAnalysisFetcher:
 
     def store_stock_data(self, stock_data_list):
         self.db_manager.scrape_manager.create_scrape_batch(stock_data_list)
-        logger.info("Stock data stored successfully.")
+        logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully.")
 
     def fetch_and_store_stock_data(self):
         delay = 0  # Initial delay set to 0 seconds

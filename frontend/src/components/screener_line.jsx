@@ -1,12 +1,59 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import PropTypes from 'prop-types';
 
 // ScreenerLine component creates a line chart using D3.js
-const ScreenerLine = ({ data, colors = { line: '#2196f3', hover: '#666' } }) => {
+const ScreenerLine = ({ data, colors }) => {
     // Refs for accessing the SVG element and tooltip
     const svgRef = useRef();
     const tooltipRef = useRef();
+    console.log(data);
+    
+    function filterAndCountTimeWindows(data) {
+        // Helper function to check if the date falls on a weekday
+        function isWeekday(date) {
+            const day = date.getUTCDay();
+            return day >= 1 && day <= 5;
+        }
+
+        // Helper function to check if a time is within trading hours
+        function isInTradeWindow(date) {
+            const hour = date.getUTCHours();
+            const minute = date.getUTCMinutes();
+
+            return (hour === 14 && minute >= 30) ||
+                (hour > 14 && hour < 22) ||
+                (hour === 22 && minute === 0);
+        }
+
+        // Filter data to include only weekdays trading hours
+        const filteredData = data.filter(item => {
+            const date = new Date(item.time);
+            return isWeekday(date) && isInTradeWindow(date);
+        });
+
+        const timeWindows = []; 
+        let currentWindow = [];
+
+        filteredData.forEach((item, index) => {
+            const date = new Date(item.time);
+            const prevDate = currentWindow.length > 0 ? new Date(currentWindow[currentWindow.length - 1].time) : null;
+
+            if (prevDate && (date - prevDate) / 60000 > 1) { 
+                timeWindows.push(currentWindow);
+                currentWindow = []; 
+            }
+            currentWindow.push(item); 
+
+            if (index === filteredData.length - 1 && currentWindow.length > 0) {
+                timeWindows.push(currentWindow); 
+            }
+        });
+        
+        // Return the number of time windows
+        return timeWindows.length;
+    } 
+
+    console.log(filterAndCountTimeWindows(data)); 
 
     useEffect(() => {
         // Clear any existing SVG content
@@ -45,18 +92,32 @@ const ScreenerLine = ({ data, colors = { line: '#2196f3', hover: '#666' } }) => 
                 const utcDate = new Date(d.time);
                 return xScale(new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000));
             })
-            .y(d => yScale(d.price));
+            .y(d => yScale(d.price))
 
         // Create the chart group and transform it
         const g = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
+        // Add an area
+        const area = d3.area()
+            .x(d => {
+                const utcDate = new Date(d.time);
+                return xScale(new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000));
+            })
+            .y0(innerHeight)
+            .y1(d => yScale(d.price))
+
+        g.append('path')
+            .attr('fill', colors.redAccent[600])
+            .attr('opacity', 0.6)
+            .attr('d', area(data))
+        
         // Add the line path
         g.append("path")
             .datum(data)
-            .attr("fill", "none")
-            .attr("stroke", "#2196f3")
-            .attr("stroke-width", 1.5)
+            .attr("fill", 'none')
+            .attr("stroke", colors.redAccent[500])
+            .attr("stroke-width", 2)
             .attr("d", line);
 
         // Create bisector for finding closest data point to mouse position
@@ -123,15 +184,11 @@ const ScreenerLine = ({ data, colors = { line: '#2196f3', hover: '#666' } }) => 
 };
 
 // PropTypes validation for component props
-ScreenerLine.propTypes = {
-    data: PropTypes.arrayOf(PropTypes.shape({
-        time: PropTypes.string.isRequired,
-        price: PropTypes.number.isRequired
-    })).isRequired,
-    colors: PropTypes.shape({
-        line: PropTypes.string,
-        hover: PropTypes.string
-    })
-};
+//ScreenerLine.propTypes = {
+//    data: PropTypes.arrayOf(PropTypes.shape({
+//        time: PropTypes.string.isRequired,
+//        price: PropTypes.number.isRequired
+//    })).isRequired,
+//};
 
-export { ScreenerLine };
+export default ScreenerLine;

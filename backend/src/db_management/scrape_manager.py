@@ -9,7 +9,7 @@ class ScrapeManager:
     def __init__(self, session, scrape_table):
         # Initialize session and table reference for managing scrapes
         self.Session = session
-        self.scrape = scrape_table
+        self.stocks_scrape = scrape_table
     
     def create_scrape_batch(self, stock_data_list):
         # Batch insert multiple stock data records into the scrape table
@@ -185,4 +185,47 @@ class ScrapeManager:
             return False
         finally:
             # Close the session to free resources
+            session.close()
+            
+    def replace_scrape(self, ticker_symbol, timestamp, new_timestamp, **kwargs):
+        
+        session = self.Session()
+        try:
+            # Select existing scrape
+            select_stmt = select(self.stocks_scrape).where(
+                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
+                self.stocks_scrape.c.timestamp == timestamp
+            )
+            existing_row = session.execute(select_stmt).fetchone()
+            
+            if not existing_row:
+                logger.debug(f"Scrape for {ticker_symbol} at {timestamp} not found.")
+                return False
+            
+            column_names = [column.name for column in self.stocks_scrape.columns]
+            # Save info to dictionary
+            row_data = dict(zip(column_names, existing_row))
+            
+            # Delete existing scrape
+            delete_stmt = delete(self.stocks_scrape).where(
+                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
+                self.stocks_scrape.c.timestamp == timestamp
+            )
+            session.execute(delete_stmt)
+            
+            row_data['timestamp'] = new_timestamp
+            row_data.update(kwargs)
+            
+            # Insert new scrape with new timestamp
+            insert_stmt = insert(self.stocks_scrape).values(row_data)
+            session.execute(insert_stmt)
+            
+            session.commit()
+            logger.info(f"Scrape for {ticker_symbol} at {timestamp} replaced with {new_timestamp}.")
+            return True
+        except SQLAlchemyError as e:
+            logger.error(f"Error replacing scrape: {e}")
+            session.rollback()
+            return False
+        finally:
             session.close()

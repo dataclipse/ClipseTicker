@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from .db_manager import DBManager
 from .scheduler import Scheduler
+from .audit import AuditManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 from .routes.user_routes import user_bp
 from .routes.stocks_routes import stocks_bp
@@ -39,6 +40,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
 scheduler = Scheduler()
+scrape_audit = AuditManager()
 
 # Generate or load JWT secret key for encoding tokens
 jwt_secret_key_file = "jwt_key.txt"
@@ -141,6 +143,7 @@ def main():
     try:
         scheduler.start_scheduler()
         scheduler.schedule_existing_jobs()
+        #scrape_audit.fetch_and_convert()
         app.run(debug=True)
         
     except KeyboardInterrupt:
