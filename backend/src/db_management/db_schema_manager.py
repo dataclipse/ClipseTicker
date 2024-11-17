@@ -18,14 +18,12 @@ logger = logging.getLogger(__name__)
 
 class DBSchemaManager:
     def __init__(self):
-        
         # Initialize metadata for schema management
         self.metadata = MetaData()
+        self.scrape_metadata = MetaData()
         
         # Initialize the database file path, creating it if necessary
-        self.db_file_path = self._initialize_database()
-        
-
+        self.db_file_path, self.scrape_db_file_path = self._initialize_database()
 
     def _initialize_database(self):
         # Create a folder for the database if it does not exist
@@ -34,8 +32,12 @@ class DBSchemaManager:
 
         # Set the path for the SQLite database file
         db_file_path = os.path.join("db", "nyse_data.db")
-        logger.debug("Database created and/or connected successfully at: %s", db_file_path) 
-        return db_file_path
+        scrape_db_file_path = os.path.join("db", "nyse_scrape_data.db")
+        
+        logger.debug("Main database path: %s", db_file_path)
+        logger.debug("Scrape database path: %s", scrape_db_file_path)
+        
+        return db_file_path, scrape_db_file_path
 
     def define_tables(self):
         # Define the stocks table with columns for stock data
@@ -107,7 +109,7 @@ class DBSchemaManager:
         # Define the stocks_scrape table for storing scraped stock data
         stocks_scrape = Table(
             "stocks_scrape",
-            self.metadata,
+            self.scrape_metadata,
             Column("ticker_symbol", String, nullable=False),
             Column("company_name", String),
             Column("price", Float),
@@ -121,7 +123,7 @@ class DBSchemaManager:
         
         # Create an index on stocks for fast lookup by timestamp_end and ticker_symbol
         Index(
-            "idx_stocks_timestamp_ticker",
+            "idx_stocks_scrape_timestamp_ticker",
             stocks_scrape.c.ticker_symbol,
             stocks_scrape.c.timestamp,
         )

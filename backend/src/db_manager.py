@@ -14,12 +14,14 @@ logger = logging.getLogger(__name__)
 
 class DBManager:
     def __init__(self):
-        
-
         # Use DBSchemaManager for database and table setup
         self.schema_manager = DBSchemaManager()
         self.db_file_path = self.schema_manager.db_file_path
+        self.scrape_db_file_path = self.schema_manager.scrape_db_file_path
+        
+        # Create engines for both databases
         self.engine = create_engine(f"sqlite:///{self.db_file_path}")
+        self.scrape_engine = create_engine(f"sqlite:///{self.scrape_db_file_path}")
 
         # Load or generate encryption key
         self.cipher, self.encryption_key = self._initialize_encryption()
@@ -28,16 +30,20 @@ class DBManager:
         self.stocks, self.api_keys, self.jobs, self.users, self.stocks_scrape, self.jobs_schedule = self.schema_manager.define_tables()
 
         # Create the tables if they do no exist
-        self.schema_manager.metadata.create_all(self.engine)
+        self.schema_manager.metadata.create_all(bind=self.engine)
+        self.schema_manager.scrape_metadata.create_all(bind=self.scrape_engine)
         logger.debug("Tables created successfully, if they didn't exist.")
 
-        # Create a session
-        self.Session = sessionmaker(bind=self.engine)
-        self.job_manager = JobManager(self.Session, self.jobs, self.jobs_schedule)
-        self.api_key_manager = ApiKeyManager(self.Session, self.api_keys, self.cipher)
-        self.stock_manager = StockManager(self.Session, self.stocks, self.stocks_scrape)
-        self.user_manager = UserManager(self.Session, self.users)
-        self.scrape_manager = ScrapeManager(self.Session, self.stocks_scrape)
+        # Create sessions
+        self.session = sessionmaker(bind=self.engine)
+        self.scrape_session = sessionmaker(bind=self.scrape_engine)
+        
+        # Initialize managers 
+        self.job_manager = JobManager(self.session, self.jobs, self.jobs_schedule)
+        self.api_key_manager = ApiKeyManager(self.session, self.api_keys, self.cipher)
+        self.stock_manager = StockManager(self.session, self.stocks, self.stocks_scrape)
+        self.user_manager = UserManager(self.session, self.users)
+        self.scrape_manager = ScrapeManager(self.scrape_session, self.stocks_scrape)
         
         # Initialize default users
         self.initialize_default_users()
