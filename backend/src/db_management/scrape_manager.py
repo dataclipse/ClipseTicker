@@ -17,7 +17,7 @@ class ScrapeManager:
         try:
             # Prepare an insert statement for the scrape table
             # `stock_data_list` is a list of dictionaries, where each dictionary represents a record
-            insert_stmt = insert(self.scrape)
+            insert_stmt = insert(self.stocks_scrape)
             
             # Execute the insert statement with batch data, inserting all records at once
             session.execute(insert_stmt, stock_data_list)
@@ -38,7 +38,7 @@ class ScrapeManager:
         session = self.Session() # Open a new session for database interaction
         try:
             # Prepare an insert statement with specified values for the new scrape record
-            insert_stmt = self.scrape.insert().values(
+            insert_stmt = self.stocks_scrape.insert().values(
                 ticker_symbol=ticker_symbol,
                 company_name=company_name,
                 price=price,

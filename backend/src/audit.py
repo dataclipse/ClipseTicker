@@ -15,7 +15,7 @@ class AuditManager():
             logger.info(f"Found {len(scrapes)} scrapes")
             if not scrapes:
                 logger.info("No scrapes found")
-                return []
+                return [] 
             
             converted_scrapes = []
             for scrape in scrapes: 
