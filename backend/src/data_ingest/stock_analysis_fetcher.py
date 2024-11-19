@@ -59,7 +59,7 @@ class StockAnalysisFetcher:
         except requests.exceptions.HTTPError as http_err:
             # Handle HTTP errors, particularly rate limiting (status 429)
             if response.status_code == 429:  # Too Many Requests
-                logger.error("Rate limit hit; backing off.")
+                logger.error("Rate limit hit; backing off.") 
                 delay = min(delay * 2, 600)  # Exponential backoff, max 10 minutes
             else:
                 logger.error(f"HTTP error occurred: {http_err}")
@@ -77,10 +77,6 @@ class StockAnalysisFetcher:
         delay = random.uniform(0, 5)
         time.sleep(delay)
         result = self.fetch_stock_data()
-        
         if result is not None: # If data was fetched successfully
             self.store_stock_data(result) # Store the fetched data
 
-if __name__ == '__main__':
-    sa = StockAnalysisFetcher()
-    sa.fetch_and_store_stock_data()

@@ -10,16 +10,30 @@ from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 from .data_ingest.stock_analysis_fetcher import StockAnalysisFetcher
 import logging 
 import json
+import os
 logger = logging.getLogger(__name__)
 
 
 class Scheduler:
+    _instance = None
+    _lock = threading.Lock()
+    _initialized = False
+    _is_shutting_down = False
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+            return cls._instance
     def __init__(self):
-        # Initialize the background scheduler
-        self.scheduler = BackgroundScheduler()
-        self.db_manager = DBManager()
-        self.polygon_fetcher = PolygonStockFetcher()
-        self.sa_fetcher = StockAnalysisFetcher()
+        with self._lock:
+            if not self._initialized:
+                # Initialize instance attributes only once
+                self.scheduler = BackgroundScheduler()
+                self.scheduler._daemon = False
+                self.db_manager = DBManager()
+                self.polygon_fetcher = PolygonStockFetcher()
+                self.sa_fetcher = StockAnalysisFetcher()
+                self._initialized = True
 
     def parse_date(self, date_str):
         # Helper function for date conversion
@@ -273,6 +287,7 @@ class Scheduler:
         
         # Generate a unique job ID for enabling and track start time
         enable_job_id = f"enable-{job_id}"
+        logger.info(f"Enabling job ID: {enable_job_id}")
         start_time = time.time()
         
         # Fetch the job schedule from the database and update the status to 'Running'
@@ -395,9 +410,13 @@ class Scheduler:
             logger.debug("APScheduler started.")
 
     def stop_scheduler(self):
-        # Stop the scheduler
-        logger.debug("APScheduler Stopped.")
-        self.scheduler.shutdown()
+        # Use class lock to prevent race conditions
+        with self._lock:
+            # Only stop if the scheduler is running and not already shutting down
+            if self.scheduler.running and not self._is_shutting_down:
+                self._is_shutting_down = True
+                logger.debug("APScheduler Stopped.")
+                self.scheduler.shutdown(wait=False)
 
     def inspect_job(self, job_id):
         # Check scheduler

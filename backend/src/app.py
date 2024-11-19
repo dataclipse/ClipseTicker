@@ -141,9 +141,10 @@ app.register_blueprint(jobs_bp)
 #     print(rule)
 def main():
     try:
-        scheduler.start_scheduler()
-        scheduler.schedule_existing_jobs()
-        scheduler.list_scheduled_jobs()
+        if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+            scheduler.start_scheduler()
+            scheduler.schedule_existing_jobs()
+            scheduler.list_scheduled_jobs()
         #scrape_audit.fetch_and_convert()
         app.run(debug=True)
         
@@ -152,7 +153,8 @@ def main():
         
     finally:
         # Ensure the scheduler stops before the application fully exits
-        scheduler.stop_scheduler()
+        if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+            scheduler.stop_scheduler()
 
 
 # Start Flask application

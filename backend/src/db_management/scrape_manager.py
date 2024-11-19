@@ -9,7 +9,7 @@ class ScrapeManager:
     def __init__(self, session, scrape_table):
         # Initialize session and table reference for managing scrapes
         self.Session = session
-        self.stocks_scrape = scrape_table
+        self.scrape = scrape_table
     
     def create_scrape_batch(self, stock_data_list):
         # Batch insert multiple stock data records into the scrape table
@@ -17,7 +17,7 @@ class ScrapeManager:
         try:
             # Prepare an insert statement for the scrape table
             # `stock_data_list` is a list of dictionaries, where each dictionary represents a record
-            insert_stmt = insert(self.stocks_scrape)
+            insert_stmt = insert(self.scrape)
             
             # Execute the insert statement with batch data, inserting all records at once
             session.execute(insert_stmt, stock_data_list)
@@ -27,8 +27,9 @@ class ScrapeManager:
             logger.debug(f"Batch insert of {len(stock_data_list)} records completed successfully.")
         except Exception as e:
             # Rollback the transaction if an error occurs to maintain data integrity
-            logger.error(f"Error creating scrape batch: {e}")
+            logger.error(f"Error creating scrape batch: {e}")  
             session.rollback()
+            raise
         finally:
             # Close the session to free resources
             session.close()
@@ -38,7 +39,7 @@ class ScrapeManager:
         session = self.Session() # Open a new session for database interaction
         try:
             # Prepare an insert statement with specified values for the new scrape record
-            insert_stmt = self.stocks_scrape.insert().values(
+            insert_stmt = self.scrape.insert().values(
                 ticker_symbol=ticker_symbol,
                 company_name=company_name,
                 price=price,
@@ -68,14 +69,14 @@ class ScrapeManager:
         session = self.Session()# Open a new session for database interaction
         try:
             # Prepare a select statement to fetch all records from the scrape table
-            select_stmt = select(self.stocks_scrape)
+            select_stmt = select(self.scrape)
             
             # Execute the select statement and fetch all results
             result = session.execute(select_stmt)
             scrapes = result.fetchall() # Fetch all records
             
             # Get column names for the scrape table to format each record as a dictionary
-            column_names = [column.name for column in self.stocks_scrape.columns]
+            column_names = [column.name for column in self.scrape.columns]
             scrapes_list = [dict(zip(column_names, row)) for row in scrapes] # Convert each row to a dictionary
             
             # Log the number of records retrieved
@@ -96,9 +97,9 @@ class ScrapeManager:
         session = self.Session()# Open a new session for database interaction
         try:
             # Prepare a select statement with conditions to match the specified ticker symbol and timestamp
-            select_stmt = select(self.stocks_scrape).where(
-                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
-                self.stocks_scrape.c.timestamp == timestamp
+            select_stmt = select(self.scrape).where(
+                self.scrape.c.ticker_symbol == ticker_symbol,
+                self.scrape.c.timestamp == timestamp
             )
             
             # Execute the select statement and fetch a single result
@@ -106,7 +107,7 @@ class ScrapeManager:
             
             # If a record is found, convert it to a dictionary with column names as keys
             if result:
-                scrape = dict(zip([column.name for column in self.stocks_scrape.columns], result))
+                scrape = dict(zip([column.name for column in self.scrape.columns], result))
                 logger.debug(f"Scrape for {ticker_symbol} at {timestamp} retrieved successfully.")
                 return scrape # Return the scrape record as a dictionary
             else:
@@ -127,9 +128,9 @@ class ScrapeManager:
         try:
             # Prepare an update statement with conditions to match the specified ticker symbol and timestamp
             # `kwargs` contains the new values to update
-            update_stmt = update(self.stocks_scrape).where(
-                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
-                self.stocks_scrape.c.timestamp == timestamp
+            update_stmt = update(self.scrape).where(
+                self.scrape.c.ticker_symbol == ticker_symbol,
+                self.scrape.c.timestamp == timestamp
             ).values(**kwargs)
             
             # Execute the update statement
@@ -160,9 +161,9 @@ class ScrapeManager:
         session = self.Session() # Open a new session for database interaction
         try:
             # Prepare a delete statement with conditions to match the specified ticker symbol and timestamp
-            delete_stmt = delete(self.stocks_scrape).where(
-                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
-                self.stocks_scrape.c.timestamp == timestamp
+            delete_stmt = delete(self.scrape).where(
+                self.scrape.c.ticker_symbol == ticker_symbol,
+                self.scrape.c.timestamp == timestamp
             )
             
             # Execute the delete statement
@@ -192,9 +193,9 @@ class ScrapeManager:
         session = self.Session()
         try:
             # Select existing scrape
-            select_stmt = select(self.stocks_scrape).where(
-                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
-                self.stocks_scrape.c.timestamp == timestamp
+            select_stmt = select(self.scrape).where(
+                self.scrape.c.ticker_symbol == ticker_symbol,
+                self.scrape.c.timestamp == timestamp
             )
             existing_row = session.execute(select_stmt).fetchone()
             
@@ -202,14 +203,14 @@ class ScrapeManager:
                 logger.debug(f"Scrape for {ticker_symbol} at {timestamp} not found.")
                 return False
             
-            column_names = [column.name for column in self.stocks_scrape.columns]
+            column_names = [column.name for column in self.scrape.columns]
             # Save info to dictionary
             row_data = dict(zip(column_names, existing_row))
             
             # Delete existing scrape
-            delete_stmt = delete(self.stocks_scrape).where(
-                self.stocks_scrape.c.ticker_symbol == ticker_symbol,
-                self.stocks_scrape.c.timestamp == timestamp
+            delete_stmt = delete(self.scrape).where(
+                self.scrape.c.ticker_symbol == ticker_symbol,
+                self.scrape.c.timestamp == timestamp
             )
             session.execute(delete_stmt)
             
@@ -217,7 +218,7 @@ class ScrapeManager:
             row_data.update(kwargs)
             
             # Insert new scrape with new timestamp
-            insert_stmt = insert(self.stocks_scrape).values(row_data)
+            insert_stmt = insert(self.scrape).values(row_data)
             session.execute(insert_stmt)
             
             session.commit()
