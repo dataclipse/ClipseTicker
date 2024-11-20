@@ -5,12 +5,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class JobManager:
-    def __init__(self, session, jobs_table, jobs_schedule_table):
+    def __init__(self, session, jobs_schedule_table):
         # Initialize the session for database interaction
         self.Session = session
         
         # Set the jobs and jobs_schedule tables for managing job records
-        self.jobs = jobs_table
         self.jobs_schedule = jobs_schedule_table
 
     def insert_job_schedule(

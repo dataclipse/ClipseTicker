@@ -16,33 +16,46 @@ class DBManager:
     def __init__(self):
         # Use DBSchemaManager for database and table setup
         self.schema_manager = DBSchemaManager()
-        self.db_file_path = self.schema_manager.db_file_path
         self.scrape_db_file_path = self.schema_manager.scrape_db_file_path
+        self.users_db_file_path = self.schema_manager.users_db_file_path
+        self.api_keys_db_file_path = self.schema_manager.api_keys_db_file_path
+        self.polygon_stocks_db_file_path = self.schema_manager.polygon_stocks_db_file_path
+        self.jobs_schedule_db_file_path = self.schema_manager.jobs_schedule_db_file_path
+
         
         # Create engines for both databases
-        self.engine = create_engine(f"sqlite:///{self.db_file_path}")
         self.scrape_engine = create_engine(f"sqlite:///{self.scrape_db_file_path}")
+        self.users_engine = create_engine(f"sqlite:///{self.users_db_file_path}")
+        self.api_keys_engine = create_engine(f"sqlite:///{self.api_keys_db_file_path}")
+        self.polygon_stocks_engine = create_engine(f"sqlite:///{self.polygon_stocks_db_file_path}")
+        self.jobs_schedule_engine = create_engine(f"sqlite:///{self.jobs_schedule_db_file_path}")
 
         # Load or generate encryption key
         self.cipher, self.encryption_key = self._initialize_encryption()
 
         # Define the stocks and api_keys tables
-        self.stocks, self.api_keys, self.jobs, self.users, self.stocks_scrape, self.jobs_schedule = self.schema_manager.define_tables()
+        self.stocks, self.api_keys, self.users, self.stocks_scrape, self.jobs_schedule = self.schema_manager.define_tables()
 
         # Create the tables if they do no exist
-        self.schema_manager.metadata.create_all(bind=self.engine)
         self.schema_manager.scrape_metadata.create_all(bind=self.scrape_engine)
+        self.schema_manager.users_metadata.create_all(bind=self.users_engine)
+        self.schema_manager.api_keys_metadata.create_all(bind=self.api_keys_engine)
+        self.schema_manager.polygon_stocks_metadata.create_all(bind=self.polygon_stocks_engine)
+        self.schema_manager.jobs_schedule_metadata.create_all(bind=self.jobs_schedule_engine)
         logger.debug("Tables created successfully, if they didn't exist.")
 
         # Create sessions
-        self.session = sessionmaker(bind=self.engine)
         self.scrape_session = sessionmaker(bind=self.scrape_engine)
+        self.users_session = sessionmaker(bind=self.users_engine)
+        self.api_keys_session = sessionmaker(bind=self.api_keys_engine)
+        self.polygon_stocks_session = sessionmaker(bind=self.polygon_stocks_engine)
+        self.jobs_schedule_session = sessionmaker(bind=self.jobs_schedule_engine)
         
         # Initialize managers 
-        self.job_manager = JobManager(self.session, self.jobs, self.jobs_schedule)
-        self.api_key_manager = ApiKeyManager(self.session, self.api_keys, self.cipher)
-        self.stock_manager = StockManager(self.session, self.stocks, self.stocks_scrape)
-        self.user_manager = UserManager(self.session, self.users)
+        self.job_manager = JobManager(self.jobs_schedule_session, self.jobs_schedule)
+        self.api_key_manager = ApiKeyManager(self.api_keys_session, self.api_keys, self.cipher)
+        self.stock_manager = StockManager(self.polygon_stocks_session, self.stocks, self.stocks_scrape)
+        self.user_manager = UserManager(self.users_session, self.users)
         self.scrape_manager = ScrapeManager(self.scrape_session, self.stocks_scrape)
         
         # Initialize default users

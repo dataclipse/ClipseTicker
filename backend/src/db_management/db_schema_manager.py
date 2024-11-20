@@ -19,11 +19,14 @@ logger = logging.getLogger(__name__)
 class DBSchemaManager:
     def __init__(self):
         # Initialize metadata for schema management
-        self.metadata = MetaData()
         self.scrape_metadata = MetaData()
+        self.users_metadata = MetaData()
+        self.api_keys_metadata = MetaData()
+        self.polygon_stocks_metadata = MetaData()
+        self.jobs_schedule_metadata = MetaData()
         
         # Initialize the database file path, creating it if necessary
-        self.db_file_path, self.scrape_db_file_path = self._initialize_database()
+        self.scrape_db_file_path, self.users_db_file_path, self.api_keys_db_file_path, self.polygon_stocks_db_file_path, self.jobs_schedule_db_file_path = self._initialize_database()
 
     def _initialize_database(self):
         # Create a folder for the database if it does not exist
@@ -31,19 +34,25 @@ class DBSchemaManager:
             os.makedirs("db")
 
         # Set the path for the SQLite database file
-        db_file_path = os.path.join("db", "nyse_data.db")
         scrape_db_file_path = os.path.join("db", "nyse_scrape_data.db")
+        users_db_file_path = os.path.join("db", "ct_users.db")
+        api_keys_db_file_path = os.path.join("db", "ct_api_keys.db")
+        polygon_stocks_db_file_path = os.path.join("db", "nyse_polygon_stocks_agg.db")
+        jobs_schedule_db_file_path = os.path.join("db", "ct_jobs_schedule.db")
         
-        logger.debug("Main database path: %s", db_file_path)
         logger.debug("Scrape database path: %s", scrape_db_file_path)
+        logger.debug("Users database path: %s", users_db_file_path)
+        logger.debug("API Keys database path: %s", api_keys_db_file_path)
+        logger.debug("Polygon Stocks Aggregated Average database path: %s", polygon_stocks_db_file_path)
+        logger.debug("Jobs Schedule database path: %s", jobs_schedule_db_file_path)
         
-        return db_file_path, scrape_db_file_path
+        return scrape_db_file_path, users_db_file_path, api_keys_db_file_path, polygon_stocks_db_file_path, jobs_schedule_db_file_path
 
     def define_tables(self):
         # Define the stocks table with columns for stock data
         stocks = Table(
             "stocks",
-            self.metadata,
+            self.polygon_stocks_metadata,
             Column("ticker_symbol", String),
             Column("close_price", Float),
             Column("highest_price", Float),
@@ -64,37 +73,18 @@ class DBSchemaManager:
         # Define the api_keys table for storing encrypted API keys
         api_keys = Table(
             "api_keys",
-            self.metadata,
+            self.api_keys_metadata,
             Column("id", Integer, primary_key=True, autoincrement=True),
             Column("service", String, unique=True, nullable=False),
             Column("encrypted_api_key", String, nullable=False),
             Column("created_at", DateTime, default=func.now()),
             Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
         )
-
-        # Define the jobs table for tracking job statuses and run times
-        jobs = Table(
-            "jobs",
-            self.metadata,
-            Column("job_name", String, nullable=False),
-            Column("scheduled_start_time", DateTime, nullable=False),
-            Column(
-                "status", String, nullable=False
-            ),  # e.g., "pending", "running", "completed", "scheduled"
-            Column("start_time", DateTime),
-            Column("end_time", DateTime),
-            Column("run_time", String),  # Duration in Hours Minutes and Seconds
-            Column("created_at", DateTime, default=func.now()),
-            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
-            PrimaryKeyConstraint(
-                "job_name", "scheduled_start_time"
-            ),  # Composite primary key
-        )
         
         # Define the users table for managing user accounts and preferences
         users = Table(
             "users",
-            self.metadata,
+            self.users_metadata,
             Column("id", Integer, primary_key=True, autoincrement=True),
             Column("username", String, unique=True, nullable=False),
             Column("password_hash", String, nullable=False),
@@ -131,7 +121,7 @@ class DBSchemaManager:
         # Define the jobs_schedule table for managing scheduled jobs
         jobs_schedule = Table(
             "jobs_schedule",
-            self.metadata,
+            self.jobs_schedule_metadata,
             Column("job_type", String, nullable=False),
             Column("service", String, nullable=False),
             Column("status", String, nullable=False),
@@ -150,4 +140,4 @@ class DBSchemaManager:
         )
 
         # Return all defined tables for easy access
-        return stocks, api_keys, jobs, users, stocks_scrape, jobs_schedule
+        return stocks, api_keys, users, stocks_scrape, jobs_schedule

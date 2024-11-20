@@ -95,12 +95,12 @@ class Migrator:
 if __name__ == "__main__":
     migrator = Migrator(
         source_db="nyse_data.db",
-        target_db="ct_users.db",
+        target_db="ct_jobs_schedule.db",
         max_retries=3,
         retry_delay=2
     )
     
-    success = migrator.migrate_table("users")
+    success = migrator.migrate_table("jobs_schedule")
     
     if success:
         print("Migration completed successfully.")
