@@ -1,64 +1,71 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import moment from 'moment';
 
 // ScreenerLine component creates a line chart using D3.js
 const ScreenerLine = ({ data, colors }) => {
     // Refs for accessing the SVG element and tooltip
     const svgRef = useRef();
     const tooltipRef = useRef();
-    console.log(data);
-    
-    function filterAndCountTimeWindows(data) {
-        // Helper function to check if the date falls on a weekday
-        function isWeekday(date) {
-            const day = date.getUTCDay();
-            return day >= 1 && day <= 5;
-        }
-
-        // Helper function to check if a time is within trading hours
-        function isInTradeWindow(date) {
-            const hour = date.getUTCHours();
-            const minute = date.getUTCMinutes();
-
-            return (hour === 14 && minute >= 30) ||
-                (hour > 14 && hour < 22) ||
-                (hour === 22 && minute === 0);
-        }
-
-        // Filter data to include only weekdays trading hours
-        const filteredData = data.filter(item => {
-            const date = new Date(item.time);
-            return isWeekday(date) && isInTradeWindow(date);
-        });
-
-        const timeWindows = []; 
-        let currentWindow = [];
-
-        filteredData.forEach((item, index) => {
-            const date = new Date(item.time);
-            const prevDate = currentWindow.length > 0 ? new Date(currentWindow[currentWindow.length - 1].time) : null;
-
-            if (prevDate && (date - prevDate) / 60000 > 1) { 
-                timeWindows.push(currentWindow);
-                currentWindow = []; 
-            }
-            currentWindow.push(item); 
-
-            if (index === filteredData.length - 1 && currentWindow.length > 0) {
-                timeWindows.push(currentWindow); 
+    const createTradingSessionWindows = (rawData) => {
+        // Sort data by time first
+        const sortedData = [...rawData].sort((a, b) => moment(a.time).diff(moment(b.time)));
+        
+        const sessions = [];
+        let currentSession = [];
+        let previousTime = null;
+        
+        sortedData.forEach(dataPoint => {
+            const time = moment(dataPoint.time).utc();
+            const isWeekday = time.day() !== 0 && time.day() !== 6;
+            const hour = time.hour() + (time.minute() / 60);
+            const isTradeHours = hour >= 14.5 && hour < 21;
+            
+            if (isWeekday && isTradeHours) {
+                // If this is a new session (more than 1 hour gap or first entry)
+                if (!previousTime || time.diff(previousTime, 'hours') > 1) {
+                    if (currentSession.length > 0) {
+                        sessions.push(currentSession);
+                    }
+                    currentSession = [dataPoint];
+                } else {
+                    currentSession.push(dataPoint);
+                }
+                previousTime = time;
             }
         });
         
-        // Return the number of time windows
-        return timeWindows.length;
-    } 
+        // Push the last session if it exists
+        if (currentSession.length > 0) {
+            sessions.push(currentSession);
+        }
+        
+        // Add session metadata
+        const sessionsWithMetadata = sessions.map((session, index) => {
+            const startTime = moment(session[0].time);
+            const endTime = moment(session[session.length - 1].time);
+            return {
+                sessionId: index + 1,
+                startTime: startTime.format('YYYY-MM-DD HH:mm:ss'),
+                endTime: endTime.format('YYYY-MM-DD HH:mm:ss'),
+                duration: endTime.diff(startTime, 'hours', true).toFixed(2),
+                dataPoints: session.length,
+                data: session
+            };
+        });
 
-    console.log(filterAndCountTimeWindows(data)); 
+        console.log('Trading Sessions:', sessionsWithMetadata);
+        return sessionsWithMetadata;
+    };
 
     useEffect(() => {
         // Clear any existing SVG content
-        d3.select(svgRef.current).selectAll("*").remove();
+        // Add this at the start of useEffect
+        const tradingSessions = createTradingSessionWindows(data);
+        console.log('Trading Session Data:', tradingSessions);
 
+        d3.select(svgRef.current).selectAll("*").remove();
+        
         // Configure chart dimensions and margins
         const margin = { top: 20, right: 30, bottom: 30, left: 60 };
         const svg = d3.select(svgRef.current);
@@ -67,14 +74,22 @@ const ScreenerLine = ({ data, colors }) => {
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
+        const sessionDomains = tradingSessions.flatMap(session => [
+            moment(session.startTime).local(),
+            moment(session.endTime).local()
+        ]);
+
+        const segmentWidth = innerWidth / tradingSessions.length;
+        const sessionRanges = tradingSessions.flatMap((_, index) => [
+            index * segmentWidth,
+            (index + 1) * segmentWidth
+        ]);
+
         // Create X scale (time) and Y scale (price)
         // Convert UTC timestamps to local time for proper display
-        const xScale = d3.scaleTime()
-            .domain(d3.extent(data, d => {
-                const utcDate = new Date(d.time);
-                return new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
-            }))
-            .range([0, innerWidth]);
+        const xScale = d3.scaleLinear()
+            .domain(sessionDomains)
+            .range(sessionRanges);
         const yScale = d3.scaleLinear()
             .domain([
                 d3.min(data, d => d.price) * 0.95,
@@ -89,8 +104,7 @@ const ScreenerLine = ({ data, colors }) => {
         // Define the line generator function that creates the SVG path
         const line = d3.line()
             .x(d => {
-                const utcDate = new Date(d.time);
-                return xScale(new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000));
+                return xScale(moment(d.time).local());
             })
             .y(d => yScale(d.price))
 
@@ -101,8 +115,7 @@ const ScreenerLine = ({ data, colors }) => {
         // Add an area
         const area = d3.area()
             .x(d => {
-                const utcDate = new Date(d.time);
-                return xScale(new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000));
+                return xScale(moment(d.time).local());
             })
             .y0(innerHeight)
             .y1(d => yScale(d.price))
@@ -122,8 +135,7 @@ const ScreenerLine = ({ data, colors }) => {
 
         // Create bisector for finding closest data point to mouse position
         const bisect = d3.bisector(d => {
-            const utcDate = new Date(d.time);
-            return utcDate.getTime() + utcDate.getTimezoneOffset() * 60000;
+            return moment(d.time).local();
         }).left;
 
         // Add invisible rectangle to capture mouse events
@@ -140,8 +152,7 @@ const ScreenerLine = ({ data, colors }) => {
                 const d = data[i];
                 if (d) {
                     tooltip.transition().duration(200).style('opacity', 0.9);
-                    const utcDate = new Date(d.time);
-                    tooltip.html(`Date: ${d3.timeFormat("%Y-%m-%d %I:%M %p")(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000)}<br>Price: ${d3.format("$,.2f")(d.price)}`);
+                    tooltip.html(`Date: ${moment(d.time).format("YYYY-MM-DD hh:mm:ss A")}<br>Price: ${d3.format("$,.2f")(d.price)}`);
                 }
                 tooltip.style("left", `${d3.pointer(event)[0] + 180}px`)
                 .style("top", `${d3.pointer(event)[1] + 210}px`);
@@ -149,9 +160,24 @@ const ScreenerLine = ({ data, colors }) => {
             .on('mouseout', () => {
                 tooltip.transition().duration(500).style('opacity', 0);
             });
+        
+
+        const uniqueDays = [...new Set(data.map(d => moment(d.time).format('YYYY-MM-DD')))];
+        const midValuePerDay = uniqueDays.map(day => {
+            const dayValues = data.filter(d => moment(d.time).format('YYYY-MM-DD') === day);
+            const midIndex = Math.floor(dayValues.length / 2);
+            return dayValues[midIndex];
+        });
+
+        const tickValues = midValuePerDay.length > 10
+            ? midValuePerDay.filter((_, i) => i % Math.ceil(midValuePerDay.length / 10) === 0)
+            : midValuePerDay;
 
         // Add axes
-        const xAxis = d3.axisBottom(xScale);
+        const xAxis = d3.axisBottom(xScale)
+            .tickFormat(d => moment(d).format('YYYY-MM-DD'))
+            .tickValues(tickValues.map(d => moment(d.time).local()));
+
         const yAxis = d3.axisLeft(yScale);
         g.append("g")
             .attr("transform", `translate(0,${innerHeight})`)
