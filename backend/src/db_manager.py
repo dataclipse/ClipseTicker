@@ -54,7 +54,7 @@ class DBManager:
         # Initialize managers 
         self.job_manager = JobManager(self.jobs_schedule_session, self.jobs_schedule)
         self.api_key_manager = ApiKeyManager(self.api_keys_session, self.api_keys, self.cipher)
-        self.stock_manager = StockManager(self.polygon_stocks_session, self.stocks, self.stocks_scrape)
+        self.stock_manager = StockManager(self.polygon_stocks_session, self.scrape_session, self.stocks, self.stocks_scrape)
         self.user_manager = UserManager(self.users_session, self.users)
         self.scrape_manager = ScrapeManager(self.scrape_session, self.stocks_scrape)
         

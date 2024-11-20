@@ -6,9 +6,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class StockManager:
-    def __init__(self, session, stocks_table, stocks_scrape_table):
+    def __init__(self, session, scrape_session, stocks_table, stocks_scrape_table):
         # Initialize the class with a session factory and a reference to the stocks table
         self.Session = session
+        self.ScrapeSession = scrape_session
         self.stocks = stocks_table
         self.stocks_scrape = stocks_scrape_table
 
@@ -238,7 +239,7 @@ class StockManager:
             
     def get_recent_stock_scrapes(self):
         # Retrieve the most recent stock scrape data for each ticker symbol
-        session = self.Session()
+        session = self.ScrapeSession()
         try:
             # Define a subquery to get the latest timestamp for each ticker symbol
             subquery = (
@@ -290,7 +291,7 @@ class StockManager:
             
     def get_stock_scrape_data_by_ticker(self, ticker_symbol):
         # Retrieve all stock scrape data for a specific ticker symbol from the stocks_scrape table
-        session = self.Session()  # Open a new session for database interaction
+        session = self.ScrapeSession()  # Open a new session for database interaction
         try:
             # Prepare a select query to fetch records for the specified ticker symbol
             query = select(

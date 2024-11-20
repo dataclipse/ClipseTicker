@@ -186,6 +186,7 @@ const Stocks = () => {
           rows={stocksData}
           columns={columns}
           loading={loading}
+          sortModel={[{ field: "ticker_symbol", sort: "asc" }]}
         />
       </Box>
     </Box>

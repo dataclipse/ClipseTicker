@@ -5,8 +5,9 @@ import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatDateLocal, formatPE } from "../../../components/helper";
+import { formatCurrency, formatPE } from "../../../components/helper";
 import ScreenerLine from '../../../components/screener_line';
+import moment from "moment";
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 const Stocks = () => {
@@ -101,25 +102,18 @@ const Stocks = () => {
                 <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
             ),
             flex: 1,
-            renderCell: (params) => {
-                const date = params.value;
-                const hours = date.getHours();
-                const minutes = date.getMinutes();
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const formattedTime = `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-                return (
-                    <Stack
-                        direction="row"
-                        alignItems={"center"}
-                        justifyContent={'left'}
-                        height={"100%"}
-                    >
-                        <Typography sx={{ mt: .1, fontSize: 12 }}>
-                            {date.toLocaleDateString()} {formattedTime}
-                        </Typography>
-                    </Stack>
-                );
-            },
+            renderCell: (params) => (
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems={"center"}
+                    height={"100%"}
+                >
+                    <Typography sx={{ fontSize: 12 }}>
+                        {moment(params.value).local().format("MM/DD/YYYY hh:mm:ss A")}
+                    </Typography>
+                </Stack>
+            ),
         },
     ], [colors]);
 
@@ -163,7 +157,7 @@ const Stocks = () => {
                 industry: stock.industry,
                 volume: stock.volume.toLocaleString(),
                 pe_ratio: formatPE(stock.pe_ratio),
-                timestamp: formatDateLocal(stock.timestamp),
+                timestamp: stock.timestamp,
             }));
             // Combine state updates
             setStockData({

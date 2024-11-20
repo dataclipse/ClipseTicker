@@ -8,9 +8,9 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     QuickSearchToolbar,
     formatCurrency,
-    formatDateLocal,
     formatPE,
 } from "../../../components/helper";
+import moment from "moment";
 
 // Stocks Component - Displays the latest stock scrapes data in a DataGrid format
 const Stocks = () => {
@@ -123,24 +123,6 @@ const Stocks = () => {
                 <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
             ),
             flex: 1,
-            renderCell: (params) => {
-                const date = params.value;
-                const hours = date.getHours();
-                const minutes = date.getMinutes();
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                const formattedTime = `${hours % 12 || 12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-                return (
-                    <Stack
-                        direction="row"
-                        alignItems={"center"}
-                        height={"100%"}
-                    >
-                        <Typography sx={{ mt: .1, fontSize: 12 }}>
-                            {date.toLocaleDateString()} {formattedTime}
-                        </Typography>
-                    </Stack>
-                );
-            },
         },
     ], [colors]);
 
@@ -173,7 +155,7 @@ const Stocks = () => {
                 industry: stock.industry,
                 volume: stock.volume.toLocaleString(),
                 pe_ratio: formatPE(stock.pe_ratio),
-                timestamp: formatDateLocal(stock.timestamp),
+                timestamp: moment(stock.timestamp).local().format("MM/DD/YYYY hh:mm:ss A"),
             }));
             setStocksData(formattedData);
             setLoading(false);
