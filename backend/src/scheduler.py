@@ -419,22 +419,24 @@ class Scheduler:
                 self.scheduler.shutdown(wait=False)
 
     def inspect_job(self, job_id):
-        # Check scheduler
+        # Check scheduler for the job with the given job_id
         scheduled_job = self.scheduler.get_job(job_id)
         logger.info(f"\nJob Inspection for {job_id}:")
         logger.info("------------------------")
         
         if scheduled_job:
+            # If the job is found in the scheduler, log its details
             logger.info("Scheduler Status:")
             logger.info(f"- Next Run Time: {scheduled_job.next_run_time}")
             logger.info(f"- Trigger: {scheduled_job.trigger}")
             logger.info(f"- Function: {scheduled_job.func.__name__}")
         else:
+            # If the job is not found, log that information
             logger.info("Job not found in scheduler")
         
-        # Check database
+        # Check the database for job details
         try:
-            # Parse job ID to get components
+            # Parse job ID to extract components
             parts = job_id.split('-')
             if len(parts) >= 5:
                 job_type = parts[1]
@@ -443,18 +445,22 @@ class Scheduler:
                 timestamp = int(parts[4])
                 datetime_obj = datetime.fromtimestamp(timestamp, timezone.utc)
                 
+                # Query the database for the job schedule using extracted components
                 db_job = self.db_manager.job_manager.select_job_schedule(
                     job_type, service, frequency, datetime_obj
                 )
                 
                 if db_job:
+                    # If the job is found in the database, log its details
                     logger.info("\nDatabase Status:")
                     logger.info(f"- Status: {db_job['status']}")
                     logger.info(f"- Start Date: {db_job['scheduled_start_date']}")
                     logger.info(f"- End Date: {db_job['scheduled_end_date']}")
                 else:
+                    # If the job is not found in the database, log that information
                     logger.info("Job not found in database")
         except Exception as e:
+            # Log any error that occurs during the database inspection
             logger.error(f"Error inspecting database record: {e}")
 
 if __name__ == "__main__":

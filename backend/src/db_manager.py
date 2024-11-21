@@ -69,14 +69,14 @@ class DBManager:
         if os.path.exists(key_file_path):
             # If the key file exists, open it in binary read mode to load the key
             with open(key_file_path, "rb") as file:
-                encryption_key = file.read() # Read the existing encryption key
+                encryption_key = file.read() 
         else:
             # If the key file does not exist, generate a new encryption key
-            encryption_key = Fernet.generate_key() # Generate a new encryption key
+            encryption_key = Fernet.generate_key()
             
             # Save the new encryption key to the file for future use
             with open(key_file_path, "wb") as file:
-                file.write(encryption_key) # Write the new encryption key to the file
+                file.write(encryption_key) 
         
         # Create a cipher instance using the loaded or generated encryption key
         cipher = Fernet(encryption_key)

@@ -6,16 +6,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 def retry_on_exception(max_retries=3, delay=1):
+    # Decorator to retry a function call if it raises an exception
     def decorator(func):
+        # Wrapper function that will replace the original function
         def wrapper(*args, **kwargs):
+            # Attempt to call the function up to max_retries times
             for attempt in range(max_retries):
                 try:
+                    # Call the original function and return its result
                     return func(*args, **kwargs)
                 except Exception as e:
+                    # If an exception occurs and it's not the last attempt
                     if attempt < max_retries - 1:
+                        # Log a warning and wait before retrying
                         logger.warning(f"Retrying {func.__name__} due to error: {e}")
                         time.sleep(delay)
                     else:
+                        # Log an error if max retries are exceeded and raise the exception
                         logger.error(f"Max retries exceeded for {func.__name__}: {e}")
                         raise
         return wrapper

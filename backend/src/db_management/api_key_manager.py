@@ -7,16 +7,23 @@ logger = logging.getLogger(__name__)
 
 
 def retry_on_exception(max_retries=3, delay=1):
+    # Decorator to retry a function call if it raises an exception
     def decorator(func):
+        # Wrapper function that will replace the original function
         def wrapper(*args, **kwargs):
+            # Attempt to call the function up to max_retries times
             for attempt in range(max_retries):
                 try:
+                    # Call the original function and return its result
                     return func(*args, **kwargs)
                 except Exception as e:
+                    # If an exception occurs and it's not the last attempt
                     if attempt < max_retries - 1:
+                        # Log a warning and wait before retrying
                         logger.warning(f"Retrying {func.__name__} due to error: {e}")
                         time.sleep(delay)
                     else:
+                        # Log an error if max retries are exceeded and raise the exception
                         logger.error(f"Max retries exceeded for {func.__name__}: {e}")
                         raise
         return wrapper
@@ -56,10 +63,12 @@ class ApiKeyManager:
                 logger.debug(f"API key for {service} deleted successfully.")
             else:
                 logger.debug(f"No API key found for {service}.")
+                
         except Exception as e:
             # Rollback if an error occurs and log the error
             session.rollback()
             logger.error(f"Error deleting API key for {service}: {e}")
+            
         finally:
             # Close the session to free up resources
             session.close()
@@ -68,13 +77,19 @@ class ApiKeyManager:
     def insert_api_key(self, service, api_key):
         # Open a new session for database interaction
         session = self.Session()
-        encrypted_key = self.encrypt_api_key(api_key) # Encrypt the API key
+        # Encrypt the API key
+        encrypted_key = self.encrypt_api_key(api_key)
+        
         try:
             # Check if an API key already exists for the specified service
             select_stmt = select(self.api_keys.c.encrypted_api_key).where(
                 self.api_keys.c.service == service
             )
+            
+            # Execute the select statement
             result = session.execute(select_stmt)
+            
+            # Get the existing API key if it exists
             existing_key = result.scalar()
 
             if existing_key:
@@ -84,20 +99,29 @@ class ApiKeyManager:
                     .where(self.api_keys.c.service == service)
                     .values(encrypted_api_key=encrypted_key, updated_at=datetime.now(timezone.utc))
                 )
+
+                # Execute the update statement
                 session.execute(update_stmt)
                 logger.debug(f"API key for {service} updated successfully.")
+            
             else:
                 # Insert new API key if none exists for the service
                 insert_stmt = self.api_keys.insert().values(
                     service=service, encrypted_api_key=encrypted_key
                 )
+            
+                # Execute the insert statement
                 session.execute(insert_stmt)
                 logger.debug(f"API key for {service} inserted successfully.")
+            
+            # Commit the transaction
             session.commit()
+        
         except Exception as e:
             # Rollback if an error occurs and log the error
             session.rollback()
             logger.error(f"Error inserting/updating API key for {service}: {e}")
+        
         finally:
             # Close the session to free up resources
             session.close()
@@ -111,6 +135,8 @@ class ApiKeyManager:
             select_stmt = select(self.api_keys.c.encrypted_api_key).where(
                 self.api_keys.c.service == service
             )
+            
+            # Execute the select statement
             result = session.execute(select_stmt)
             encrypted_key = result.scalar()
 
@@ -119,14 +145,17 @@ class ApiKeyManager:
                 decrypted_key = self.decrypt_api_key(encrypted_key)
                 logger.debug(f"API key for {service}: {decrypted_key}")
                 return decrypted_key
+            
             else:
                 # Log if no API key is found for the service
                 logger.debug(f"No API key found for {service}.")
                 return None
+            
         except Exception as e:
             # Log any error that occurs
             logger.error(f"Error selecting API key for {service}: {e}")
             return None
+        
         finally:
             # Close the session to free up resources
             session.close()
@@ -144,9 +173,11 @@ class ApiKeyManager:
                 self.api_keys.c.created_at,
                 self.api_keys.c.updated_at,
             )
+            # Execute the select statement
             result = session.execute(select_stmt)
             rows = result.fetchall()
 
+            # Initialize a list to store API key information
             api_keys_list = []
 
             # Decrypt each API key and store relevant information in a list
@@ -173,10 +204,12 @@ class ApiKeyManager:
 
             # Return the list of API keys
             return api_keys_list
+        
         except Exception as e:
             # Log any error that occurs
             logger.error(f"Error selecting all API keys: {e}")
             return []
+        
         finally:
             # Close the session to free up resources
             session.close()
