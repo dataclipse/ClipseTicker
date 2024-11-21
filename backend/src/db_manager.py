@@ -21,6 +21,7 @@ class DBManager:
         self.api_keys_db_file_path = self.schema_manager.api_keys_db_file_path
         self.polygon_stocks_db_file_path = self.schema_manager.polygon_stocks_db_file_path
         self.jobs_schedule_db_file_path = self.schema_manager.jobs_schedule_db_file_path
+        self.scrape_ticker_db_file_path = self.schema_manager.scrape_ticker_db_file_path
 
         
         # Create engines for both databases
@@ -29,12 +30,13 @@ class DBManager:
         self.api_keys_engine = create_engine(f"sqlite:///{self.api_keys_db_file_path}")
         self.polygon_stocks_engine = create_engine(f"sqlite:///{self.polygon_stocks_db_file_path}")
         self.jobs_schedule_engine = create_engine(f"sqlite:///{self.jobs_schedule_db_file_path}")
+        self.scrape_ticker_engine = create_engine(f"sqlite:///{self.scrape_ticker_db_file_path}")
 
         # Load or generate encryption key
         self.cipher, self.encryption_key = self._initialize_encryption()
 
         # Define the stocks and api_keys tables
-        self.stocks, self.api_keys, self.users, self.stocks_scrape, self.jobs_schedule = self.schema_manager.define_tables()
+        self.stocks, self.api_keys, self.users, self.stocks_scrape, self.jobs_schedule, self.ticker_scrape = self.schema_manager.define_tables()
 
         # Create the tables if they do no exist
         self.schema_manager.scrape_metadata.create_all(bind=self.scrape_engine)
@@ -42,6 +44,7 @@ class DBManager:
         self.schema_manager.api_keys_metadata.create_all(bind=self.api_keys_engine)
         self.schema_manager.polygon_stocks_metadata.create_all(bind=self.polygon_stocks_engine)
         self.schema_manager.jobs_schedule_metadata.create_all(bind=self.jobs_schedule_engine)
+        self.schema_manager.scrape_ticker_metadata.create_all(bind=self.scrape_ticker_engine)
         logger.debug("Tables created successfully, if they didn't exist.")
 
         # Create sessions
@@ -50,6 +53,7 @@ class DBManager:
         self.api_keys_session = sessionmaker(bind=self.api_keys_engine)
         self.polygon_stocks_session = sessionmaker(bind=self.polygon_stocks_engine)
         self.jobs_schedule_session = sessionmaker(bind=self.jobs_schedule_engine)
+        self.scrape_ticker_session = sessionmaker(bind=self.scrape_ticker_engine)
         
         # Initialize managers 
         self.job_manager = JobManager(self.jobs_schedule_session, self.jobs_schedule)
