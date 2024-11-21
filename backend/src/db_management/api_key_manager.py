@@ -1,8 +1,26 @@
 # db_management/api_key_manager.py
 from sqlalchemy import select, update, func
 import logging 
+import time
+from datetime import datetime, timezone
 logger = logging.getLogger(__name__)
 
+
+def retry_on_exception(max_retries=3, delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Retrying {func.__name__} due to error: {e}")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"Max retries exceeded for {func.__name__}: {e}")
+                        raise
+        return wrapper
+    return decorator
 
 class ApiKeyManager:
     def __init__(self, session, api_keys_table, cipher):
@@ -19,6 +37,7 @@ class ApiKeyManager:
         # Decrypt the encrypted API key using the provided cipher
         return self.cipher.decrypt(encrypted_api_key.encode()).decode()
 
+    @retry_on_exception()
     def delete_api_key(self, service):
         # Open a new session for database interaction
         session = self.Session()
@@ -45,6 +64,7 @@ class ApiKeyManager:
             # Close the session to free up resources
             session.close()
 
+    @retry_on_exception()
     def insert_api_key(self, service, api_key):
         # Open a new session for database interaction
         session = self.Session()
@@ -62,7 +82,7 @@ class ApiKeyManager:
                 update_stmt = (
                     update(self.api_keys)
                     .where(self.api_keys.c.service == service)
-                    .values(encrypted_api_key=encrypted_key, updated_at=func.now())
+                    .values(encrypted_api_key=encrypted_key, updated_at=datetime.now(timezone.utc))
                 )
                 session.execute(update_stmt)
                 logger.debug(f"API key for {service} updated successfully.")
@@ -82,6 +102,7 @@ class ApiKeyManager:
             # Close the session to free up resources
             session.close()
 
+    @retry_on_exception()
     def select_api_key(self, service):
         # Open a new session for database interaction
         session = self.Session()
@@ -110,6 +131,7 @@ class ApiKeyManager:
             # Close the session to free up resources
             session.close()
 
+    @retry_on_exception()
     def select_all_api_keys(self):
         # Open a new session for database interaction
         session = self.Session()

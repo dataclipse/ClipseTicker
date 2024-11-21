@@ -1,5 +1,6 @@
 # db_management/db_schema_manager.py
 import os
+from datetime import datetime, timezone
 from sqlalchemy import (
     MetaData,
     Table,
@@ -77,8 +78,8 @@ class DBSchemaManager:
             Column("id", Integer, primary_key=True, autoincrement=True),
             Column("service", String, unique=True, nullable=False),
             Column("encrypted_api_key", String, nullable=False),
-            Column("created_at", DateTime, default=func.now()),
-            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+            Column("created_at", DateTime, default=datetime.now(timezone.utc)),
+            Column("updated_at", DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)),
         )
         
         # Define the users table for managing user accounts and preferences
@@ -92,8 +93,8 @@ class DBSchemaManager:
             Column("email", String),
             Column("theme_preference", String, default="Dark"), # Possible themes: Light, Dark
             Column("currency_preference", String, default="USD"), # Possible currencies: USD, EUR, GBP, etc
-            Column("created_at", DateTime, default=func.now()),
-            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+            Column("created_at", DateTime, default=datetime.now(timezone.utc)),
+            Column("updated_at", DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)),
         )
         
         # Define the stocks_scrape table for storing scraped stock data
@@ -134,8 +135,8 @@ class DBSchemaManager:
             Column("interval_days", Integer),
             Column("weekdays", String),
             Column("run_time", String), 
-            Column("created_at", DateTime, default=func.now()),
-            Column("updated_at", DateTime, default=func.now(), onupdate=func.now()),
+            Column("created_at", DateTime, default=datetime.now(timezone.utc)),
+            Column("updated_at", DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)),
             PrimaryKeyConstraint("job_type","service","frequency","scheduled_start_date"),
         )
 

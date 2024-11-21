@@ -1,9 +1,26 @@
 # db_management/stock_manager.py
 from sqlalchemy import select, update, func
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from datetime import datetime
+from datetime import datetime, timezone
 import logging 
+import time
 logger = logging.getLogger(__name__)
+
+def retry_on_exception(max_retries=3, delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Retrying {func.__name__} due to error: {e}")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"Max retries exceeded for {func.__name__}: {e}")
+                        raise
+        return wrapper
+    return decorator
 
 class StockManager:
     def __init__(self, session, scrape_session, stocks_table, stocks_scrape_table):
@@ -13,6 +30,7 @@ class StockManager:
         self.stocks = stocks_table
         self.stocks_scrape = stocks_scrape_table
 
+    @retry_on_exception()
     def insert_stock(self, ticker, close_price, highest_price, lowest_price, open_price, timestamp_end, timestamp):
         # Insert or update stock data in the stocks table based on ticker and timestamp_end
         session = self.Session()# Open a new session for database interaction
@@ -24,7 +42,6 @@ class StockManager:
             )
             result = session.execute(select_stmt)
             existing_stock = result.fetchone() # Fetch the existing record if it exists
-            
             if existing_stock:
                 # If the stock record exists, prepare an update statement with new values
                 update_stmt = (
@@ -58,7 +75,6 @@ class StockManager:
                 # Execute the insert statement to add the new record
                 session.execute(insert_stmt)
                 logger.debug(f"Stock data for {ticker} at {timestamp_end} inserted successfully.")
-            
             # Commit the transaction to save the changes in the database
             session.commit()
         except Exception as e:
@@ -68,18 +84,17 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def select_stock(self):
         # Retrieve all stock data records from the stocks table
         session = self.Session() # Open a new session for database interaction
         try:
             # Prepare a select statement to fetch all records from the stocks table
             select_stmt = select(self.stocks)
-            
             # Execute the select statement and fetch all results
             result = session.execute(select_stmt)
             rows = result.fetchall() # Fetch all records as a list of rows
-            
             # Check if any records were retrieved
             if rows:
                 logger.debug("Retrieved stock data:")
@@ -97,7 +112,8 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def insert_stock_batch(self, stock_data_batch):
         # Insert or update a batch of stock data records in the stocks table
         session = self.Session() # Open a new session for database interaction
@@ -110,8 +126,7 @@ class StockManager:
                 lowest_price = stock["l"]
                 open_price = stock["o"]
                 timestamp_end = stock["t"]
-                insert_timestamp = datetime.now()
-                
+                insert_timestamp = datetime.now(timezone.utc)
                 # Prepare an insert statement with "OR REPLACE" to upsert each stock record
                 insert_stmt = (
                     sqlite_insert(self.stocks)
@@ -126,14 +141,11 @@ class StockManager:
                     )
                     .prefix_with("OR REPLACE") # Use "OR REPLACE" to update existing records with the same primary key
                 )
-                
                 # Execute the upsert (insert or replace) for the current stock record
                 session.execute(insert_stmt)
-            
             # Commit the transaction to save all changes in the database
             session.commit()
             logger.debug(f"Inserted or update batch of {len(stock_data_batch)} stock entries successfully.")
-            
         except Exception as e:
             # Rollback the transaction in case of an error to maintain data integrity
             session.rollback()
@@ -141,7 +153,8 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def get_recent_stock_prices(self):
         # Retrieve the most recent stock prices for each ticker symbol in the stocks table
         session = self.Session() # Open a new session for database interaction
@@ -155,7 +168,6 @@ class StockManager:
                 .group_by(self.stocks.c.ticker_symbol)
                 .subquery()
             )
-            
             # Define the main query to get stock data with the most recent timestamp for each ticker
             query = select(
                 self.stocks.c.ticker_symbol,
@@ -170,10 +182,8 @@ class StockManager:
                 (self.stocks.c.ticker_symbol == subquery.c.ticker_symbol)
                 & (self.stocks.c.timestamp_end == subquery.c.max_timestamp),
             )
-            
             # Execute the query to retrieve the latest stock data for each ticker
             result = session.execute(query)
-            
             # Convert each row of result into a dictionary and store it in a list
             stocks_data = [
                 {
@@ -186,7 +196,6 @@ class StockManager:
                 }
                 for row in result
             ]
-            
             # Return the list of dictionaries containing the latest stock data for each ticker
             return stocks_data
         except Exception as e:
@@ -196,7 +205,8 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def get_stock_data_by_ticker(self, ticker_symbol):
         # Retrieve all stock data for a specific ticker symbol from the stocks table
         session = self.Session() # Open a new session for database interaction
@@ -210,10 +220,8 @@ class StockManager:
                 self.stocks.c.lowest_price,
                 self.stocks.c.timestamp_end,
             ).where(self.stocks.c.ticker_symbol == ticker_symbol)
-            
             # Execute the query to retrieve the stock data for the given ticker symbol
             result = session.execute(query)
-            
             # Convert each row of the result into a dictionary and store it in a list
             stocks_data = [
                 {
@@ -226,7 +234,6 @@ class StockManager:
                 }
                 for row in result
             ]
-            
             # Return the list of dictionaries containing stock data for the specified ticker
             return stocks_data
         except Exception as e:
@@ -236,7 +243,8 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def get_recent_stock_scrapes(self):
         # Retrieve the most recent stock scrape data for each ticker symbol
         session = self.ScrapeSession()
@@ -288,7 +296,8 @@ class StockManager:
             return []
         finally:
             session.close()
-            
+
+    @retry_on_exception()
     def get_stock_scrape_data_by_ticker(self, ticker_symbol):
         # Retrieve all stock scrape data for a specific ticker symbol from the stocks_scrape table
         session = self.ScrapeSession()  # Open a new session for database interaction
@@ -304,10 +313,8 @@ class StockManager:
                 self.stocks_scrape.c.pe_ratio,
                 self.stocks_scrape.c.timestamp,
             ).where(self.stocks_scrape.c.ticker_symbol == ticker_symbol)
-            
             # Execute the query to retrieve the stock scrape data for the given ticker symbol
             result = session.execute(query)
-            
             # Convert each row of the result into a dictionary and store it in a list
             stocks_scrape_data = [
                 {
@@ -322,7 +329,6 @@ class StockManager:
                 }
                 for row in result
             ]
-            
             # Return the list of dictionaries containing stock scrape data for the specified ticker
             return stocks_scrape_data
         except Exception as e:
@@ -332,4 +338,4 @@ class StockManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+

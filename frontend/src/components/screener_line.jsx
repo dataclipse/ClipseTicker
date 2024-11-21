@@ -86,7 +86,6 @@ const ScreenerLine = ({ data, colors }) => {
         ]);
 
         // Create X scale (time) and Y scale (price)
-        // Convert UTC timestamps to local time for proper display
         const xScale = d3.scaleLinear()
             .domain(sessionDomains)
             .range(sessionRanges);
@@ -208,13 +207,5 @@ const ScreenerLine = ({ data, colors }) => {
         </>
     );
 };
-
-// PropTypes validation for component props
-//ScreenerLine.propTypes = {
-//    data: PropTypes.arrayOf(PropTypes.shape({
-//        time: PropTypes.string.isRequired,
-//        price: PropTypes.number.isRequired
-//    })).isRequired,
-//};
 
 export default ScreenerLine;

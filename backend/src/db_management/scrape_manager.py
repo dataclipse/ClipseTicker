@@ -1,16 +1,34 @@
 # db_management/scrape_manager.py
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
+from datetime import datetime, timezone
+import time
 import logging 
 logger = logging.getLogger(__name__)
+
+def retry_on_exception(max_retries=3, delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Retrying {func.__name__} due to error: {e}")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"Max retries exceeded for {func.__name__}: {e}")
+                        raise
+        return wrapper
+    return decorator
 
 class ScrapeManager:
     def __init__(self, session, scrape_table):
         # Initialize session and table reference for managing scrapes
         self.Session = session
         self.scrape = scrape_table
-    
+
+    @retry_on_exception()
     def create_scrape_batch(self, stock_data_list):
         # Batch insert multiple stock data records into the scrape table
         session = self.Session() # Open a new session for database interaction
@@ -18,10 +36,8 @@ class ScrapeManager:
             # Prepare an insert statement for the scrape table
             # `stock_data_list` is a list of dictionaries, where each dictionary represents a record
             insert_stmt = insert(self.scrape)
-            
             # Execute the insert statement with batch data, inserting all records at once
             session.execute(insert_stmt, stock_data_list)
-            
             # Commit the transaction to save changes in the database
             session.commit()
             logger.debug(f"Batch insert of {len(stock_data_list)} records completed successfully.")
@@ -33,7 +49,8 @@ class ScrapeManager:
         finally:
             # Close the session to free resources
             session.close()
-        
+
+    @retry_on_exception()
     def create_scrape(self, ticker_symbol, company_name, price, change, industry, volume=None, pe_ratio=None, timestamp=None):
         # Create a single scrape record in the scrape table with the provided data
         session = self.Session() # Open a new session for database interaction
@@ -47,12 +64,10 @@ class ScrapeManager:
                 industry=industry,
                 volume=volume if volume is not None else 0.0,
                 pe_ratio=pe_ratio if pe_ratio is not None else 0.0,
-                timestamp=timestamp or datetime.now()
+                timestamp=timestamp or datetime.now(timezone.utc)
             )
-            
             # Execute the insert statement to add the new record
             session.execute(insert_stmt)
-            
             # Commit the transaction to save the changes in the database
             session.commit()
             logger.debug(f"Scrape for {ticker_symbol} at {timestamp} created successfully.")
@@ -63,25 +78,22 @@ class ScrapeManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def get_scrapes(self):
         # Retrieve all scrape records from the scrape table
         session = self.Session()# Open a new session for database interaction
         try:
             # Prepare a select statement to fetch all records from the scrape table
             select_stmt = select(self.scrape)
-            
             # Execute the select statement and fetch all results
             result = session.execute(select_stmt)
             scrapes = result.fetchall() # Fetch all records
-            
             # Get column names for the scrape table to format each record as a dictionary
             column_names = [column.name for column in self.scrape.columns]
             scrapes_list = [dict(zip(column_names, row)) for row in scrapes] # Convert each row to a dictionary
-            
             # Log the number of records retrieved
             logger.debug(f"Retrieved {len(scrapes_list)} scrapes.")
-            
             # Return the list of scrape records as dictionaries
             return scrapes_list
         except SQLAlchemyError as e:
@@ -92,6 +104,7 @@ class ScrapeManager:
             # Close the session to free resources
             session.close()
 
+    @retry_on_exception()
     def get_scrape(self, ticker_symbol, timestamp):
         # Retrieve a specific scrape record from the scrape table based on ticker symbol and timestamp
         session = self.Session()# Open a new session for database interaction
@@ -101,10 +114,8 @@ class ScrapeManager:
                 self.scrape.c.ticker_symbol == ticker_symbol,
                 self.scrape.c.timestamp == timestamp
             )
-            
             # Execute the select statement and fetch a single result
             result = session.execute(select_stmt).fetchone()
-            
             # If a record is found, convert it to a dictionary with column names as keys
             if result:
                 scrape = dict(zip([column.name for column in self.scrape.columns], result))
@@ -121,7 +132,8 @@ class ScrapeManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def update_scrape(self, ticker_symbol, timestamp, **kwargs):
         # Update a specific scrape record in the scrape table with new values
         session = self.Session() # Open a new session for database interaction
@@ -132,13 +144,10 @@ class ScrapeManager:
                 self.scrape.c.ticker_symbol == ticker_symbol,
                 self.scrape.c.timestamp == timestamp
             ).values(**kwargs)
-            
             # Execute the update statement
             result = session.execute(update_stmt)
-            
             # Commit the transaction to save the changes in the database
             session.commit()
-            
             # Check if any rows were affected by the update
             if result.rowcount > 0:
                 logger.debug(f"Scrape for {ticker_symbol} at {timestamp} updated successfully.")
@@ -155,7 +164,8 @@ class ScrapeManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def delete_scrape(self, ticker_symbol, timestamp):
         # Delete a specific scrape record from the scrape table based on ticker symbol and timestamp
         session = self.Session() # Open a new session for database interaction
@@ -165,12 +175,10 @@ class ScrapeManager:
                 self.scrape.c.ticker_symbol == ticker_symbol,
                 self.scrape.c.timestamp == timestamp
             )
-            
             # Execute the delete statement
             result = session.execute(delete_stmt)
             # Commit the transaction to save the changes in the database
             session.commit()
-            
             # Check if any rows were affected by the delete operation
             if result.rowcount > 0:
                 logger.debug(f"Scrape for {ticker_symbol} at {timestamp} deleted successfully.")
@@ -187,9 +195,9 @@ class ScrapeManager:
         finally:
             # Close the session to free resources
             session.close()
-            
+
+    @retry_on_exception()
     def replace_scrape(self, ticker_symbol, timestamp, new_timestamp, **kwargs):
-        
         session = self.Session()
         try:
             # Select existing scrape
@@ -198,29 +206,23 @@ class ScrapeManager:
                 self.scrape.c.timestamp == timestamp
             )
             existing_row = session.execute(select_stmt).fetchone()
-            
             if not existing_row:
                 logger.debug(f"Scrape for {ticker_symbol} at {timestamp} not found.")
                 return False
-            
             column_names = [column.name for column in self.scrape.columns]
             # Save info to dictionary
             row_data = dict(zip(column_names, existing_row))
-            
             # Delete existing scrape
             delete_stmt = delete(self.scrape).where(
                 self.scrape.c.ticker_symbol == ticker_symbol,
                 self.scrape.c.timestamp == timestamp
             )
             session.execute(delete_stmt)
-            
             row_data['timestamp'] = new_timestamp
             row_data.update(kwargs)
-            
             # Insert new scrape with new timestamp
             insert_stmt = insert(self.scrape).values(row_data)
             session.execute(insert_stmt)
-            
             session.commit()
             logger.info(f"Scrape for {ticker_symbol} at {timestamp} replaced with {new_timestamp}.")
             return True
