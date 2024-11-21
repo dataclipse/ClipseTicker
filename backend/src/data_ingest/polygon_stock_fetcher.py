@@ -25,11 +25,11 @@ class PolygonStockFetcher:
         # Define the API endpoint and URL for retrieving stock data for a specific date
         endpoint = f"/v2/aggs/grouped/locale/us/market/stocks/{date}"
         url = self.base_url + endpoint
-        params = {"adjusted": "true", "apikey": self.polygon_api_key} # Set query parameters
+        params = {"adjusted": "true", "apikey": self.polygon_api_key} 
         
         # Send the API request to the specified URL with the query parameters
         response = requests.get(url, params=params)
-        data = response.json() # Parse the response as JSON
+        data = response.json() 
 
         # Check if the response status is successful (status code 200)
         if response.status_code == 200:
@@ -61,51 +61,46 @@ class PolygonStockFetcher:
             self.database_connect.stock_manager.insert_stock_batch(stock_data_batch)
 
     def producer_thread(self, start_date, end_date, rate_limit_counter):
-        # Producer thread to fetch stock data concurrently for a date range
-        current_date = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        # Producer thread to fetch stock data sequentially for a date range
+        current_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
         request_times = [] # Track request timestamps to manage rate limits
-
-        # Use ThreadPoolExecutor to run multiple threads, up to the max requests per minute
-        with ThreadPoolExecutor(max_workers=self.max_requests_per_minute) as executor:
-            futures = []
-            while current_date <= end_date:
-                # Format the current date for the API request
-                formatted_date = current_date.strftime("%Y-%m-%d")
+        
+        while current_date <= end_date:
+            # Format the current date for the API request
+            formatted_date = current_date.strftime('%Y-%m-%d')
+            
+            # Check if request limit is reached
+            if len(request_times) >= self.max_requests_per_minute:
+                time_since_first_request = time.time() - request_times[0]
+                is_last_date = current_date == end_date # Sets a boolean to determine if the current date is equal to the end date
                 
-                # Check if request limit is reached
-                if len(request_times) >= self.max_requests_per_minute:
-                    time_since_first_request = time.time() - request_times[0]
-                    is_last_date = current_date == end_date
-
-                    # If limit is reached and not on the last date, wait for the remaining time
-                    if not is_last_date and time_since_first_request < 60:
-                        wait_time = 60 - time_since_first_request
-                        logger.info(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
-                        time.sleep(wait_time)
-
-                # Submit the data fetch task to the ThreadPoolExecutor
-                futures.append(executor.submit(self.fetch_data_for_date, formatted_date))
-
-                # Log the request time and manage the request timing list for rate limiting
-                request_times.append(time.time())
-                if len(request_times) > self.max_requests_per_minute:
-                    request_times.pop(0) # Remove the oldest request time if over limit
-
-                # Move to the next date in the range
-                current_date += timedelta(days=1)
-
-            # Process completed tasks and handle any errors that occur in threads
-            for future in as_completed(futures):
-                try:
-                    result = future.result()  # Raises any exception that occurred during the task
-                    if result == "RATE_LIMIT_EXCEEDED":
-                        rate_limit_counter["count"] += 1
-                        if rate_limit_counter["count"] >= 15:
-                            logger.error("Exceeded maximum rate limit retries (15). Exiting.")
-                            return "RATE_LIMIT_FAILURE"
-                except Exception as e:
-                    logger.error(f"Error in fetching data: {e}")
+                # If limit is reached and not on the last date, wait for the remaining time
+                if not is_last_date and time_since_first_request < 60:
+                    wait_time = 60 - time_since_first_request
+                    logger.info(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
+                    time.sleep(wait_time)
+                    request_times=[] # Reset request times after waiting
+                    
+            try:
+                # Fetch data for the current date
+                result = self.fetch_data_for_date(formatted_date)
+                logger.info(f"Requesting data for {formatted_date}")
+                if result == "RATE_LIMIT_EXCEEDED" :
+                    rate_limit_counter['count'] += 1
+                    if rate_limit_counter['count'] >= self.max_rate_limit_retries:
+                        logger.error(f"Exceeded maximum rate limit retries ({self.max_rate_limit_retries}). Exiting.")
+                        return "RATE_LIMIT_FAILURE"
+            except Exception as e:
+                logger.error(f"Error in fetching data: {e}")
+                
+            # Log the request time and manage the request timing list
+            request_times.append(time.time())
+            if len(request_times) > self.max_requests_per_minute:
+                request_times.pop(0)
+                
+            # Move to the next date
+            current_date += timedelta(days=1)
 
     def consumer_thread(self):
         # Consumer thread that batches and inserts stock data into the database
@@ -161,7 +156,7 @@ class PolygonStockFetcher:
         rate_limit_counter = {"count": 0}  # Initialize rate limit counter
         
         # Initialize producer and consumer threads
-        producer = threading.Thread(target=self.producer_thread_simple, args=(start_date, end_date, rate_limit_counter))
+        producer = threading.Thread(target=self.producer_thread, args=(start_date, end_date, rate_limit_counter))
         consumer = threading.Thread(target=self.consumer_thread)
 
         # Start the threads
@@ -195,44 +190,3 @@ class PolygonStockFetcher:
         logger.info(f"Finished fetching data for date range {start_date} to {end_date}.")
         logger.info(f"Time Taken: {formatted_run_time}")
 
-    def producer_thread_simple(self, start_date, end_date, rate_limit_counter):
-        # Producer thread to fetch stock data sequentially for a date range
-        current_date = datetime.strptime(start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(end_date, '%Y-%m-%d')
-        request_times = [] # Track request timestamps to manage rate limits
-        
-        while current_date <= end_date:
-            # Format the current date for the API request
-            formatted_date = current_date.strftime('%Y-%m-%d')
-            
-            # Check if request limit is reached
-            if len(request_times) >= self.max_requests_per_minute:
-                time_since_first_request = time.time() - request_times[0]
-                is_last_date = current_date == end_date # Sets a boolean to determine if the current date is equal to the end date
-                
-                # If limit is reached and not on the last date, wait for the remaining time
-                if not is_last_date and time_since_first_request < 60:
-                    wait_time = 60 - time_since_first_request
-                    logger.info(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
-                    time.sleep(wait_time)
-                    request_times=[] # Reset request times after waiting
-                    
-            try:
-                # Fetch data for the current date
-                result = self.fetch_data_for_date(formatted_date)
-                logger.info(f"Requesting data for {formatted_date}")
-                if result == "RATE_LIMIT_EXCEEDED" :
-                    rate_limit_counter['count'] += 1
-                    if rate_limit_counter['count'] >= self.max_rate_limit_retries:
-                        logger.error(f"Exceeded maximum rate limit retries ({self.max_rate_limit_retries}). Exiting.")
-                        return "RATE_LIMIT_FAILURE"
-            except Exception as e:
-                logger.error(f"Error in fetching data: {e}")
-                
-            # Log the request time and manage the request timing list
-            request_times.append(time.time())
-            if len(request_times) > self.max_requests_per_minute:
-                request_times.pop(0)
-                
-            # Move to the next date
-            current_date += timedelta(days=1)

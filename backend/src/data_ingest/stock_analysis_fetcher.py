@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class StockAnalysisFetcher:
-    
     def __init__(self):
         # Initialize the StockAnalysisFetcher
         self.db_manager = DBManager()
@@ -24,21 +23,24 @@ class StockAnalysisFetcher:
         }
 
     def fetch_stock_data(self):
-        # Fetch stock data from the API
         try:
+            # Fetch stock data from the API
             response = requests.get(self.API_URL, headers=self.HEADERS)
-            response.raise_for_status() # Raise an exception for HTTP errors
             
-            data = response.json() # Parse the JSON response
+            # Raise an exception for HTTP errors
+            response.raise_for_status() 
+            
+            # Parse the JSON response
+            data = response.json() 
             stock_list = data.get('data', {}).get('data',[])
-            
             
             # Check if stock_list is a list, otherwise logger.debug an error and exit
             if not isinstance(stock_list, list):
                 logger.info("Unexpected format: stock_list is not a list.")
                 return
             
-            stock_data_list = [] # List to hold stock data dictionaries
+            # List to hold stock data dictionaries
+            stock_data_list = [] 
             
             # Iterate through each stock entry and build a dictionary for each
             for stock in stock_list:
@@ -56,27 +58,40 @@ class StockAnalysisFetcher:
                 
             logger.info(f'Fetching data from Stock Analysis {datetime.now()}')
             return stock_data_list
+        
         except requests.exceptions.HTTPError as http_err:
             # Handle HTTP errors, particularly rate limiting (status 429)
             if response.status_code == 429:  # Too Many Requests
                 logger.error("Rate limit hit; backing off.") 
-                delay = min(delay * 2, 600)  # Exponential backoff, max 10 minutes
+                # Exponential backoff, max 10 minutes
+                delay = min(delay * 2, 600)  
             else:
                 logger.error(f"HTTP error occurred: {http_err}")
+        
+        # Handle other request errors (e.g., network issues)
         except requests.exceptions.RequestException as req_err:
-            # Handle other request errors (e.g., network issues)
             logger.error(f"Request error occurred: {req_err}")
-            delay = min(delay * 2, 600)  # Exponential backoff, max 10 minutes
+            # Exponential backoff, max 10 minutes
+            delay = min(delay * 2, 600)  
 
     def store_stock_data(self, stock_data_list):
+        # Store a batch of stock data in the database
         self.db_manager.scrape_manager.create_scrape_batch(stock_data_list)
         logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully.")
 
     def fetch_and_store_stock_data(self):
-        delay = 0  # Initial delay set to 0 seconds
+        # Initial delay set to 0 seconds
+        delay = 0
+        
+        # Generate a random delay between 0 and 5 seconds
         delay = random.uniform(0, 5)
         time.sleep(delay)
+        
+        # Fetch stock data from the source
         result = self.fetch_stock_data()
-        if result is not None: # If data was fetched successfully
-            self.store_stock_data(result) # Store the fetched data
+        
+        # If data was fetched successfully
+        if result is not None: 
+            # Store the fetched data
+            self.store_stock_data(result) 
 
