@@ -24,6 +24,7 @@ class Scheduler:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
             return cls._instance
+        
     def __init__(self):
         with self._lock:
             if not self._initialized:

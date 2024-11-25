@@ -6,6 +6,7 @@ from .db_manager import DBManager
 from .scheduler import Scheduler
 from .audit import AuditManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
+from .data_ingest.stock_analysis_fetcher import StockAnalysisFetcher
 from .routes.user_routes import user_bp
 from .routes.stocks_routes import stocks_bp
 from .routes.api_key_routes import api_key_bp
@@ -17,6 +18,7 @@ import logging
 import logging.handlers
 import sys
 import time
+import threading
 
 # Set UTC for asctime
 logging.Formatter.converter = time.gmtime
@@ -39,6 +41,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # Initialize database manager and polygon data fetcher instances
 db_manager = DBManager()
 polygon_fetcher = PolygonStockFetcher()
+stock_analysis_fetcher = StockAnalysisFetcher()
 scheduler = Scheduler()
 scrape_audit = AuditManager()
 
@@ -145,7 +148,15 @@ def main():
             scheduler.start_scheduler()
             scheduler.schedule_existing_jobs()
             scheduler.list_scheduled_jobs()
+            fetch_thread = threading.Thread(
+                target=stock_analysis_fetcher.fetch_ticker_data,
+                args=(),
+                daemon=True
+            )
+            fetch_thread.start()
         #scrape_audit.fetch_and_convert()
+        
+        #stock_analysis_fetcher.fetch_ticker_data()
         app.run(debug=True)
         
     except KeyboardInterrupt:

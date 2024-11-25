@@ -30,10 +30,12 @@ def retry_on_exception(max_retries=3, delay=1):
     return decorator
 
 class ScrapeManager:
-    def __init__(self, session, scrape_table):
+    def __init__(self, session, ticker_scrape_session, scrape_table, ticker_scrape_table):
         # Initialize session and table reference for managing scrapes
         self.Session = session
+        self.TickerScrapeSession = ticker_scrape_session
         self.scrape = scrape_table
+        self.ticker_scrape = ticker_scrape_table
 
     @retry_on_exception()
     def create_scrape_batch(self, stock_data_list):
@@ -239,3 +241,31 @@ class ScrapeManager:
             return False
         finally:
             session.close()
+
+    @retry_on_exception()
+    def batch_create_or_update_scrapes(self, data_list):
+        session = self.TickerScrapeSession()
+        try:
+            for data in data_list:
+                ticker_symbol = data.get('ticker_symbol')
+                if not ticker_symbol:
+                    logger.warning("Ticker symbol is missing in the data.")
+                    continue
+                
+                select_stmt = select(self.ticker_scrape).where(self.ticker_scrape.c.ticker_symbol == ticker_symbol)
+                existing_record = session.execute(select_stmt).fetchone()
+                
+                if existing_record:
+                    update_stmt = update(self.ticker_scrape).where(self.ticker_scrape.c.ticker_symbol == ticker_symbol).values(**data)
+                    session.execute(update_stmt)
+                else:
+                    insert_stmt = insert(self.ticker_scrape).values(**data)
+                    session.execute(insert_stmt)
+            session.commit()
+            logger.debug(f"Batch create or update of {len(data_list)} records completed successfully.")
+        except SQLAlchemyError as e:
+            logger.error(f"Error in batch create or update: {e}")
+            session.rollback()
+            raise
+        finally:
+            session.close()        

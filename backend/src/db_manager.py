@@ -60,7 +60,7 @@ class DBManager:
         self.api_key_manager = ApiKeyManager(self.api_keys_session, self.api_keys, self.cipher)
         self.stock_manager = StockManager(self.polygon_stocks_session, self.scrape_session, self.stocks, self.stocks_scrape)
         self.user_manager = UserManager(self.users_session, self.users)
-        self.scrape_manager = ScrapeManager(self.scrape_session, self.stocks_scrape)
+        self.scrape_manager = ScrapeManager(self.scrape_session, self.scrape_ticker_session, self.stocks_scrape, self.ticker_scrape)
         
         # Initialize default users
         self.initialize_default_users()

@@ -5,6 +5,9 @@ import time
 import random
 from datetime import datetime, timezone
 import logging 
+import csv
+import os
+import json
 logger = logging.getLogger(__name__)
 
 
@@ -95,3 +98,61 @@ class StockAnalysisFetcher:
             # Store the fetched data
             self.store_stock_data(result) 
 
+    def fetch_ticker_data(self):
+        # Build the uri list
+        csv_file_path = os.path.join(os.path.dirname(__file__), 'column_data', 'stock_scrape_columns.csv')
+        
+        urls=[]
+        identifiers=[]
+        
+        try:
+            with open(csv_file_path, 'r', newline='') as csvfile:
+                csv_reader = csv.reader(csvfile, delimiter=';')
+                next(csv_reader)
+                for row in csv_reader:
+                    url = f"https://stockanalysis.com/api/screener/s/d/{row[1]}"
+                    urls.append(url)
+                    identifiers.append(row[0])
+                
+                ticker_data = {identifier: url for identifier, url in zip(identifiers, urls)}
+                
+                for identifier, url in ticker_data.items():
+                    logger.info(f"Identifier: {identifier}, URL: {url}")
+                    response = requests.get(url.strip(), headers=self.HEADERS)
+                    
+                    response.raise_for_status() 
+                    
+                    data = response.json() 
+                    
+                    stock_list = []
+                    
+                    stock_list = data.get('data', {}).get('data',[])
+                    
+                    # Check if stock_list is a list
+                    if not isinstance(stock_list, list):
+                        logger.info("Unexpected format: stock_list is not a list.")
+                        return
+                    
+                    stock_data_list = [] 
+                    
+                    for stock in stock_list:
+                        # Check for the specific condition to skip
+                        if identifier == 'return_from_ipo_price':
+                            # Check if the value is not a float
+                            if not isinstance(stock[1], float):
+                                continue  # Skip to the next iteration
+                        stock_data = {
+                            "ticker_symbol": stock[0],
+                            # Check if identifier is 'in_index' and deserialize if true
+                            identifier: stock[1] if identifier != 'in_index' else json.dumps(stock[1])  # Deserialize for 'in_index'
+                        }
+                        stock_data_list.append(stock_data)
+                    self.db_manager.scrape_manager.batch_create_or_update_scrapes(stock_data_list)
+                    logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully for {identifier}.")
+                    
+                    time.sleep(30)
+                
+        except FileNotFoundError:
+            logger.error(f"File not found: {csv_file_path}")
+        except Exception as e:
+            logger.error(f"An error occurred while reading the CSV file: {e}")
