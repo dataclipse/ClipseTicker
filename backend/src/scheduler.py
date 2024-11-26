@@ -83,6 +83,26 @@ class Scheduler:
         else:
             logger.info("No jobs currently scheduled.")
 
+    def fetch_scrape_ticker_data_task(self, job_id):
+        # Parse the job ID components
+        prefix, job_type, service, frequency, timestamp = job_id.split('-')
+        datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
+        
+        # Log the job information for debugging
+        logger.info(f"Fetching data for job ID: {job_id} at {datetime.now()}")
+        logger.info("Prefix: %s, Data Type: %s, Job Type: %s, Schedule Type: %s, Timestamp: %s", prefix, job_type, service, frequency, datetime_obj)
+        
+        # Update job status to 'Running' before starting data fetch
+        self.db_manager.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
+        
+        # Start a new thread for data fetching
+        fetch_thread = threading.Thread(
+            target=self.sa_fetcher.fetch_ticker_data,
+            args=(job_id,),
+            daemon=True
+        )
+        fetch_thread.start()
+
     def fetch_scrape_data_task(self, job_id):
         # Parse the job ID components
         prefix, job_type, service, frequency, timestamp = job_id.split('-')
@@ -122,7 +142,6 @@ class Scheduler:
                 daemon=True
             )
             fetch_thread.start()
-            #self.sa_fetcher.fetch_and_store_stock_data()
             
             # Calculate and log the total time taken
             end_time = time.time()
@@ -379,7 +398,63 @@ class Scheduler:
                                 replace_existing=True
                             )
                             logger.info(f"Scheduled enable interval for data scrape task with job ID: {job_id}.")
-            
+                # Handle data scrape ticker jobs
+                elif job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis_ticker_data':
+                    current_time = datetime.now(timezone.utc).time()
+                    if job['status'] in ['Running', 'Scheduled']:
+                        # Check if current time is greater than 21:00
+                        if current_time > datetime.strptime("21:00", "%H:%M").time() and job['frequency'] == 'recurring_daily_am':
+                            # Mark job as skipped
+                            self.db_manager.job_manager.update_job_schedule_status(job['job_type'], job['service'], job['frequency'], scheduled_start_datetime, 'Skipped')
+                            # Schedule for the next day based on the current day
+                            tomorrow = datetime.now(timezone.utc).date() + timedelta(days=1)
+                            new_start_date = datetime.combine(tomorrow, scheduled_start_datetime.time()).replace(tzinfo=timezone.utc)
+                            self.db_manager.job_manager.insert_job_schedule(
+                                job_type=job['job_type'],
+                                service=job['service'],
+                                owner=job['owner'],
+                                frequency=job['frequency'],
+                                scheduled_start_date=new_start_date,
+                                scheduled_end_date=None,
+                                data_fetch_start_date=None,
+                                data_fetch_end_date=None,
+                                interval_days=None,
+                                weekdays=None
+                            )
+                            logger.info(f"Job ID: {job_id} marked as skipped and rescheduled for the next day.")
+                            continue  # Skip further processing for this job
+                        
+                        if datetime.strptime("09:00", "%H:%M").time() <= current_time <= datetime.strptime("11:00", "%H:%M").time():
+                            # Mark job as skipped
+                            self.db_manager.job_manager.update_job_schedule_status(job['job_type'], job['service'], job['frequency'], scheduled_start_datetime, 'Skipped')
+                            # Schedule for the current day with the same time
+                            today = datetime.now(timezone.utc).date()
+                            new_start_date = datetime.combine(today, scheduled_start_datetime.time()).replace(tzinfo=timezone.utc)
+                            self.db_manager.job_manager.insert_job_schedule(
+                                job_type=job['job_type'],
+                                service=job['service'],
+                                owner=job['owner'],
+                                frequency=job['frequency'],
+                                scheduled_start_date=new_start_date,
+                                scheduled_end_date=None,
+                                data_fetch_start_date=None,
+                                data_fetch_end_date=None,
+                                interval_days=None,
+                                weekdays=None
+                            )
+                            logger.info(f"Job ID: {job_id} marked as skipped and rescheduled for today.")
+                            continue  # Skip further processing for this job
+                        
+                        # Restart the job for any other time
+                        self.scheduler.add_job(
+                            self.fetch_scrape_ticker_data_task,
+                            trigger=DateTrigger(run_date=datetime.now(timezone.utc) + timedelta(seconds=30)),  
+                            args=[job_id],
+                            id=job_id,
+                            replace_existing=True
+                        )
+                        logger.info(f"Job ID: {job_id} restarted for fetch_scrape_ticker_data_task.")
+                        
             # Only schedule jobs with a start date in the future
             if scheduled_start_datetime > datetime.now(timezone.utc):
                 trigger_start = CronTrigger(
@@ -403,7 +478,11 @@ class Scheduler:
                     else:
                         self.scheduler.add_job(self.fetch_scrape_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
                         logger.info(f"Scheduled data scrape task with job ID: {job_id}")
-
+                # Schedule data scrape ticker jobs
+                elif job['job_type'] == 'data_scrape' and job['service'] == 'stock_analysis_ticker_data':
+                    self.scheduler.add_job(self.fetch_scrape_ticker_data_task, trigger=trigger_start, args=[job_id], id=job_id, replace_existing=True)
+                    logger.info(f"Scheduled API fetch task with job ID: {job_id}")
+                    
     def start_scheduler(self):
         # Start the scheduler if it isn't running already
         if not self.scheduler.running:
@@ -463,6 +542,47 @@ class Scheduler:
         except Exception as e:
             # Log any error that occurs during the database inspection
             logger.error(f"Error inspecting database record: {e}")
+
+    def add_ticker_data_jobs(self):
+        job_type = 'data_scrape'
+        service = 'stock_analysis_ticker_data'
+        owner = 'AutoGen'
+        frequency_am = 'recurring_daily_am'
+        frequency_pm = 'recurring_daily_pm'
+        
+        current_time = datetime.now(timezone.utc)
+        
+        scheduled_start_utc_am = datetime.now(timezone.utc).replace(hour=11, minute=0, second=0, microsecond=0)
+        scheduled_start_utc_pm = datetime.now(timezone.utc).replace(hour=23, minute=0, second=0, microsecond=0)
+        
+        # Check if the scheduled AM time has already passed
+        if scheduled_start_utc_am <= current_time:
+            scheduled_start_utc_am += timedelta(days=1)  # Move to the next day
+            
+        # Check if the scheduled PM time has already passed
+        if scheduled_start_utc_pm <= current_time:
+            scheduled_start_utc_pm += timedelta(days=1)  # Move to the next day
+
+        existing_job_am = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency_am, scheduled_start_utc_am)
+        if not existing_job_am:
+            self.db_manager.job_manager.insert_job_schedule(
+                job_type, service, owner, frequency_am, scheduled_start_utc_am,
+                None, None, None, None, None
+            )
+            logger.info("Scheduled new ticker data job for AM.")
+        else:
+            logger.info("A job is already scheduled for AM; no new job created.")
+            
+        
+        existing_job_pm = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency_pm, scheduled_start_utc_pm)
+        if not existing_job_pm:
+            self.db_manager.job_manager.insert_job_schedule(
+                job_type, service, owner, frequency_pm, scheduled_start_utc_pm,
+                None, None, None, None, None
+            )
+            logger.info("Scheduled new ticker data job for PM.")
+        else:
+            logger.info("A job is already scheduled for PM; no new job created.")
 
 if __name__ == "__main__":
     logger.debug("Placeholder")

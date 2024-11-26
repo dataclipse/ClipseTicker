@@ -3,7 +3,7 @@ import requests
 from ..db_manager import DBManager
 import time
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging 
 import csv
 import os
@@ -98,9 +98,19 @@ class StockAnalysisFetcher:
             # Store the fetched data
             self.store_stock_data(result) 
 
-    def fetch_ticker_data(self):
+    def fetch_ticker_data(self, job_id):
         # Build the uri list
         csv_file_path = os.path.join(os.path.dirname(__file__), 'column_data', 'stock_scrape_columns.csv')
+        
+        # Parse the job ID components
+        prefix, job_type, service, frequency, timestamp = job_id.split('-')
+        datetime_obj = datetime.fromtimestamp(int(timestamp), timezone.utc)
+
+        # Fetch job schedule from the database
+        result = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency, datetime_obj)
+
+        # Record start time for tracking execution duration
+        start_time = time.time()
         
         urls=[]
         identifiers=[]
@@ -151,8 +161,54 @@ class StockAnalysisFetcher:
                     logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully for {identifier}.")
                     
                     time.sleep(30)
-                
         except FileNotFoundError:
             logger.error(f"File not found: {csv_file_path}")
         except Exception as e:
             logger.error(f"An error occurred while reading the CSV file: {e}")
+
+        # Calculate and log the total time taken
+        end_time = time.time()
+        total_time = end_time - start_time
+        hours, remainder = divmod(total_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
+            
+        # Update the run time and status to 'Complete' after execution
+        self.db_manager.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
+        self.db_manager.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
+        
+        # Log completion details
+        logger.info(f"Finished fetching data for Stock Analysis Ticker Data Scrape on {datetime_obj}.")
+        logger.info(f"Time Taken: {formatted_run_time}")
+        
+        new_start_date = self.parse_date(result['scheduled_start_date']) + timedelta(days=1)
+
+        # Check if the new job schedule already exists
+        existing_schedule = self.db_manager.job_manager.select_job_schedule(
+            job_type=result['job_type'],
+            service=result['service'],
+            frequency=frequency,
+            scheduled_start_date=new_start_date
+        )
+
+        # Insert a new job schedule iteration with the updated start date
+        if not existing_schedule:
+            self.db_manager.job_manager.insert_job_schedule(
+                job_type=result['job_type'],
+                service=result['service'],
+                owner=result['owner'],
+                frequency=frequency,
+                scheduled_start_date=new_start_date,
+                scheduled_end_date=None,
+                data_fetch_start_date=None,
+                data_fetch_end_date=None,
+                interval_days=None,
+                weekdays=None
+            )
+            logger.info(f"Created new job schedule iteration")
+        else:
+            logger.info(f"Job schedule already exists for {new_start_date}; skipping insert.")
+        
+    def parse_date(self, date_str):
+        # Helper function for date conversion
+        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S") if isinstance(date_str, str) else date_str

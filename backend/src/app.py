@@ -146,17 +146,10 @@ def main():
     try:
         if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
             scheduler.start_scheduler()
+            scheduler.add_ticker_data_jobs()
             scheduler.schedule_existing_jobs()
             scheduler.list_scheduled_jobs()
-            fetch_thread = threading.Thread(
-                target=stock_analysis_fetcher.fetch_ticker_data,
-                args=(),
-                daemon=True
-            )
-            fetch_thread.start()
-        #scrape_audit.fetch_and_convert()
-        
-        #stock_analysis_fetcher.fetch_ticker_data()
+
         app.run(debug=True)
         
     except KeyboardInterrupt:
