@@ -1,10 +1,12 @@
 # scheduler.py
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.events import EVENT_JOB_MISSED
 from datetime import datetime, timezone, timedelta
 import threading
 import time
-from apscheduler.triggers.date import DateTrigger
 from .db_manager import DBManager
 from .data_ingest.polygon_stock_fetcher import PolygonStockFetcher
 from .data_ingest.stock_analysis_fetcher import StockAnalysisFetcher
@@ -26,15 +28,32 @@ class Scheduler:
             return cls._instance
         
     def __init__(self):
+        executors = {
+            'default': ThreadPoolExecutor(20) # Adjust thread pool size to handle load
+        }
+        job_defaults = {
+            'misfire_grace_time': 120,  # Allow jobs to run up to 2 minutes late
+            'coalesce': False,          # Run all missed jobs, not just the latest one
+            'max_instances': 3          # Allow multiple concurrent instances
+        }
+        
         with self._lock:
             if not self._initialized:
                 # Initialize instance attributes only once
-                self.scheduler = BackgroundScheduler()
+                self.scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
                 self.scheduler._daemon = False
                 self.db_manager = DBManager()
                 self.polygon_fetcher = PolygonStockFetcher()
                 self.sa_fetcher = StockAnalysisFetcher()
                 self._initialized = True
+                self.scheduler.add_listener(self.missed_listener, EVENT_JOB_MISSED)
+
+    def missed_listener(self, event):
+        if event.exception:
+            logger.error(f"Job {event.job_id} missed, rescheduling...")
+            job = self.scheduler.get_job(event.job_id)
+            if job:
+                job.modify(next_run_time=datetime.now(timezone.utc))
 
     def parse_date(self, date_str):
         # Helper function for date conversion
