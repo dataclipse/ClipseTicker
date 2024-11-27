@@ -3,6 +3,10 @@ import React from "react";
 import { Box } from "@mui/material";
 import { GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { z } from "zod";
+import moment from 'moment';
+
+//Helper functions for the ClipseTicker application
+//Contains utilities for date formatting, data validation, and UI components
 
 // Simple Zod schema to validate that dates are strings
 const dateSchema = z.object({
@@ -10,11 +14,13 @@ const dateSchema = z.object({
   end_date: z.string()
 });
 
+//  Checks if a given date is before today
 const isBeforeToday = (date) => {
   const today = new Date();
   return date >= today;
 };
 
+// Validates a date range and sets error messages
 export const validateDateRange = (start, end, setError, allowFutureDates = false) => {
   try {
       dateSchema.parse({ start_date: start, end_date: end });
@@ -42,6 +48,7 @@ export const validateDateRange = (start, end, setError, allowFutureDates = false
   }
 };
 
+// Updates form state with new field values
 export const updateFormState = (field, value, setStateFunction) => {
     if (typeof setStateFunction !== 'function') {
         console.error('setStateFunction is not a function:', setStateFunction);
@@ -54,6 +61,7 @@ export const updateFormState = (field, value, setStateFunction) => {
     }));
 };
 
+// Calculates start and end dates based on data fetch type
 export const calculateDataFetchDates = (dataFetchType, updateFormState) => {
   const today = new Date();
   const endDate = new Date(today);
@@ -97,9 +105,6 @@ export const QuickSearchToolbar = () => (
 // Format a number as currency with two decimal places
 export const formatCurrency = (value) => `$${parseFloat(value).toFixed(2)}`;
 
-// Format a number as currency for charts without the dollar sign
-export const formatCurrencyChart = (value) => parseFloat(value).toFixed(2);
-
 // Format a Unix timestamp into a JavaScript Date object
 export const formatDate = (unix_timestamp) => {
   // Convert Unix timestamp to milliseconds if it's less than 10 digits
@@ -107,13 +112,6 @@ export const formatDate = (unix_timestamp) => {
     unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
   const date = new Date(timestamp);
   return date;
-};
-
-export const formatDateTimestamp = (unix_timestamp) => {
-  // Convert Unix timestamp to milliseconds if it's less than 10 digits
-  const timestamp =
-    unix_timestamp < 10000000000 ? unix_timestamp * 1000 : unix_timestamp;
-  return timestamp;
 };
 
 // Format a Unix timestamp specifically for chart data
@@ -147,7 +145,7 @@ export function parseWeekdays(weekdaysStr) {
     return weekdaysStr; // Return the original string if parsing fails
   }
 }
-// Format a Unix timestamp into a JavaScript Date object in the user's local timezone
+
 // Format a Unix timestamp into a JavaScript Date object in the user's local timezone
 export const formatDateLocal = (unix_timestamp) => {
   // Convert Unix timestamp to milliseconds if it's less than 10 digits
@@ -176,11 +174,13 @@ export const formatDateLocal = (unix_timestamp) => {
   return local_date
 };
 
+// Formats PE (Price-to-Earnings) ratio
 export function formatPE(value) {
   if (value === 0) return undefined;
   return parseFloat(value).toFixed(2);
 };
 
+// Converts timestamp to seconds by removing milliseconds
 export function convertTimestamp(timestamp){
 
   // Get the new timestamp without milliseconds
@@ -188,14 +188,44 @@ export function convertTimestamp(timestamp){
 
   return newTimestamp;
 }
-const myPriceFormatter = Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  currencyDisplay: 'symbol',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-}).format;
-export const customPriceFormatter = (value) => {
-  const formattedValue = myPriceFormatter(value);
-  return formattedValue.replace(/([^\d.,]+)(\d)/, '$1 $2');
+
+// Helper function to check if a date is a weekend
+const isWeekend = (date) => {
+  return moment(date).day() === 0 || moment(date).day() === 6;
+};
+
+// Helper function to get date minus N business days
+const getDateMinusBusinessDays = (date, businessDays) => {
+  // Start from yesterday
+  const currentDate = moment(date).subtract(1, 'days');
+  let remainingDays = businessDays - 1;
+  
+  while (remainingDays > 0) {
+      currentDate.subtract(1, 'days');
+      if (!isWeekend(currentDate)) {
+          remainingDays--;
+      }
+  }
+  return currentDate.toDate();
+};
+
+// Helper function for time frame filtering
+export const getFilteredDateByTimeFrame = (timeFrame, dataDate, now) => {
+  const momentDate = moment(dataDate);
+  const momentNow = moment(now);
+
+  switch (timeFrame) {  
+      case '1w':
+          return momentDate.isAfter(getDateMinusBusinessDays(now, 5));
+      case '1m':
+          return momentDate.isAfter(momentNow.clone().subtract(1, 'month'));
+      case 'YTD':
+          return momentDate.isAfter(momentNow.clone().startOf('year'));
+      case '1y':
+          return momentDate.isAfter(momentNow.clone().subtract(1, 'year'));
+      case '2y':
+          return momentDate.isAfter(momentNow.clone().subtract(2, 'year'));
+      default:
+          return true;
+  }
 };

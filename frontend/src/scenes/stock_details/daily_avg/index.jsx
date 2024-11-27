@@ -5,7 +5,7 @@ import { tokens } from "../../../theme";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatDate, formatDateChart } from "../../../components/helper";
+import { formatCurrency, formatDate, formatDateChart, getFilteredDateByTimeFrame } from "../../../components/helper";
 import CandlestickChart from '../../../components/candlestick';
 import moment from 'moment';
 
@@ -20,48 +20,6 @@ const Stocks = () => {
   const [stockData, setStockData] = useState({ details: [], chartData: [] });
   const [filteredChartData, setFilteredChartData] = useState(stockData.chartData);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState('1m'); // Default to 1 month
-
-
-  // Helper function to check if a date is a weekend
-  const isWeekend = useCallback((date) => {
-    return moment(date).day() === 0 || moment(date).day() === 6;
-  }, []);
-
-  // Helper function to get date minus N business days
-  const getDateMinusBusinessDays = useCallback((date, businessDays) => {
-    // Start from yesterday
-    const currentDate = moment(date).subtract(1, 'days');
-    let remainingDays = businessDays -1;
-    
-    while (remainingDays > 0) {
-      currentDate.subtract(1, 'days');
-      if (!isWeekend(currentDate)) {
-        remainingDays--;
-      }
-    }
-    return currentDate.toDate();
-  }, [isWeekend]);
-
-  // Helper function for time frame filtering
-  const getFilteredDateByTimeFrame = useCallback((timeFrame, dataDate, now) => {
-    const momentDate = moment(dataDate);
-    const momentNow = moment(now);
-
-    switch (timeFrame) {  
-      case '1w':
-        return momentDate.isAfter(getDateMinusBusinessDays(now, 5));
-      case '1m':
-        return momentDate.isAfter(momentNow.clone().subtract(1, 'month'));
-      case 'YTD':
-        return momentDate.isAfter(momentNow.clone().startOf('year'));
-      case '1y':
-        return momentDate.isAfter(momentNow.clone().subtract(1, 'year'));
-      case '2y':
-        return momentDate.isAfter(momentNow.clone().subtract(2, 'year'));
-      default:
-        return true;
-    }
-  }, [getDateMinusBusinessDays]);
 
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
@@ -185,7 +143,7 @@ const Stocks = () => {
     } finally {
       setLoading(false);
     }
-  }, [ticker, navigate, selectedTimeFrame, getFilteredDateByTimeFrame]);
+  }, [ticker, navigate, selectedTimeFrame]);
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
@@ -206,7 +164,7 @@ const Stocks = () => {
     } catch (error) {
       console.error(error);
     }
-  }, [fetchData, getFilteredDateByTimeFrame]);
+  }, [fetchData]);
 
   const timeFrameLabels = {
     '1w': '1 Week',
