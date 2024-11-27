@@ -21,12 +21,12 @@ class PolygonStockFetcher:
     def get_stock_data(self, date):
         # Refresh the API key to ensure the latest key is used for the request
         self.polygon_api_key = self.database_connect.api_key_manager.select_api_key("Polygon.io")
-        
+
         # Define the API endpoint and URL for retrieving stock data for a specific date
         endpoint = f"/v2/aggs/grouped/locale/us/market/stocks/{date}"
         url = self.base_url + endpoint
         params = {"adjusted": "true", "apikey": self.polygon_api_key} 
-        
+
         # Send the API request to the specified URL with the query parameters
         response = requests.get(url, params=params)
         data = response.json() 
@@ -40,14 +40,14 @@ class PolygonStockFetcher:
                 # Print message if no data is available, likely due to market closure on the date
                 logger.info(f"No stock data found for {date}.")
                 return []
-            
+
         # Handle rate limit errors (status code 429)
         elif response.status_code == 429:
             # Handle rate limit error (429 Too Many Requests)
             logger.error("Rate limit exceeded. Waiting for 60 seconds before retrying...")
             time.sleep(60)  # Wait for 60 seconds before retrying
             return "RATE_LIMIT_EXCEEDED" # Return a special signal for a 429 error
-        
+
         # Handle other errors by printing the status and error message
         else:
             # If the response status is not 200, raise an error
@@ -65,23 +65,23 @@ class PolygonStockFetcher:
         current_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
         request_times = [] # Track request timestamps to manage rate limits
-        
+
         while current_date <= end_date:
             # Format the current date for the API request
             formatted_date = current_date.strftime('%Y-%m-%d')
-            
+
             # Check if request limit is reached
             if len(request_times) >= self.max_requests_per_minute:
                 time_since_first_request = time.time() - request_times[0]
                 is_last_date = current_date == end_date # Sets a boolean to determine if the current date is equal to the end date
-                
+
                 # If limit is reached and not on the last date, wait for the remaining time
                 if not is_last_date and time_since_first_request < 60:
                     wait_time = 60 - time_since_first_request
                     logger.info(f"Reached request limit. Waiting for {wait_time:.2f} seconds...")
                     time.sleep(wait_time)
                     request_times=[] # Reset request times after waiting
-                    
+
             try:
                 # Fetch data for the current date
                 result = self.fetch_data_for_date(formatted_date)
@@ -93,12 +93,12 @@ class PolygonStockFetcher:
                         return "RATE_LIMIT_FAILURE"
             except Exception as e:
                 logger.error(f"Error in fetching data: {e}")
-                
+
             # Log the request time and manage the request timing list
             request_times.append(time.time())
             if len(request_times) > self.max_requests_per_minute:
                 request_times.pop(0)
-                
+
             # Move to the next date
             current_date += timedelta(days=1)
 
@@ -136,10 +136,10 @@ class PolygonStockFetcher:
 
     def fetch_data_for_date(self, date):
         # Fetch stock data for a single date and add it to the database queue
-        
+
         # Call the function to get stock data for the specified date
         stock_data = self.get_stock_data(date)
-        
+
         # If stock data is retrieved successfully, add it to the database insert queue
         if stock_data is not None:
             # Place the data in db_insert_queue to be processed later by the consumer thread in batches
@@ -148,11 +148,8 @@ class PolygonStockFetcher:
     def fetch_data_for_date_range(self, start_date, end_date, job_type, service, frequency, datetime_obj):
         # Fetch stock data for a specified date range using a producer-consumer threading model
         start_time = time.time() # Start timer to track total runtime
-
         logger.info(f"Fetching stock data from {start_date} to {end_date}...")
-
         self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Running')
-        
         rate_limit_counter = {"count": 0}  # Initialize rate limit counter
         
         # Initialize producer and consumer threads
@@ -170,7 +167,7 @@ class PolygonStockFetcher:
             logger.error("Job failed due to excessive rate limiting.")
             self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Failed')
             return
-        
+
         self.db_insert_queue.join() # Ensure all items in queue are processed by the consumer
         consumer.join() # Wait for consumer to finish processing
 
@@ -185,7 +182,7 @@ class PolygonStockFetcher:
 
         self.database_connect.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
         self.database_connect.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
-        
+
         # Log completion message with total time taken
         logger.info(f"Finished fetching data for date range {start_date} to {end_date}.")
         logger.info(f"Time Taken: {formatted_run_time}")

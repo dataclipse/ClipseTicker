@@ -99,7 +99,7 @@ class StockAnalysisFetcher:
             self.store_stock_data(result) 
 
     def fetch_ticker_data(self, job_id):
-        # Build the uri list
+        # Load column definitions from CSV file containing metric mappings
         csv_file_path = os.path.join(os.path.dirname(__file__), 'column_data', 'stock_scrape_columns.csv')
         
         # Parse the job ID components
@@ -112,55 +112,61 @@ class StockAnalysisFetcher:
         # Record start time for tracking execution duration
         start_time = time.time()
         
+        # Lists to store API endpoints and their corresponding metric identifiers
         urls=[]
         identifiers=[]
         
         try:
+            # Read and process the CSV file containing metric definitions
             with open(csv_file_path, 'r', newline='') as csvfile:
                 csv_reader = csv.reader(csvfile, delimiter=';')
-                next(csv_reader)
+                next(csv_reader) # Skip header row
                 for row in csv_reader:
                     url = f"https://stockanalysis.com/api/screener/s/d/{row[1]}"
                     urls.append(url)
                     identifiers.append(row[0])
                 
+                # Create a mapping of metric identifiers to their corresponding API endpoints
                 ticker_data = {identifier: url for identifier, url in zip(identifiers, urls)}
                 
+                # Process each metric endpoint
                 for identifier, url in ticker_data.items():
+                    stock_list = []
+                    stock_data_list = [] 
                     logger.info(f"Identifier: {identifier}, URL: {url}")
                     response = requests.get(url.strip(), headers=self.HEADERS)
-                    
                     response.raise_for_status() 
-                    
                     data = response.json() 
-                    
-                    stock_list = []
-                    
+
+                    # Extract stock data from response
                     stock_list = data.get('data', {}).get('data',[])
                     
-                    # Check if stock_list is a list
+                    # Validate response format
                     if not isinstance(stock_list, list):
                         logger.info("Unexpected format: stock_list is not a list.")
                         return
-                    
-                    stock_data_list = [] 
-                    
+
+                    # Process each stock entry
                     for stock in stock_list:
-                        # Check for the specific condition to skip
+                        # Special handling for IPO return price data - skip invalid entries
                         if identifier == 'return_from_ipo_price':
-                            # Check if the value is not a float
                             if not isinstance(stock[1], float):
-                                continue  # Skip to the next iteration
+                                continue 
+
+                        # Create stock data entry with special handling for index data
                         stock_data = {
                             "ticker_symbol": stock[0],
-                            # Check if identifier is 'in_index' and deserialize if true
-                            identifier: stock[1] if identifier != 'in_index' else json.dumps(stock[1])  # Deserialize for 'in_index'
+                            identifier: stock[1] if identifier != 'in_index' else json.dumps(stock[1])  
                         }
                         stock_data_list.append(stock_data)
+
+                    # Batch store the processed stock data
                     self.db_manager.scrape_manager.batch_create_or_update_scrapes(stock_data_list)
                     logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully for {identifier}.")
-                    
+
+                    # Rate limiting delay between API requests
                     time.sleep(30)
+
         except FileNotFoundError:
             logger.error(f"File not found: {csv_file_path}")
         except Exception as e:
@@ -172,7 +178,7 @@ class StockAnalysisFetcher:
         hours, remainder = divmod(total_time, 3600)
         minutes, seconds = divmod(remainder, 60)
         formatted_run_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
-            
+
         # Update the run time and status to 'Complete' after execution
         self.db_manager.job_manager.update_job_schedule_run_time(job_type, service, frequency, datetime_obj, formatted_run_time)
         self.db_manager.job_manager.update_job_schedule_status(job_type, service, frequency, datetime_obj, 'Complete')
@@ -180,10 +186,11 @@ class StockAnalysisFetcher:
         # Log completion details
         logger.info(f"Finished fetching data for Stock Analysis Ticker Data Scrape on {datetime_obj}.")
         logger.info(f"Time Taken: {formatted_run_time}")
-        
+
+        # Calculate next job schedule date
         new_start_date = self.parse_date(result['scheduled_start_date']) + timedelta(days=1)
 
-        # Check if the new job schedule already exists
+        # Verify if next job schedule already exists
         existing_schedule = self.db_manager.job_manager.select_job_schedule(
             job_type=result['job_type'],
             service=result['service'],

@@ -50,9 +50,12 @@ class Scheduler:
 
     def missed_listener(self, event):
         if event.exception:
+            # Log error message for the missed job
             logger.error(f"Job {event.job_id} missed, rescheduling...")
+            # Attempt to retrieve the missed job from the scheduler
             job = self.scheduler.get_job(event.job_id)
             if job:
+                # Reschedule the job to run immediately
                 job.modify(next_run_time=datetime.now(timezone.utc))
 
     def parse_date(self, date_str):
@@ -563,14 +566,17 @@ class Scheduler:
             logger.error(f"Error inspecting database record: {e}")
 
     def add_ticker_data_jobs(self):
+        # Define job parameters
         job_type = 'data_scrape'
         service = 'stock_analysis_ticker_data'
         owner = 'AutoGen'
         frequency_am = 'recurring_daily_am'
         frequency_pm = 'recurring_daily_pm'
         
+        # Get current UTC time for comparison
         current_time = datetime.now(timezone.utc)
         
+        # Set scheduled times for AM (11:00 UTC) and PM (23:00 UTC) jobs
         scheduled_start_utc_am = datetime.now(timezone.utc).replace(hour=11, minute=0, second=0, microsecond=0)
         scheduled_start_utc_pm = datetime.now(timezone.utc).replace(hour=23, minute=0, second=0, microsecond=0)
         
@@ -582,6 +588,7 @@ class Scheduler:
         if scheduled_start_utc_pm <= current_time:
             scheduled_start_utc_pm += timedelta(days=1)  # Move to the next day
 
+        # Check and schedule AM job if it doesn't exist
         existing_job_am = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency_am, scheduled_start_utc_am)
         if not existing_job_am:
             self.db_manager.job_manager.insert_job_schedule(
@@ -592,7 +599,7 @@ class Scheduler:
         else:
             logger.info("A job is already scheduled for AM; no new job created.")
             
-        
+        # Check and schedule PM job if it doesn't exist
         existing_job_pm = self.db_manager.job_manager.select_job_schedule(job_type, service, frequency_pm, scheduled_start_utc_pm)
         if not existing_job_pm:
             self.db_manager.job_manager.insert_job_schedule(
