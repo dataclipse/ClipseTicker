@@ -1,13 +1,13 @@
 // src/scenes/stock_details/index.jsx
-import { Box, useTheme, Typography, Stack, ButtonGroup, Button } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-import { tokens } from "../../../theme";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Header from "../../../components/header";
-import { useParams, useNavigate } from "react-router-dom";
-import { formatCurrency, formatPE } from "../../../components/helper";
+import { Box, useTheme, Typography, Stack, ButtonGroup, Button } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import { tokens } from '../../../theme';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Header from '../../../components/header';
+import { useParams, useNavigate } from 'react-router-dom';
+import { formatCurrency, formatPE } from '../../../components/helper';
 import ScreenerLine from '../../../components/screener_line';
-import moment from "moment";
+import moment from 'moment';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 const Stocks = () => {
@@ -180,29 +180,64 @@ const Stocks = () => {
 
     // Filter the chartData based on the button that is pressed
     const getFilteredChartData = useCallback(() => {
-        const now = new Date();
         const data = [...stockData.chartData];
 
         // Ensure the data is sorted in chronological order (oldest to newest) based on the `time` property.
-        data.sort((a, b) => new Date(a.time) - new Date(b.time));
+        data.sort((a, b) => moment(a.time).valueOf() - moment(b.time).valueOf());
 
         // Use a switch statement to filter the data based on the selected `timeRange`.
         switch (timeRange) {
             case '1D':
-                const oneDayAgo = new Date(now.setDate(now.getDate() - 1));
-                return data.filter(item => new Date(item.time) >= oneDayAgo);
+                // Function to get data for a specific day
+                const getDayData = (date) => {
+                    const startOfDay = moment(date).startOf('day');
+                    const endOfDay = moment(date).endOf('day');
+                    return data.filter(item =>
+                        moment(item.time).isBetween(startOfDay, endOfDay, undefined, '[]')
+                    );
+                };
+                
+                // Try to get today's data
+                const today = moment();
+                let filteredData = getDayData(today);
+
+                // If no data for today, keep checking previous days until we find data
+                let currentDate1D = today;
+                const twoWeeksAgo1D = moment().subtract(14, 'days');
+                while (filteredData.length === 0 && currentDate1D.isAfter(twoWeeksAgo1D)) {
+                    currentDate1D = currentDate1D.subtract(1, 'days');
+                    filteredData = getDayData(currentDate1D);
+                }
+                return filteredData;
             case '5D':
-                const fiveDaysAgo = new Date(now.setDate(now.getDate() - 5));
-                return data.filter(item => new Date(item.time) >= fiveDaysAgo);
+                const twoWeeksAgo5D = moment().subtract(14, 'days');
+                let businessDaysFound = 0;
+                let currentDate5D = moment();
+
+                // Find the date that gives us 5 business days
+                while (businessDaysFound < 5 && currentDate5D.isAfter(twoWeeksAgo5D)) {
+                    // Check if it's a business day (not weekend)
+                    if (currentDate5D.day() !== 0 && currentDate5D.day() !== 6) {
+                        businessDaysFound++;
+                    }
+                    if (businessDaysFound < 5) {
+                        currentDate5D.subtract(1, 'days');
+                    }
+                }
+
+                // Filter data between the found date and now
+                return data.filter(item => 
+                    moment(item.time).isBetween(currentDate5D, moment(), undefined, '[]')
+                );
             case '1M':
-                const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
-                return data.filter(item => new Date(item.time) >= oneMonthAgo);
+                const oneMonthAgo = moment().subtract(1, 'month');
+                return data.filter(item => moment(item.time).isAfter(oneMonthAgo));
             case 'YTD':
-                const startOfYear = new Date(now.getFullYear(), 0, 1);
-                return data.filter(item => new Date(item.time) >= startOfYear);
+                const startOfYear = moment().startOf('year');
+                return data.filter(item => moment(item.time).isAfter(startOfYear));
             case '1Y':
-                const oneYearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
-                return data.filter(item => new Date(item.time) >= oneYearAgo);
+                const oneYearAgo = moment().subtract(1, 'year');
+                return data.filter(item => moment(item.time).isAfter(oneYearAgo));
             default:
                 return data;
         }
