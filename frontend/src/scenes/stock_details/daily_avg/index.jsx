@@ -7,7 +7,7 @@ import Header from "../../../components/header";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatCurrency, formatDate, formatDateChart } from "../../../components/helper";
 import CandlestickChart from '../../../components/candlestick';
-
+import moment from 'moment';
 
 // Stocks Component - Displays detailed stock information for a selected ticker.
 // - Shows stock data in both a candlestick chart and a data grid.
@@ -24,39 +24,40 @@ const Stocks = () => {
 
   // Helper function to check if a date is a weekend
   const isWeekend = useCallback((date) => {
-    const day = date.getDay();
-    return day === 0 || day === 6;
+    return moment(date).day() === 0 || moment(date).day() === 6;
   }, []);
 
   // Helper function to get date minus N business days
   const getDateMinusBusinessDays = useCallback((date, businessDays) => {
     // Start from yesterday
-    let currentDate = new Date(date);
-    currentDate.setDate(currentDate.getDate() - 1);
-    let remainingDays = businessDays- 1; // Subtract 1 since we're already starting from yesterday
-
+    const currentDate = moment(date).subtract(1, 'days');
+    let remainingDays = businessDays -1;
+    
     while (remainingDays > 0) {
-      currentDate.setDate(currentDate.getDate() - 1);
+      currentDate.subtract(1, 'days');
       if (!isWeekend(currentDate)) {
         remainingDays--;
       }
     }
-    return currentDate;
+    return currentDate.toDate();
   }, [isWeekend]);
 
   // Helper function for time frame filtering
   const getFilteredDateByTimeFrame = useCallback((timeFrame, dataDate, now) => {
+    const momentDate = moment(dataDate);
+    const momentNow = moment(now);
+
     switch (timeFrame) {  
       case '1w':
-        return dataDate >= getDateMinusBusinessDays(now, 5);
+        return momentDate.isAfter(getDateMinusBusinessDays(now, 5));
       case '1m':
-        return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        return momentDate.isAfter(momentNow.clone().subtract(1, 'month'));
       case 'YTD':
-        return dataDate >= new Date(now.getFullYear(), 0, 1);
+        return momentDate.isAfter(momentNow.clone().startOf('year'));
       case '1y':
-        return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        return momentDate.isAfter(momentNow.clone().subtract(1, 'year'));
       case '2y':
-        return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        return momentDate.isAfter(momentNow.clone().subtract(2, 'year'));
       default:
         return true;
     }
@@ -114,7 +115,6 @@ const Stocks = () => {
       ),
       flex: 1,
       renderCell: (params) => {
-        const date = params.value;
         return (
             <Stack
                 direction="row"
@@ -122,7 +122,7 @@ const Stocks = () => {
                 height={"100%"}
             >
                 <Typography sx={{ fontSize: 12 }}>
-                    {date.toLocaleDateString()}
+                  {moment(params.value).format('L')}
                 </Typography>
             </Stack>
         );
