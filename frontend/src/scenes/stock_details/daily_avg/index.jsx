@@ -21,6 +21,47 @@ const Stocks = () => {
   const [filteredChartData, setFilteredChartData] = useState(stockData.chartData);
   const [selectedTimeFrame, setSelectedTimeFrame] = useState('1m'); // Default to 1 month
 
+
+  // Helper function to check if a date is a weekend
+  const isWeekend = useCallback((date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  }, []);
+
+  // Helper function to get date minus N business days
+  const getDateMinusBusinessDays = useCallback((date, businessDays) => {
+    // Start from yesterday
+    let currentDate = new Date(date);
+    currentDate.setDate(currentDate.getDate() - 1);
+    let remainingDays = businessDays- 1; // Subtract 1 since we're already starting from yesterday
+
+    while (remainingDays > 0) {
+      currentDate.setDate(currentDate.getDate() - 1);
+      if (!isWeekend(currentDate)) {
+        remainingDays--;
+      }
+    }
+    return currentDate;
+  }, [isWeekend]);
+
+  // Helper function for time frame filtering
+  const getFilteredDateByTimeFrame = useCallback((timeFrame, dataDate, now) => {
+    switch (timeFrame) {  
+      case '1w':
+        return dataDate >= getDateMinusBusinessDays(now, 5);
+      case '1m':
+        return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      case 'YTD':
+        return dataDate >= new Date(now.getFullYear(), 0, 1);
+      case '1y':
+        return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      case '2y':
+        return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+      default:
+        return true;
+    }
+  }, [getDateMinusBusinessDays]);
+
   // Column definitions for the DataGrid
   const columns = useMemo(() => [
     {
@@ -135,30 +176,16 @@ const Stocks = () => {
       });
       // Set filteredChartData based on selectedTimeFrame
       const now = new Date();
-      const filteredData = chart_data.filter((dataPoint) => {
-        const dataDate = new Date(dataPoint.time);
-        switch (selectedTimeFrame) {
-          case '1w':
-            return dataDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-          case '1m':
-            return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-          case 'YTD':
-            return dataDate >= new Date(now.getFullYear(), 0, 1);
-          case '1y':
-            return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-          case '2y':
-            return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
-          default:
-            return true;
-        }
-      });
+      const filteredData = chart_data.filter((dataPoint) => 
+        getFilteredDateByTimeFrame(selectedTimeFrame, new Date(dataPoint.time), now)
+      );
       setFilteredChartData(filteredData);
     } catch (error) {
       console.error("Error fetching Stocks data:", error);
     } finally {
       setLoading(false);
     }
-  }, [ticker, navigate, selectedTimeFrame]);
+  }, [ticker, navigate, selectedTimeFrame, getFilteredDateByTimeFrame]);
 
   // Set interval to refetch data every 30 seconds
   useEffect(() => {
@@ -179,30 +206,14 @@ const Stocks = () => {
     } catch (error) {
       console.error(error);
     }
-  }, [fetchData]);
+  }, [fetchData, getFilteredDateByTimeFrame]);
 
-  // Function to filter chart data based on selected time frame
-  const filterChartData = (timeFrame) => {
-    setSelectedTimeFrame(timeFrame);
-    const now = new Date();
-    const filteredData = stockData.chartData.filter((dataPoint) => {
-      const dataDate = new Date(dataPoint.time);
-      switch (timeFrame) {
-        case '1w':
-          return dataDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-        case '1m':
-          return dataDate >= new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        case 'YTD':
-          return dataDate >= new Date(now.getFullYear(), 0, 1);
-        case '1y':
-          return dataDate >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-        case '2y':
-          return dataDate >= new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
-        default:
-          return true;
-      }
-    });
-    setFilteredChartData(filteredData);
+  const timeFrameLabels = {
+    '1w': '1 Week',
+    '1m': '1 Month',
+    'YTD': 'Year To Date',
+    '1y': '1 Year',
+    '2y': '2 Years'
   };
 
   return (
@@ -212,10 +223,10 @@ const Stocks = () => {
       {/* Replace the individual Buttons with ButtonGroup */}
       <Box mb={2}>
         <ButtonGroup variant="contained" sx={{ ml: 6.1 }}>
-          {['1w', '1m', 'YTD', '1y', '2y'].map((range) => (
+          {Object.entries(timeFrameLabels).map(([range, label]) => (
             <Button
               key={range}
-              onClick={() => filterChartData(range)}
+              onClick={() => setSelectedTimeFrame(range)}
               sx={{
                 backgroundColor: selectedTimeFrame === range ? colors.blueAccent[700] : colors.blueAccent[800],
                 '&:hover': {
@@ -223,11 +234,7 @@ const Stocks = () => {
                 }
               }}
             >
-              {range === '1w' ? '1 Week' :
-                range === '1m' ? '1 Month' :
-                  range === 'YTD' ? 'Year To Date' :
-                    range === '1y' ? '1 Year' :
-                      '2 Years'}
+              {label}
             </Button>
           ))}
         </ButtonGroup>
