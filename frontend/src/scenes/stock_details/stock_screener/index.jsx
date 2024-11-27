@@ -15,9 +15,13 @@ const Stocks = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [stockData, setStockData] = useState({ details: [], chartData: [] });
     const [timeRange, setTimeRange] = useState('1D');
+    const [state, setState] = useState({
+        loading: true,
+        error: null,
+        details: [],
+        chartData: []
+    });
 
     // Column definitions for the DataGrid
     const columns = useMemo(() => [
@@ -117,70 +121,22 @@ const Stocks = () => {
         },
     ], [colors]);
 
-    // fetchData - Fetches stock details and formats data for both chart and table.
-    // - Data is updated periodically with an interval of 30 seconds.
-    const fetchData = useCallback(async () => {
-        try {
-            const token = localStorage.getItem("auth_token");
-            const response = await fetch(`/api/stock_scrapes/${ticker}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-            if (response.status === 401) {
-                // Unauthorized, redirect to login page
-                navigate("/login");
-                return;
-            }
-            const data = await response.json();
-
-            // Format data for the chart
-            const chart_data = data
-                .map((stock) => ({
-                    time: stock.timestamp,
-                    price: stock.price,
-                    ticker_symbol: stock.ticker_symbol
-                }))
-                .filter((stock) => stock.time)
-                .sort((a, b) => b.time - a.time);
-
-
-            // Format data for the DataGrid
-            const formattedData = data.map((stock, index) => ({
-                id: index,
-                ticker_symbol: stock.ticker_symbol,
-                company_name: stock.company_name,
-                price: formatCurrency(stock.price),
-                change: stock.change,
-                industry: stock.industry,
-                volume: stock.volume.toLocaleString(),
-                pe_ratio: formatPE(stock.pe_ratio),
-                timestamp: stock.timestamp,
-            }));
-            // Combine state updates
-            setStockData({
-                details: formattedData,
-                chartData: chart_data,
-            });
-        } catch (error) {
-            console.error("Error fetching Stocks data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [ticker, navigate]);
-
-    // Set interval to refetch data every 30 seconds
-    useEffect(() => {
-        fetchData();
-        const intervalId = setInterval(fetchData, 30000);
-        return () => clearInterval(intervalId);
-    }, [fetchData]);
-
+    const formattedGridData = useMemo(() => 
+        state.details.map((stock, index) => ({
+            id: index,
+            ticker_symbol: stock.ticker_symbol,
+            company_name: stock.company_name,
+            price: formatCurrency(stock.price),
+            change: stock.change,
+            industry: stock.industry,
+            volume: stock.volume.toLocaleString(),
+            pe_ratio: formatPE(stock.pe_ratio),
+            timestamp: stock.timestamp,
+        })), [state.details]);
+        
     // Filter the chartData based on the button that is pressed
-    const getFilteredChartData = useCallback(() => {
-        const data = [...stockData.chartData];
+    const filteredChartData = useMemo(() => {
+        const data = [...state.chartData];
 
         // Ensure the data is sorted in chronological order (oldest to newest) based on the `time` property.
         data.sort((a, b) => moment(a.time).valueOf() - moment(b.time).valueOf());
@@ -241,7 +197,57 @@ const Stocks = () => {
             default:
                 return data;
         }
-    }, [timeRange, stockData.chartData]);
+    }, [state.chartData, timeRange]);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const token = localStorage.getItem("auth_token");
+            const response = await fetch(`/api/stock_scrapes/${ticker}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+            
+            if (response.status === 401) {
+                navigate("/login");
+                return;
+            }
+            
+            const data = await response.json();
+            const chart_data = data
+                .map((stock) => ({
+                    time: stock.timestamp,
+                    price: stock.price,
+                    ticker_symbol: stock.ticker_symbol
+                }))
+                .filter((stock) => stock.time)
+                .sort((a, b) => b.time - a.time);
+
+            setState(prev => ({
+                ...prev,
+                loading: false,
+                error: null,
+                details: data,
+                chartData: chart_data
+            }));
+        } catch (error) {
+            setState(prev => ({
+                ...prev,
+                loading: false,
+                error: "Failed to fetch stock data. Please try again later."
+            }));
+        }
+    }, [ticker, navigate]);
+
+    // Set interval to refetch data every 30 seconds
+    useEffect(() => {
+        fetchData();
+        const intervalId = setInterval(fetchData, 30000);
+        return () => clearInterval(intervalId);
+    }, [fetchData]);
+
 
     return (
         <Box m="20px">
@@ -266,7 +272,11 @@ const Stocks = () => {
                 </ButtonGroup>
             </Box>
 
-            <ScreenerLine data={getFilteredChartData()} colors={colors} />
+            {state.error && (
+                <Typography sx={{ color: 'red' }}>{state.error}</Typography>
+            )}
+
+            <ScreenerLine data={filteredChartData} colors={colors} />
             <Box
                 display="flex"
                 height={"75vh"}
@@ -297,9 +307,9 @@ const Stocks = () => {
 
                 {/* DataGrid */}
                 <DataGrid
-                    rows={stockData.details}
+                    rows={formattedGridData}
                     columns={columns}
-                    loading={loading}
+                    loading={state.loading}
                     initialState={{
                         sorting: {
                             sortModel: [{ field: "timestamp", sort: "desc" }],
