@@ -123,15 +123,18 @@ const Stocks = () => {
       }
 
       const data = await response.json();
-      const formattedData = data.map((stock, index) => ({
-        id: index,
+      const formattedData = data.map((stock) => ({
+        id: `${stock.ticker_symbol}_${stock.timestamp_end}`,
         ticker_symbol: stock.ticker_symbol,
         open_price: formatCurrency(stock.open_price),
         close_price: formatCurrency(stock.close_price),
         highest_price: formatCurrency(stock.highest_price),
         lowest_price: formatCurrency(stock.lowest_price),
         timestamp_end: formatDate(stock.timestamp_end),
-      }));
+      }))
+      .filter((stock, index, self) =>
+        index === self.findIndex((t) => t.id === stock.id)
+      );
       setStocksData(formattedData);
     } catch (error) {
       console.error("Error fetching Stocks data:", error);

@@ -119,19 +119,33 @@ const ScreenerLine = ({ data, colors }) => {
             .y0(innerHeight)
             .y1(d => yScale(d.price))
 
-        g.append('path')
-            .attr('fill', colors.redAccent[600])
-            .attr('opacity', 0.6)
-            .attr('d', area(data))
+        // Determine color based on first and last data point comparison
+        const fillColor = data && data.length > 1 
+            ? (data[0].price > data[data.length - 1].price 
+                ? colors.redAccent[600] 
+                : colors.greenAccent[600]) 
+            : colors.blueAccent[600];
+        const strokeColor = data && data.length > 1 
+            ? (data[0].price > data[data.length - 1].price 
+                ? colors.redAccent[500] 
+                : colors.greenAccent[500]) 
+            : colors.blueAccent[500];
+        if (data && data.length > 1) {
+            g.append('path')
+                .attr('fill', fillColor)
+                .attr('opacity', 0.6)
+                .attr('d', area(data));
         
-        // Add the line path
-        g.append("path")
-            .datum(data)
-            .attr("fill", 'none')
-            .attr("stroke", colors.redAccent[500])
-            .attr("stroke-width", 2)
-            .attr("d", line);
-
+            // Add the line path
+            g.append("path")
+                .datum(data)
+                .attr("fill", 'none')
+                .attr("stroke", strokeColor)
+                .attr("stroke-width", 2)
+                .attr("d", line);
+        } else {
+            console.warn('Insufficient data points to render graph');
+        }
         // Create bisector for finding closest data point to mouse position
         const bisect = d3.bisector(d => {
             return moment(d.time).local();
