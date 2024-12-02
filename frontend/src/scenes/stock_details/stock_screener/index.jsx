@@ -122,18 +122,21 @@ const Stocks = () => {
     ], [colors]);
     
     // Format the data for the DataGrid
-    const formattedGridData = useMemo(() => 
-        state.details.map((stock, index) => ({
+    const formattedGridData = useMemo(() => {
+        if (!state.details || state.details.length === 0) return [];
+        
+        return state.details.map((stock, index) => ({
             id: index,
             ticker_symbol: stock.ticker_symbol,
-            company_name: stock.company_name,
+            company_name: stock.company_name || 'N/A',
             price: formatCurrency(stock.price),
-            change: stock.change,
-            industry: stock.industry,
-            volume: stock.volume.toLocaleString(),
-            pe_ratio: formatPE(stock.pe_ratio),
-            timestamp: stock.timestamp,
-        })), [state.details]);
+            change: stock.change, 
+            industry: stock.industry || 'N/A',
+            volume: stock.volume ? stock.volume.toLocaleString() : 'N/A',
+            pe_ratio: stock.pe_ratio ? formatPE(stock.pe_ratio) : 'N/A',
+            timestamp: moment(stock.timestamp).format('MM/DD/YYYY HH:mm:ss')
+        })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    }, [state.details]);
         
     // Filter the chartData based on the button that is pressed
     const filteredChartData = useMemo(() => {
@@ -257,11 +260,16 @@ const Stocks = () => {
             width='100%'
             height='100%'
             sx={{
-                backgroundColor: colors.primary[400],
-                position: 'relative'
+                backgroundColor: colors.primary[500],
+                position: 'relative',
             }}
-        >
-            <Header title='Stock Details' subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} />
+        >   
+            <Box sx={{ m:'20px'}}>
+                <Header 
+                    title='Stock Details' 
+                    subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} 
+                />
+            </Box>
             
             {/* Top section with two columns */}
             <Box 
