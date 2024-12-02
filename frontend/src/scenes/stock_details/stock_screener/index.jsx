@@ -26,47 +26,47 @@ const Stocks = () => {
     // Column definitions for the DataGrid
     const columns = useMemo(() => [
         {
-            field: "ticker_symbol",
+            field: 'ticker_symbol',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Ticker"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Ticker'}</Typography>
             ),
             flex: 1,
         },
         {
-            field: "company_name",
+            field: 'company_name',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Company Name"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Company Name'}</Typography>
             ),
             flex: 1,
         },
         {
-            field: "price",
+            field: 'price',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Price"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Price'}</Typography>
             ),
-            align: "right",
-            headerAlign: "right",
+            align: 'right',
+            headerAlign: 'right',
             flex: 1,
         },
         {
-            field: "change",
+            field: 'change',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Change"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Change'}</Typography>
             ),
-            align: "right",
-            headerAlign: "right",
+            align: 'right',
+            headerAlign: 'right',
             flex: 1,
             renderCell: (params) => (
                 <Stack
-                    direction="row"
+                    direction='row'
                     spacing={1}
-                    alignItems={"center"}
-                    justifyContent={"flex-end"}
-                    height={"100%"}
+                    alignItems={'center'}
+                    justifyContent={'flex-end'}
+                    height={'100%'}
                 >
                     <Typography
                         sx={{
-                            fontWeight: "bold",
+                            fontWeight: 'bold',
                             color: params.value < 0 ? colors.redAccent[500] : colors.greenAccent[500],
                         }}
                     >
@@ -76,45 +76,45 @@ const Stocks = () => {
             ),
         },
         {
-            field: "industry",
+            field: 'industry',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Industry"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Industry'}</Typography>
             ),
             flex: 1,
         },
         {
-            field: "volume",
+            field: 'volume',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Volume"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Volume'}</Typography>
             ),
-            align: "right",
-            headerAlign: "right",
+            align: 'right',
+            headerAlign: 'right',
             flex: 1,
         },
         {
-            field: "pe_ratio",
+            field: 'pe_ratio',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"P/E Ratio"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'P/E Ratio'}</Typography>
             ),
-            align: "right",
-            headerAlign: "right",
+            align: 'right',
+            headerAlign: 'right',
             flex: 1,
         },
         {
-            field: "timestamp",
+            field: 'timestamp',
             renderHeader: () => (
-                <Typography sx={{ fontWeight: "bold" }}>{"Date"}</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>{'Date'}</Typography>
             ),
             flex: 1,
             renderCell: (params) => (
                 <Stack
-                    direction="row"
+                    direction='row'
                     spacing={1}
-                    alignItems={"center"}
-                    height={"100%"}
+                    alignItems={'center'}
+                    height={'100%'}
                 >
                     <Typography sx={{ fontSize: 12 }}>
-                        {moment(params.value).local().format("MM/DD/YYYY hh:mm:ss A")}
+                        {moment(params.value).local().format('MM/DD/YYYY hh:mm:ss A')}
                     </Typography>
                 </Stack>
             ),
@@ -202,17 +202,17 @@ const Stocks = () => {
 
     const fetchData = useCallback(async () => {
         try {
-            const token = localStorage.getItem("auth_token");
+            const token = localStorage.getItem('auth_token');
             const response = await fetch(`/api/stock_scrapes/${ticker}`, {
-                method: "GET",
+                method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
                 },
             });
             
             if (response.status === 401) {
-                navigate("/login");
+                navigate('/login');
                 return;
             }
             
@@ -237,7 +237,7 @@ const Stocks = () => {
             setState(prev => ({
                 ...prev,
                 loading: false,
-                error: "Failed to fetch stock data. Please try again later."
+                error: 'Failed to fetch stock data. Please try again later.'
             }));
         }
     }, [ticker, navigate]);
@@ -251,69 +251,155 @@ const Stocks = () => {
 
 
     return (
-        <Box m="20px">
-            <Header title="Stock Details" subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} />
+        <Box 
+            display='flex'
+            flexDirection='column'
+            width='100%'
+            height='100%'
+            sx={{
+                backgroundColor: colors.primary[400],
+                position: 'relative'
+            }}
+        >
+            <Header title='Stock Details' subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} />
+            
+            {/* Top section with two columns */}
+            <Box 
+                display='flex'
+                width='100%' 
+                height='70%'
+                sx={{
+                    position: 'relative',
+                    mb: 2
+                }} 
+            >
+                {/* Left side vertical divider */}
+                <Box 
+                    width='2px' 
+                    height='100%' 
+                    sx={{ 
+                        backgroundColor: colors.grey[300], 
+                        position: 'absolute', 
+                        left: '40%', 
+                        transform: 'translateX(-40%)',
+                        zIndex: 10 
+                    }} 
+                />
+                {/* Left side (empty for now) */}
+                <Box 
+                    width='40%' 
+                    height='100%' 
+                    sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        padding: 2 
+                    }}
+                >
+                    {/* Placeholder for future content */}
+                    <Typography variant="h6" sx={{ color: colors.grey[300] }}>
+                        Additional Filters/Information
+                    </Typography>
+                </Box>
 
-            <Box mb={2}>
-                <ButtonGroup variant="contained" sx={{ ml: 6.1 }}>
-                    {['1D', '5D', '1M', 'YTD', '1Y'].map((range) => (
-                        <Button
-                            key={range}
-                            onClick={() => setTimeRange(range)}
-                            sx={{
-                                backgroundColor: timeRange === range ? colors.blueAccent[700] : colors.blueAccent[800],
-                                '&:hover': {
-                                    backgroundColor: colors.blueAccent[600],
+                {/* Right side (buttons and graph) */}
+                <Box 
+                    width='60%' 
+                    height='100%' 
+                    sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                    }}
+                >
+                    {/* Time range buttons */}
+                    <Box 
+                        sx={{ 
+                            width: '100%', 
+                            display: 'flex', 
+                            justifyContent: 'Left',
+                        }}
+                    >
+                        <ButtonGroup 
+                            variant='text' 
+                            sx={{ 
+                                ml: 2,
+                                '& .MuiButtonGroup-grouped': {
+                                    borderColor: colors.primary[400]
                                 }
                             }}
                         >
-                            {range}
-                        </Button>
-                    ))}
-                </ButtonGroup>
+                            {Object.entries({
+                                '1D': '1 Day', 
+                                '5D': '5 Days',
+                                '1M': '1 Month',
+                                'YTD': 'YTD',
+                                '1Y': '1 Year'
+                            }).map(([range, displayText]) => (
+                                <Button
+                                    key={range}
+                                    onClick={() => setTimeRange(range)}
+                                    sx={{
+                                        color: range === timeRange ? colors.greenAccent[500] : colors.grey[300],
+                                        fontSize: '15px',
+                                    }}
+                                >
+                                    {displayText}
+                                </Button>
+                            ))}
+                        </ButtonGroup>
+                    </Box>
+                    {/* Stock chart */}
+                    <Box 
+                        sx={{ 
+                            flexGrow: 1, 
+                            height: '100%', 
+                            width: '112%',
+                            mb: -8,
+                            ml: -5 
+                        }}>
+                        <ScreenerLine data={filteredChartData} colors={colors} />
+                    </Box>
+                </Box>
             </Box>
-
-            {state.error && (
-                <Typography sx={{ color: 'red' }}>{state.error}</Typography>
-            )}
-
-            <ScreenerLine data={filteredChartData} colors={colors} />
-            <Box
-                display="flex"
-                height={"75vh"}
-                sx={{
-                    "& .MuiDataGrid-root": {
-                        border: "none",
+            
+            {/* DataGrid */}
+            <Box 
+                sx={{ 
+                    flexGrow: 1, 
+                    height: '70%', 
+                    width: '99.9%', 
+                    px: 2, 
+                    '& .MuiDataGrid-root': {
+                        border: 'none',
                     },
-                    "& .MuiDataGrid-cell": {
-                        borderBottom: "none",
+                    '& .MuiDataGrid-cell': {
+                        borderBottom: 'none',
                     },
-                    "& .MuiDataGrid-columnHeaders": {
+                    '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: colors.blueAccent[700],
-                        borderBottom: "none",
-                        fontWeight: "bold",
+                        borderBottom: 'none',
+                        fontWeight: 'bold',
                     },
-                    "& .MuiDataGrid-virtualScroller": {
+                    '& .MuiDataGrid-virtualScroller': {
                         backgroundColor: colors.primary[400],
                     },
-                    "& .MuiCircularProgress-root": {
+                    '& .MuiCircularProgress-root': {
                         color: colors.greenAccent[500],
                     },
-                    "& .MuiPaginationItem-root": {
-                        borderTop: "none",
+                    '& .MuiPaginationItem-root': {
+                        borderTop: 'none',
                         backgroundColor: `${colors.blueAccent[700]} !important`,
                     },
                 }}
             >
-
-                {/* DataGrid */}
                 <DataGrid
                     rows={formattedGridData}
                     columns={columns}
                     loading={state.loading}
+                    pageSize={5}
+                    rowsPerPageOptions={[5]}
                     initialState={{
                         sorting: {
-                            sortModel: [{ field: "timestamp", sort: "desc" }],
+                            sortModel: [{ field: 'timestamp', sort: 'desc' }],
                         },
                     }}
                 />

@@ -91,8 +91,8 @@ const ScreenerLine = ({ data, colors }) => {
             .range(sessionRanges);
         const yScale = d3.scaleLinear()
             .domain([
-                d3.min(data, d => d.price) * 0.95,
-                d3.max(data, d => d.price) * 1.05
+                d3.min(data, d => d.price) * 0.999,
+                d3.max(data, d => d.price) * 1.001
             ])
             .range([innerHeight, 0]);
 
@@ -152,12 +152,49 @@ const ScreenerLine = ({ data, colors }) => {
                 if (d) {
                     tooltip.transition().duration(200).style('opacity', 0.9);
                     tooltip.html(`Date: ${moment(d.time).format("YYYY-MM-DD hh:mm:ss A")}<br>Price: ${d3.format("$,.2f")(d.price)}`);
+
+                    // Remove existing dot if any
+                    g.selectAll('.hover-dot, .hover-crossbar').remove();
+                    
+                    // Add horizontal crossbar
+                    g.append('line')
+                        .attr('class', 'hover-crossbar hover-crossbar-horizontal')
+                        .attr('x1', 0)
+                        .attr('y1', yScale(d.price))
+                        .attr('x2', innerWidth)
+                        .attr('y2', yScale(d.price))
+                        .attr('stroke', '#e0e0e0')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '10,3');
+
+                    // Add vertical crossbar
+                    g.append('line')
+                        .attr('class', 'hover-crossbar hover-crossbar-vertical')
+                        .attr('x1', xScale(moment(d.time).local()))
+                        .attr('y1', 0)
+                        .attr('x2', xScale(moment(d.time).local()))
+                        .attr('y2', innerHeight)
+                        .attr('stroke', '#e0e0e0')
+                        .attr('stroke-width', 1)
+                        .attr('stroke-dasharray', '10,3');
+
+                    // Add dot at current position
+                    g.append('circle')
+                        .attr('class', 'hover-dot')
+                        .attr('cx', xScale(moment(d.time).local()))
+                        .attr('cy', yScale(d.price))
+                        .attr('r', 4)
+                        .attr('fill', colors.redAccent[500])
+                        .attr('stroke', '#e0e0e0')
+                        .attr('stroke-width', 0.5);
                 }
-                tooltip.style("left", `${d3.pointer(event)[0] + 180}px`)
-                .style("top", `${d3.pointer(event)[1] + 210}px`);
+                tooltip.style("left", (event.pageX - 450) + 'px')
+                .style("top", (event.pageY - 245) + 'px');
             })
             .on('mouseout', () => {
                 tooltip.transition().duration(500).style('opacity', 0);
+                // Remove dot when mouse leaves
+                g.selectAll('.hover-dot, .hover-crossbar').transition().duration(200).style('opacity', 0);
             });
         
 
@@ -177,11 +214,12 @@ const ScreenerLine = ({ data, colors }) => {
             .tickFormat(d => moment(d).format('YYYY-MM-DD'))
             .tickValues(tickValues.map(d => moment(d.time).local()));
 
-        const yAxis = d3.axisLeft(yScale);
+        const yAxis = d3.axisRight(yScale);
         g.append("g")
             .attr("transform", `translate(0,${innerHeight})`)
             .call(xAxis);
         g.append("g")
+            .attr("transform", `translate(${innerWidth},0)`)
             .call(yAxis);
 
     }, [data, colors]);// Re-render chart when data or colors change
