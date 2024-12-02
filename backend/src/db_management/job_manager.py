@@ -120,11 +120,6 @@ class JobManager:
         # Open a new session for database interaction
         session = self.Session()
         try:
-            # Convert scheduled_start_date to a datetime object if it is provided as a string
-            if isinstance(scheduled_start_date, str):
-                scheduled_start_date = datetime.strptime(
-                    scheduled_start_date, "%a, %d %b %Y %H:%M:%S %Z"
-                )
             # Prepare the SQL delete statement with conditions matching job type, service, frequency, and start date
             delete_stmt = self.jobs_schedule.delete().where(
                 self.jobs_schedule.c.job_type == job_type,

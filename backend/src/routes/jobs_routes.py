@@ -174,17 +174,28 @@ def check_job_schedule_exists():
         logger.error(f"Error checking Job Schedule: {e}")
         return jsonify({"error": "Unable to check job schedule"}), 500
     
-@jobs_bp.route("/api/jobs/2yr", methods=["GET"])
+@jobs_bp.route("/api/jobs_schedule", methods=["DELETE"])
 @token_required
-def fetch_data_job_2yr():
+def delete_job_schedule():
     try:
-        # Fetch data for the previous two years from polygon_io
-        polygon_fetcher.fetch_previous_two_years()
+        # Extract JSON data from the request
+        data = request.get_json()
         
-        # Return success message upon successful data retrieval
-        return jsonify({"message": "Job added successfully"}), 200
-
+        # Extract required parameters
+        job_type = data.get("job_type")
+        service = data.get("service")
+        frequency = data.get("frequency")
+        scheduled_start_date = data.get("scheduled_start_date")
+        
+        # Validate required parameters
+        if not all([job_type, service, frequency, scheduled_start_date]):
+            return jsonify({"error": "Missing required parameters"}), 400
+        
+        # Delete the job schedule from the database
+        db_manager.job_manager.delete_job_schedule(job_type, service, frequency, scheduled_start_date)
+        
+        # Return the result as JSON
+        return jsonify({"message": f"Successfully deleted job schedule for {job_type} {service}"}), 200
     except Exception as e:
-        # Log the error to the console and return a 500 error response to the client
-        logger.error(f"Error retrieving two-year jobs data: {e}")
-        return jsonify({"error": "Unable to retrieve jobs data for the last two years"}), 500
+        logger.error(f"Error deleting Job Schedule: {e}")
+        return jsonify({"error": "Unable to delete job schedule"}), 500

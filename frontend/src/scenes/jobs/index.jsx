@@ -1,6 +1,6 @@
 // src/scenes/jobs/index.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import Header from "../../components/header";
@@ -13,6 +13,7 @@ import MuiAccordion from '@mui/material/Accordion';
 import MuiAccordionSummary from '@mui/material/AccordionSummary';
 import MuiAccordionDetails from '@mui/material/AccordionDetails';
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
+import DeleteIcon from "@mui/icons-material/Delete";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useNavigate } from "react-router-dom";
 
@@ -43,6 +44,85 @@ const Jobs = () => {
     interval_days: false,
     weekdays: false,
   });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch("/api/jobs_schedule", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.status === 401) {
+        // Unauthorized, redirect to login page
+        navigate("/login");
+        return;
+      }
+      const data = await response.json();
+      const formattedData = data.map((jobs, index) => ({
+        id: index,
+        job_type: formatString(jobs.job_type),
+        job_type_original: jobs.job_type,
+        service: formatString(jobs.service),
+        service_original: jobs.service,
+        status: jobs.status,
+        owner: jobs.owner,
+        frequency: formatString(jobs.frequency),
+        frequency_original: jobs.frequency,
+        scheduled_start_date: convertToLocalTime(jobs.scheduled_start_date),
+        scheduled_start_date_original: jobs.scheduled_start_date,
+        scheduled_end_date: convertToLocalTime(jobs.scheduled_end_date),
+        data_fetch_start_date: jobs.data_fetch_start_date,
+        data_fetch_end_date: jobs.data_fetch_end_date,
+        interval_days: jobs.interval_days,
+        weekdays: parseWeekdays(jobs.weekdays), 
+        run_time: formatRunTime(jobs.run_time),
+        created_at: jobs.created_at,
+        updated_at: jobs.updated_at,
+      }));
+      setJobs(formattedData);
+    } catch (error) {
+      console.error("Error fetching Jobs data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  const handleDeleteJobSchedule = useCallback(async (jobSchedule) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+
+      // Parse the original date string to match SQLite format
+      const date = new Date(jobSchedule.scheduled_start_date_original);
+      const formattedDate = date.toISOString().replace('T', ' ').split('.')[0] + '.000000';
+
+      const requestData = {
+        job_type: jobSchedule.job_type_original,
+        service: jobSchedule.service_original,
+        frequency: jobSchedule.frequency_original,
+        scheduled_start_date: formattedDate,
+      };
+
+      const response = await fetch('/api/jobs_schedule', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
+    });
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.error || 'Failed to delete job schedule');
+    }
+    fetchData();
+    } catch (error) {
+      console.error('Error deleting job schedule:', error);
+    }
+  }, [fetchData]);
 
   const columns = useMemo(() => { 
     const baseColumns = [
@@ -160,10 +240,31 @@ const Jobs = () => {
           <Typography sx={{ fontWeight: "bold" }}>{"Updated At"}</Typography>
         ),
         flex: 0.5,
-      }
+      },
+      {
+        field: "actions",
+        headerName: "Actions",
+        renderCell: (params) => (
+          <Stack direction="row" alignItems={"center"} height={"100%"} spacing={0} sx={{width:'100%', justifyContent: 'flex-start', pl: 1}}>
+            {/* Delete button for deleting API key */}
+            <Button
+              onClick={() => handleDeleteJobSchedule(params.row)}
+              sx={{
+                cursor: "pointer",
+                color: colors.redAccent[500],
+                minWidth: 'auto',
+                padding: 0
+              }}
+            >
+              <DeleteIcon />
+            </Button>
+          </Stack>
+        ),
+        flex: 0.2,
+      },
     ];
     return baseColumns;
-  }, [colors.redAccent]);
+  }, [colors.redAccent, handleDeleteJobSchedule]);
 
   const AccordionComponent = ({ title, filterCondition }) => (
     <Accordion 
@@ -246,47 +347,6 @@ const Jobs = () => {
     padding: theme.spacing(2),
     borderTop: '1px solid rgba(0, 0, 0, .125)',
   }));
-
-  const fetchData = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/jobs_schedule", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.status === 401) {
-        // Unauthorized, redirect to login page
-        navigate("/login");
-        return;
-      }
-      const data = await response.json();
-      const formattedData = data.map((jobs, index) => ({
-        id: index,
-        job_type: formatString(jobs.job_type),
-        service: formatString(jobs.service),
-        status: jobs.status,
-        owner: jobs.owner,
-        frequency: formatString(jobs.frequency),
-        scheduled_start_date: convertToLocalTime(jobs.scheduled_start_date),
-        scheduled_end_date: convertToLocalTime(jobs.scheduled_end_date),
-        data_fetch_start_date: jobs.data_fetch_start_date,
-        data_fetch_end_date: jobs.data_fetch_end_date,
-        interval_days: jobs.interval_days,
-        weekdays: parseWeekdays(jobs.weekdays), 
-        run_time: formatRunTime(jobs.run_time),
-        created_at: jobs.created_at,
-        updated_at: jobs.updated_at,
-      }));
-      setJobs(formattedData);
-    } catch (error) {
-      console.error("Error fetching Jobs data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
 
   useEffect(() => {
     fetchData();

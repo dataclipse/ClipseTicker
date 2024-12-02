@@ -15,13 +15,13 @@ const Stocks = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
-    const [timeRange, setTimeRange] = useState('1D');
     const [state, setState] = useState({
         loading: true,
         error: null,
         details: [],
         chartData: []
     });
+    const [timeRange, setTimeRange] = useState('1D');
 
     // Column definitions for the DataGrid
     const columns = useMemo(() => [
@@ -120,7 +120,8 @@ const Stocks = () => {
             ),
         },
     ], [colors]);
-
+    
+    // Format the data for the DataGrid
     const formattedGridData = useMemo(() => 
         state.details.map((stock, index) => ({
             id: index,
