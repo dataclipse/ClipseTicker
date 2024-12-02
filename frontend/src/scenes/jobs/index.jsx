@@ -248,7 +248,7 @@ const Jobs = () => {
           <Stack direction="row" alignItems={"center"} height={"100%"} spacing={0} sx={{width:'100%', justifyContent: 'flex-start', pl: 1}}>
             {/* Delete button for deleting API key */}
             <Button
-              onClick={() => handleDeleteJobSchedule(params.row)}
+              onClick={() => user?.role === 'Admin' && handleDeleteJobSchedule(params.row)}
               sx={{
                 cursor: "pointer",
                 color: colors.redAccent[500],
@@ -256,7 +256,13 @@ const Jobs = () => {
                 padding: 0
               }}
             >
-              <DeleteIcon />
+              <DeleteIcon 
+                sx={{
+                  color: user?.role === 'Admin' ? 'inherit' : '#808080',
+                  cursor: user?.role === 'Admin' ? 'pointer' : 'not-allowed',
+                  pointerEvents: user?.role === 'Admin' ? 'auto' : 'none'
+                }}
+              />
             </Button>
           </Stack>
         ),
@@ -264,7 +270,7 @@ const Jobs = () => {
       },
     ];
     return baseColumns;
-  }, [colors.redAccent, handleDeleteJobSchedule]);
+  }, [colors.redAccent, handleDeleteJobSchedule, user?.role]);
 
   const AccordionComponent = ({ title, filterCondition }) => (
     <Accordion 
