@@ -92,7 +92,7 @@ def get_stock_scrapes():
     # Retrieve recent stock scrapes and return them as a JSON response
     try:
         # Call the stock manager to fetch recent stock scrapes
-        stock_scrapes_data = db_manager.stock_manager.get_recent_stock_scrapes()
+        stock_scrapes_data = db_manager.scrape_manager.get_recent_stock_scrapes()
         # Return the stock scrapes data as a JSON response with a 200 status code
         return jsonify(stock_scrapes_data), 200
     except Exception as e:
@@ -108,7 +108,29 @@ def get_stock_scrape_by_ticker(ticker_symbol):
     # Retrieve stock scrape data for a specific ticker symbol and return it as a JSON response
     try:
         # Call the stock manager to fetch data for the specified ticker symbol
-        stock_scrape_data = db_manager.stock_manager.get_stock_scrape_data_by_ticker(ticker_symbol)
+        stock_scrape_data = db_manager.scrape_manager.get_stock_scrape_data_by_ticker(ticker_symbol)
+        
+        # Check if any data was returned for the ticker symbol
+        if stock_scrape_data is None:
+            # Return a 404 error if no data was found
+            return jsonify({"error": f"No Data found for ticker symbol '{ticker_symbol}'"}), 404
+        
+        # Return the stock scrape data as a JSON response with a 200 status code
+        return jsonify(stock_scrape_data), 200
+    except Exception as e:
+        # Log any error that occurs during data retrieval
+        logger.error(f"Error retrieving stock scrape data for ticker symbol '{ticker_symbol}': {e}")
+        
+        # Return a JSON error response with a 500 status code if an exception occurs
+        return jsonify({"error": f"Unable to retrieve stock scrape data"}), 500
+
+@stocks_bp.route('/api/scrape_ticker_stats/<string:ticker_symbol>', methods=["GET"])
+@token_required
+def get_stock_scrape_ticker_stats(ticker_symbol):
+        # Retrieve stock scrape data for a specific ticker symbol and return it as a JSON response
+    try:
+        # Call the stock manager to fetch data for the specified ticker symbol
+        stock_scrape_data = db_manager.scrape_manager.get_scrape_ticker_stats(ticker_symbol)
         
         # Check if any data was returned for the ticker symbol
         if stock_scrape_data is None:

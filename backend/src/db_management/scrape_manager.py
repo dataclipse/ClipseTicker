@@ -1,5 +1,5 @@
 # db_management/scrape_manager.py
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, func
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timezone
 import time
@@ -243,7 +243,102 @@ class ScrapeManager:
             session.close()
 
     @retry_on_exception()
-    def batch_create_or_update_scrapes(self, data_list):
+    def get_stock_scrape_data_by_ticker(self, ticker_symbol):
+        # Retrieve all stock scrape data for a specific ticker symbol from the stocks_scrape table
+        session = self.Session()  # Open a new session for database interaction
+        try:
+            # Prepare a select query to fetch records for the specified ticker symbol
+            query = select(
+                self.scrape.c.ticker_symbol,
+                self.scrape.c.company_name,
+                self.scrape.c.price,
+                self.scrape.c.change,
+                self.scrape.c.industry,
+                self.scrape.c.volume,
+                self.scrape.c.pe_ratio,
+                self.scrape.c.timestamp,
+            ).where(self.scrape.c.ticker_symbol == ticker_symbol)
+            # Execute the query to retrieve the stock scrape data for the given ticker symbol
+            result = session.execute(query)
+            # Convert each row of the result into a dictionary and store it in a list
+            stocks_scrape_data = [
+                {
+                    "ticker_symbol": row.ticker_symbol,
+                    "company_name": row.company_name,
+                    "price": row.price,
+                    "change": row.change,
+                    "industry": row.industry,
+                    "volume": row.volume,
+                    "pe_ratio": row.pe_ratio,
+                    "timestamp": row.timestamp,
+                }
+                for row in result
+            ]
+            # Return the list of dictionaries containing stock scrape data for the specified ticker
+            return stocks_scrape_data
+        except Exception as e:
+            # Print an error message and return an empty list if an error occurs
+            logger.error(f"Error retrieving stock scrape data for '{ticker_symbol}': {e}")
+            return []
+        finally:
+            # Close the session to free resources
+            session.close()
+
+    @retry_on_exception()
+    def get_recent_stock_scrapes(self):
+        # Retrieve the most recent stock scrape data for each ticker symbol
+        session = self.Session()
+        try:
+            # Define a subquery to get the latest timestamp for each ticker symbol
+            subquery = (
+                select(
+                    self.scrape.c.ticker_symbol,
+                    func.max(self.scrape.c.timestamp).label("max_timestamp"),
+                )
+                .group_by(self.scrape.c.ticker_symbol)
+                .subquery()
+            )
+            # Define the main query to get stock scrape data with the most recent timestamp for each ticker
+            query = select(
+                self.scrape.c.ticker_symbol,
+                self.scrape.c.company_name,
+                self.scrape.c.price,
+                self.scrape.c.change,
+                self.scrape.c.industry,
+                self.scrape.c.volume,
+                self.scrape.c.pe_ratio,
+                self.scrape.c.timestamp,
+                subquery.c.max_timestamp,
+            ).join(
+                subquery,
+                (self.scrape.c.ticker_symbol == subquery.c.ticker_symbol)
+                & (self.scrape.c.timestamp == subquery.c.max_timestamp),
+            )
+            # Execute the query to retrieve the latest stock scrape data for each ticker
+            result = session.execute(query)
+            # Convert each row of result into a dictionary and store it in a list
+            stocks_data = [
+                {
+                    "ticker_symbol": row.ticker_symbol,
+                    "company_name": row.company_name,
+                    "price": row.price,
+                    "change": row.change,
+                    "industry": row.industry,
+                    "volume": row.volume,
+                    "pe_ratio": row.pe_ratio,
+                    "timestamp": row.timestamp,
+                }
+                for row in result
+            ]
+            return stocks_data
+        except Exception as e:
+            logger.error(f"Error retrieving recent stock scrape data: {e}")
+            return []
+        finally:
+            session.close()
+
+    @retry_on_exception()
+    def batch_create_or_update_scrape_ticker_stats(self, data_list):
         session = self.TickerScrapeSession()
         try:
             for data in data_list:
@@ -268,4 +363,32 @@ class ScrapeManager:
             session.rollback()
             raise
         finally:
-            session.close()        
+            session.close()     
+
+    @retry_on_exception()
+    def get_scrape_ticker_stats(self, ticker_symbol):
+        # Retrieve all ticker scrape records for a specific ticker symbol
+        session = self.TickerScrapeSession()
+        try:
+            # Prepare a select statement with conditions to match the specified ticker symbol
+            select_stmt = select(self.ticker_scrape).where(
+                self.ticker_scrape.c.ticker_symbol == ticker_symbol
+            )
+            # Execute the select statement and fetch all result
+            result = session.execute(select_stmt)
+            ticker_scrapes = result.fetchall()
+            # Get column names for the ticker scrape table to format each record as a dictionary
+            column_names = [column.name for column in self.ticker_scrape.columns]
+            ticker_scrapes_list = [dict(zip(column_names, row)) for row in ticker_scrapes]
+            # Log the number of records retrieved
+            logger.debug(f"Retrieved {len(ticker_scrapes_list)} ticker scrapes for {ticker_symbol}.")
+            # Return the list of ticker scrape records as dictionaries
+            return ticker_scrapes_list
+        except SQLAlchemyError as e:
+            # Log error if retrieval fails and return an empty list
+            logger.error(f"Error retrieving ticker scrapes for {ticker_symbol}: {e}")
+            return []
+        finally:
+            # Close the session to free resources
+            session.close()
+

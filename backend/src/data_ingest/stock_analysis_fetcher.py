@@ -161,7 +161,7 @@ class StockAnalysisFetcher:
                         stock_data_list.append(stock_data)
 
                     # Batch store the processed stock data
-                    self.db_manager.scrape_manager.batch_create_or_update_scrapes(stock_data_list)
+                    self.db_manager.scrape_manager.batch_create_or_update_scrape_ticker_stats(stock_data_list)
                     logger.info(f"Stock data of {len(stock_data_list)} rows stored successfully for {identifier}.")
 
                     # Rate limiting delay between API requests
