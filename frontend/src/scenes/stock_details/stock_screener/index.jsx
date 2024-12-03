@@ -254,87 +254,235 @@ const Stocks = () => {
 
 
     return (
-        <Box 
-            display='flex'
-            flexDirection='column'
-            width='100%'
-            height='100%'
-            sx={{
-                backgroundColor: colors.primary[500],
-                position: 'relative',
-            }}
-        >   
+        <Box display='flex'flexDirection='column'width='100%'height='100%'sx={{ backgroundColor:colors.primary[500], position:'relative'}} >   
             <Box sx={{ m:'20px'}}>
-                <Header 
-                    title='Stock Details' 
-                    subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} 
-                />
+                <Header title='Stock Details' subtitle={`Full Stock Screener Data for ${ticker} polled ~every 5 minutes`} />
             </Box>
             
             {/* Top section with two columns */}
-            <Box 
-                display='flex'
-                width='100%' 
-                height='70%'
-                sx={{
-                    position: 'relative',
-                    mb: 2
-                }} 
-            >
+            <Box display='flex'width='100%' height='70%'sx={{position:'relative', mb:2}} >
                 {/* Left side vertical divider */}
-                <Box 
-                    width='2px' 
-                    height='100%' 
-                    sx={{ 
-                        backgroundColor: colors.grey[300], 
-                        position: 'absolute', 
-                        left: '40%', 
-                        transform: 'translateX(-40%)',
-                        zIndex: 10 
-                    }} 
-                />
-                {/* Left side (empty for now) */}
-                <Box 
-                    width='40%' 
-                    height='100%' 
-                    sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        padding: 2 
-                    }}
-                >
-                    {/* Placeholder for future content */}
-                    <Typography variant="h6" sx={{ color: colors.grey[300] }}>
-                        Additional Filters/Information
-                    </Typography>
-                </Box>
+                <Box width='2px' height='100%' sx={{backgroundColor:colors.grey[300], position:'absolute', left:'40%', transform:'translateX(-40%)', zIndex:10}} />
+                
+                
+                {/* Left side */}
+                <Stack width='40%' height='100%' sx={{display:'flex', flexDirection:'column', padding:2}} >
+                    <Box sx={{ display: 'flex' }} >
+
+                        {/* Column 1 */}
+                        <Box sx={{ flex: 1, mr: 2 }} >
+                            <Box sx={{ mb: 2 }} >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Market Cap
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mb: 1, mt: -1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Revenue (ttm)
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Net Income (ttm)	
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Shares Out	
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        EPS (ttm)
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        PE Ratio
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Forward PE
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Dividend
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Ex-Dividend Date
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                        </Box>
+                        
+                        {/* Column 2 */}
+                        <Box sx={{ flex: 1 }}>
+                            <Box sx={{ mb: 2 }} >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Volume
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mb: 1, mt: -1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Open
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Previous Close	
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Day's Range
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        52-Week Range
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Beta
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Analysts
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Price Target
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                            <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="h5" color={colors.grey[300]} sx={{ textAlign: 'left' }}>
+                                        Earnings Date
+                                    </Typography>
+                                    <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
+                                        XX.XX
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ height: '1px', backgroundColor: colors.grey[300], opacity: 0.2, mt: 1, mb: 1 }} />
+                        </Box>
+                        
+                    </Box>
+                </Stack>
 
                 {/* Right side (buttons and graph) */}
-                <Box 
-                    width='60%' 
-                    height='100%' 
-                    sx={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                    }}
-                >
+                <Box width='60%' height='100%' sx={{display:'flex', flexDirection:'column'}} >
                     {/* Time range buttons */}
-                    <Box 
-                        sx={{ 
-                            width: '100%', 
-                            display: 'flex', 
-                            justifyContent: 'Left',
-                        }}
-                    >
-                        <ButtonGroup 
-                            variant='text' 
-                            sx={{ 
-                                ml: 2,
-                                '& .MuiButtonGroup-grouped': {
-                                    borderColor: colors.primary[400]
-                                }
-                            }}
-                        >
+                    <Box sx={{width:'100%', display:'flex', justifyContent:'left'}} >
+                        <ButtonGroup variant='text' sx={{ml:2, '& .MuiButtonGroup-grouped':{borderColor: colors.primary[400]}}} >
                             {Object.entries({
                                 '1D': '1 Day', 
                                 '5D': '5 Days',
@@ -342,28 +490,14 @@ const Stocks = () => {
                                 'YTD': 'YTD',
                                 '1Y': '1 Year'
                             }).map(([range, displayText]) => (
-                                <Button
-                                    key={range}
-                                    onClick={() => setTimeRange(range)}
-                                    sx={{
-                                        color: range === timeRange ? colors.greenAccent[500] : colors.grey[300],
-                                        fontSize: '15px',
-                                    }}
-                                >
+                                <Button key={range} onClick={() => setTimeRange(range)} sx={{color:range===timeRange?colors.greenAccent[500]:colors.grey[300], fontSize:'15px',}} >
                                     {displayText}
                                 </Button>
                             ))}
                         </ButtonGroup>
                     </Box>
                     {/* Stock chart */}
-                    <Box 
-                        sx={{ 
-                            flexGrow: 1, 
-                            height: '100%', 
-                            width: '112%',
-                            mb: -8,
-                            ml: -5 
-                        }}>
+                    <Box sx={{flexGrow:1, height:'100%', width:'112%',mb:-8,ml:-5}} >
                         <ScreenerLine data={filteredChartData} colors={colors} />
                     </Box>
                 </Box>
