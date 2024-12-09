@@ -5,13 +5,15 @@ ClipseTicker is a stock data aggregation application designed to fetch and manag
 ---
 ## Example Screenshots (WIP)
 
+
+
+**Example showing Stock Screener for individual Stock Data**
+![stockdetails](https://github.com/user-attachments/assets/c0bfdea8-7d07-4a0b-a1bd-3fba42ce1002)
+
 **Example showing Candlestick Graph for Individual Stock Aggregated Daily Average OHLC Data**
-![example](https://github.com/user-attachments/assets/c1d00360-1554-47c3-90bf-f3dfbe3f685a)
+![stockaggavg](https://github.com/user-attachments/assets/09887710-875a-4c7e-a07b-0ef01cf3698d)
 
-**Example showing per minute Data Scrapes for NYSE**
-![Screenshot 2024-11-14 094903](https://github.com/user-attachments/assets/3c2ddfcd-3370-48e5-b5c3-c32c552204f2)
-
-**Example Scrape Job running set up to pull 1 minute granularity data during NYSE open hours**
+**Example Scrape Job running set up to pull 5 minute granularity data during NYSE open hours**
 ![jobs](https://github.com/user-attachments/assets/c4634e17-c7fb-4b42-b36a-344708601972)
 
 
