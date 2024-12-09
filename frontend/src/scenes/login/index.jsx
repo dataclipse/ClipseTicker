@@ -90,6 +90,7 @@ function Login() {
                             onChange={(e) => setUsername(e.target.value)} 
                             fullWidth 
                             color={colors.redAccent[500]}
+                            autoComplete="username"
                         />
                         <TextField 
                             sx= {{ mb: '10px '}}
@@ -99,6 +100,7 @@ function Login() {
                             onChange={(e) => setPassword(e.target.value)} 
                             fullWidth 
                             color={colors.redAccent[500]}
+                            autoComplete="current-password"
                         />
                         {error && <Typography color="error">{error}</Typography>}
                 </CardContent>

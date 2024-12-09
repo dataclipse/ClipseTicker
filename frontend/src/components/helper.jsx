@@ -229,3 +229,17 @@ export const getFilteredDateByTimeFrame = (timeFrame, dataDate, now) => {
           return true;
   }
 };
+
+export const formatNumericMagnitude = (value) => {
+  if (value >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(2) + 'B';
+  } else {
+    return (value / 1_000_000).toFixed(2) + 'M';
+  }
+};
+
+// Calculate PE Ratio from price and EPS
+export const calculatePERatio = (price, eps) => {
+  if (!price || !eps || eps === 0) return null;
+  return (price / eps).toFixed(2);
+};

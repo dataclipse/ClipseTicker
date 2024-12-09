@@ -54,7 +54,8 @@ const ScreenerLine = ({ data, colors }) => {
             };
         });
 
-        console.log('Trading Sessions:', sessionsWithMetadata);
+        // Uncomment to view trading sessions data
+        // console.log('Trading Sessions:', sessionsWithMetadata);
         return sessionsWithMetadata;
     };
 
@@ -62,7 +63,9 @@ const ScreenerLine = ({ data, colors }) => {
         // Clear any existing SVG content
         // Add this at the start of useEffect
         const tradingSessions = createTradingSessionWindows(data);
-        console.log('Trading Session Data:', tradingSessions);
+        
+        // Uncomment to view trading sessions data
+        // console.log('Trading Session Data:', tradingSessions);
 
         d3.select(svgRef.current).selectAll("*").remove();
         

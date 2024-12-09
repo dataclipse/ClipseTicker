@@ -5,7 +5,7 @@ import { tokens } from '../../../theme';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Header from '../../../components/header';
 import { useParams, useNavigate } from 'react-router-dom';
-import { formatCurrency, formatPE } from '../../../components/helper';
+import { formatCurrency, formatPE, formatNumericMagnitude, calculatePERatio } from '../../../components/helper';
 import ScreenerLine from '../../../components/screener_line';
 import moment from 'moment';
 
@@ -19,7 +19,8 @@ const Stocks = () => {
         loading: true,
         error: null,
         details: [],
-        chartData: []
+        chartData: [],
+        tickerStats: null
     });
     const [timeRange, setTimeRange] = useState('1D');
 
@@ -228,13 +229,35 @@ const Stocks = () => {
                 }))
                 .filter((stock) => stock.time)
                 .sort((a, b) => b.time - a.time);
+            
+            // Log the entire data object for inspection
+            //console.log('Details:', data);
+            
+            const statsResponse = await fetch(`/api/scrape_ticker_stats/${ticker}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (statsResponse.status === 401) {
+                navigate('/login');
+                return;
+            }
+
+            const statsData = await statsResponse.json();
+
+            // Log the entire statsData object for inspection
+            //console.log('Ticker Stats Data:', statsData);
 
             setState(prev => ({
                 ...prev,
                 loading: false,
                 error: null,
                 details: data,
-                chartData: chart_data
+                chartData: chart_data,
+                tickerStats: statsData
             }));
         } catch (error) {
             setState(prev => ({
@@ -277,7 +300,7 @@ const Stocks = () => {
                                         Market Cap
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].market_cap_group : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -288,7 +311,7 @@ const Stocks = () => {
                                         Revenue (ttm)
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? formatNumericMagnitude(state.tickerStats[0].revenue) : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -299,7 +322,7 @@ const Stocks = () => {
                                         Net Income (ttm)	
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? formatNumericMagnitude(state.tickerStats[0].net_income) : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -310,7 +333,7 @@ const Stocks = () => {
                                         Shares Out	
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? formatNumericMagnitude(state.tickerStats[0].shares_out) : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -321,7 +344,7 @@ const Stocks = () => {
                                         EPS (ttm)
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].earnings_per_share : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -332,7 +355,8 @@ const Stocks = () => {
                                         PE Ratio
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] && state.details && state.details.length > 0
+                                            ? calculatePERatio( [...state.details].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].price.toLocaleString(), state.tickerStats[0].earnings_per_share ) || 'N/A' : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -343,7 +367,8 @@ const Stocks = () => {
                                         Forward PE
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].pe_forward !== null 
+                                            ? Number(state.tickerStats[0].pe_forward).toFixed(2) : 'N/A' : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -354,7 +379,11 @@ const Stocks = () => {
                                         Dividend
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] && 
+                                        state.tickerStats[0].dividend_per_share !== null && 
+                                        state.tickerStats[0].dividend_yield !== null 
+                                            ? `$${Number(state.tickerStats[0].dividend_per_share).toFixed(2)} (${(state.tickerStats[0].dividend_yield).toFixed(2)}%)` 
+                                            : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -365,7 +394,7 @@ const Stocks = () => {
                                         Ex-Dividend Date
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].ex_div_date : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -380,7 +409,9 @@ const Stocks = () => {
                                         Volume
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.details && state.details[0] && state.details[0].volume 
+                                            ? [...state.details].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].volume.toLocaleString() 
+                                            : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -391,7 +422,7 @@ const Stocks = () => {
                                         Open
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].open_price : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -402,7 +433,7 @@ const Stocks = () => {
                                         Previous Close	
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].previous_close : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -413,7 +444,26 @@ const Stocks = () => {
                                         Day's Range
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                    {state.details && state.details.length > 0 
+                                        ? (() => {
+                                            // Sort details by timestamp in descending order
+                                            const sortedDetails = [...state.details].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                                            
+                                            // Get the most recent day
+                                            const mostRecentDay = sortedDetails[0].timestamp;
+                                            
+                                            // Filter details for the most recent day
+                                            const mostRecentDayDetails = sortedDetails.filter(detail => 
+                                                new Date(detail.timestamp).toDateString() === new Date(mostRecentDay).toDateString()
+                                            );
+                                            
+                                            // Calculate min and max prices for the most recent day
+                                            const lowPrice = Math.min(...mostRecentDayDetails.map(detail => detail.price));
+                                            const highPrice = Math.max(...mostRecentDayDetails.map(detail => detail.price));
+                                            
+                                            return `${lowPrice.toFixed(2)} - ${highPrice.toFixed(2)}`;
+                                        })()
+                                        : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -424,7 +474,26 @@ const Stocks = () => {
                                         52-Week Range
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] && 
+                                        state.tickerStats[0]['52w_high'] !== null && 
+                                        state.tickerStats[0]['52w_low'] !== null &&
+                                        state.details && state.details.length > 0
+                                            ? (() => {
+                                                // Calculate day's high and low prices
+                                                const dayHighPrice = Math.max(...state.details.map(detail => detail.price));
+                                                const dayLowPrice = Math.min(...state.details.map(detail => detail.price));
+                                                
+                                                // Compare with 52-week high and low
+                                                const weekHighPrice = state.tickerStats[0]['52w_high'];
+                                                const weekLowPrice = state.tickerStats[0]['52w_low'];
+                                                
+                                                // Use extreme values
+                                                const effectiveHighPrice = Math.max(dayHighPrice, weekHighPrice);
+                                                const effectiveLowPrice = Math.min(dayLowPrice, weekLowPrice);
+                                                
+                                                return `${effectiveLowPrice.toFixed(2)} - ${effectiveHighPrice.toFixed(2)}`;
+                                            })()
+                                            : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -435,7 +504,7 @@ const Stocks = () => {
                                         Beta
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].beta_1y.toFixed(2) : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -446,7 +515,7 @@ const Stocks = () => {
                                         Analysts
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].analyst_rating : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -457,7 +526,22 @@ const Stocks = () => {
                                         Price Target
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] && state.details && state.details.length > 0 
+                                            ? (() => {
+                                                // Sort details by timestamp in descending order and get the most recent price
+                                                const mostRecentPrice = [...state.details]
+                                                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0].price;
+                                                
+                                                // Get price target from tickerStats
+                                                const priceTarget = state.tickerStats[0].price_target;
+                                                
+                                                // Calculate percentage difference
+                                                const priceTargetDiffPercentage = 
+                                                    ((priceTarget - mostRecentPrice) / mostRecentPrice) * 100;
+                                                
+                                                return `${priceTarget.toFixed(2)} (${priceTargetDiffPercentage.toFixed(2)}%)`;
+                                            })()
+                                            : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -468,7 +552,7 @@ const Stocks = () => {
                                         Earnings Date
                                     </Typography>
                                     <Typography variant="h5" color={colors.greenAccent[500]} sx={{ textAlign: 'right' }}>
-                                        XX.XX
+                                        {state.tickerStats && state.tickerStats[0] ? state.tickerStats[0].earnings_date : 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
