@@ -1,40 +1,54 @@
 // src/scenes/dashboard/index.jsx
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import StorageIcon from "@mui/icons-material/Storage";
-import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import TrafficIcon from "@mui/icons-material/Traffic";
 import Header from "../../components/header";
-import StatBox from "../../components/stat_box";
-import ProgressCircle from "../../components/progress_circle";
 import { useAuth } from "../../context/auth_context";
+import axios from 'axios';
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const { user } = useAuth();
+  const [rssItems, setRssItems] = useState([]);
+  const [error, setError] = useState(null); 
+
+  useEffect(() => {
+    const fetchRssFeed = async () => {
+      try {
+        // Get the authentication token from local storage
+        const token = localStorage.getItem('auth_token');
+
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        // Fetch RSS feed from backend
+        const response = await axios.get('/api/rss/marketwatch', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        setRssItems(response.data);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching MarketWatch RSS feed:', error);
+        setError('Could not fetch news feed');
+      }
+    };
+
+    fetchRssFeed();
+    const intervalId = setInterval(fetchRssFeed, 60000); // Fetch every minute
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   return (
     <Box m="20px">
       {/* Header section with a title, welcome message, and a download button */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header title="DASHBOARD" subtitle={`Welcome to your dashboard, ${user?.username}`} />
-        <Box>
-          <Button
-            sx={{
-              backgroundColor: colors.blueAccent[700],
-              color: colors.grey[100],
-              fontSize: "14px",
-              fontWeight: "bold",
-              padding: "10px 20px",
-            }}
-          >
-            <DownloadOutlinedIcon sx={{ mr: "10px" }} />
-            Download Reports
-          </Button>
-        </Box>
+        <Header title="Dashboard" subtitle={`Welcome ${user?.username}`} />
       </Box>
 
       {/* Main grid section containing statistic boxes and placeholders for charts */}
@@ -44,88 +58,27 @@ const Dashboard = () => {
         gridAutoRows="140px"
         gap="20px"
       >
-        {/* Row 1 - Stat boxes with placeholders */}
+        {/* Row 1 */}
         <Box
-          gridColumn="span 3"
+          gridColumn="span 12"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
-          justifyContent="center"
+          justifyContent="space-between"
+          p="10px"
         >
-          <StatBox
-            title=""
-            subtitle=""
-            progress=""
-            increase=""
-            icon={
-              <StorageIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
+          <Typography
+            variant="h5"
+            fontWeight="600"
+            color={colors.grey[100]}
+          >
+            Biggest Gainers of the Day
+          </Typography>
         </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title=""
-            subtitle=""
-            progress=""
-            increase=""
-            icon={
-              <PointOfSaleIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title=""
-            subtitle=""
-            progress=""
-            increase=""
-            icon={
-              <PersonAddIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-        <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title=""
-            subtitle=""
-            progress=""
-            increase=""
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box>
-
-        {/* Row 2 - Placeholder for a line chart and recent transactions */}
+        {/* Row 2 */}
         <Box
           gridColumn="span 8"
-          gridRow="span 2"
+          gridRow={`span ${rssItems.length > 0 ? Math.ceil(rssItems.length / 3) + 2 : 2}`}
           backgroundColor={colors.primary[400]}
         >
           <Box
@@ -135,32 +88,46 @@ const Dashboard = () => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Box>
+            <Box width="100%">
               <Typography
                 variant="h5"
                 fontWeight="600"
                 color={colors.grey[100]}
+                mb="15px"
               >
-                Placeholder
+                MarketWatch News
               </Typography>
-              <Typography
-                variant="h3"
-                fontWeight="bold"
-                color={colors.greenAccent[500]}
-              >
-                Placeholder
-              </Typography>
+              {error ? (
+                <Typography color={colors.redAccent[500]}>
+                  {error}
+                </Typography>
+              ) : (
+                rssItems.map((item, index) => (
+                  <Box
+                    key={index}
+                    mb="9px"
+                    mt="9px"
+                    pb="18px"
+                    borderBottom={`1px solid ${colors.grey[100]}`}
+                  >
+                    <Typography
+                      variant="h6"
+                      color={colors.greenAccent[400]}
+                      onClick={() => window.open(item.link, '_blank')}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
+                      {item.title}
+                    </Typography>
+                    <Typography variant="body2" color={colors.grey[100]}>
+                      {item.pubDate}
+                    </Typography>
+                  </Box>
+                ))
+              )}
             </Box>
-            <Box>
-              <IconButton>
-                <DownloadOutlinedIcon
-                  sx={{ fontSize: "26px", color: colors.greenAccent[500] }}
-                />
-              </IconButton>
-            </Box>
-          </Box>
-          <Box height="250px" m="-20px 0 0 0">
-            {/* Placeholder for a Line Chart */}
           </Box>
         </Box>
         <Box
@@ -169,108 +136,9 @@ const Dashboard = () => {
           backgroundColor={colors.primary[400]}
           overflow="auto"
         >
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            borderBottom={`4px solid ${colors.primary[500]}`}
-            colors={colors.grey[100]}
-            p="15px"
-          >
-            <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-              Placeholder
-            </Typography>
-          </Box>
-          {/* Placeholder for transactions or data entries */}
-          <Box
-            key={"placeholder"}
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            borderBottom={`4px solid ${colors.primary[500]}`}
-            p="15px"
-          >
-            <Box>
-              <Typography
-                color={colors.greenAccent[500]}
-                variant="h5"
-                fontWeight="600"
-              >
-                {/* Placeholder text for user name */}
-              </Typography>
-              <Typography color={colors.grey[100]}>
-                {/* Placeholder text for user name */}
-              </Typography>
-            </Box>
-            <Box color={colors.grey[100]}>12/25/2023</Box>
-            <Box
-              backgroundColor={colors.greenAccent[500]}
-              p="5px 10px"
-              borderRadius="4px"
-            >
-              placeholder
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Row 3 - Additional stat boxes and placeholders for bar charts */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="30px"
-        >
-          <Typography variant="h5" fontWeight="600">
-            Placeholder
+          <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
+            Database Stats
           </Typography>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            mt="25px"
-          >
-            <ProgressCircle size="125" />
-            <Typography
-              variant="h5"
-              color={colors.greenAccent[500]}
-              sx={{ mt: "15px" }}
-            >
-              Placeholder
-            </Typography>
-            <Typography>Placeholder</Typography>
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ padding: "30px 30px 0 30px" }}
-          >
-            Placeholder
-          </Typography>
-          <Box height="250px" mt="-20px">
-            {/* Placeholder for Bar Chart */}
-          </Box>
-        </Box>
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-        >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            sx={{ padding: "30px 30px 0 30px" }}
-          >
-            Placeholder
-          </Typography>
-          <Box height="250px" mt="-20px">
-            {/* Placeholder for another Bar Chart */}
-          </Box>
         </Box>
       </Box>
     </Box>

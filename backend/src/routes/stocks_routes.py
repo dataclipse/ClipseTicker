@@ -3,7 +3,10 @@ from flask import Blueprint, request, jsonify, current_app
 from ..db_manager import DBManager
 import jwt
 from  functools import wraps
-import logging 
+import logging
+import requests
+import xml.etree.ElementTree as ET
+from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Initialize Blueprint
@@ -145,3 +148,50 @@ def get_stock_scrape_ticker_stats(ticker_symbol):
         
         # Return a JSON error response with a 500 status code if an exception occurs
         return jsonify({"error": f"Unable to retrieve stock scrape data"}), 500
+    
+@stocks_bp.route('/api/rss/marketwatch', methods=["GET"])
+@token_required
+def get_marketwatch_rss():
+    try:
+        # Fetch RSS feed from MarketWatch
+        rss_url = 'https://feeds.content.dowjones.io/public/rss/mw_marketpulse'
+        response = requests.get(rss_url)
+        response.raise_for_status()
+        
+        # Parse the RSS XML
+        root = ET.fromstring(response.content)
+        
+        # Find all items in the RSS feed
+        items = root.findall('.//item')
+        
+        # Process and limit to 15 items
+        news_items = []
+        for item in items[:15]:
+            title = item.find('title').text if item.find('title') is not None else ''
+            link = item.find('link').text if item.find('link') is not None else ''
+            pub_date = item.find('pubDate').text if item.find('pubDate') is not None else ''
+            
+            # Parse date and format it
+            try:
+                parsed_date = datetime.strptime(pub_date, '%a, %d %b %Y %H:%M:%S %z')
+                formatted_date = parsed_date.strftime('%Y-%m-%d')
+            except (ValueError, TypeError):
+                formatted_date = pub_date
+                
+            news_items.append({
+                'title': title,
+                'link': link,
+                'pubDate': formatted_date
+            })
+            
+        return jsonify(news_items), 200
+    
+    except requests.RequestException as e:
+        logger.error(f'Error fetching MarketWatch RSS: {e}')
+        return jsonify({'error': 'Failed to fetch news feed'}), 500
+    except ET.ParseError as e:
+        logger.error(f'Error parsing RSS feed: {e}')
+        return jsonify({'error': 'Failed to parse RSS feed'}), 500
+    except Exception as e:
+        logger.error(f'Unexpected Error: {e}')
+        return jsonify({'error': 'An unexpected error occurred'}), 500
