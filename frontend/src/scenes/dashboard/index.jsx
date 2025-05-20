@@ -16,7 +16,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchRssFeed = async () => {
       try {
-        // Get the authentication token from local storage
+        // Get the authentication token from local storagec
         const token = localStorage.getItem('auth_token');
 
         if (!token) {
@@ -39,7 +39,7 @@ const Dashboard = () => {
     };
 
     fetchRssFeed();
-    const intervalId = setInterval(fetchRssFeed, 60000); // Fetch every minute
+    const intervalId = setInterval(fetchRssFeed, 60000 * 5); // Fetch every 5 minutes
 
     return () => clearInterval(intervalId);
   }, []);
@@ -62,31 +62,31 @@ const Dashboard = () => {
         <Box
           gridColumn="span 12"
           backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          p="10px"
+          borderRadius="10px" 
         >
-          <Typography
-            variant="h5"
-            fontWeight="600"
-            color={colors.grey[100]}
+          <Box
+            mt="25px"
+            p="0 30px"
           >
-            Biggest Gainers of the Day
-          </Typography>
+            <Typography
+              variant="h5"
+              fontWeight="600"
+              color={colors.grey[100]}
+            >
+              Biggest Gainers of the Day
+            </Typography>
+          </Box>
         </Box>
         {/* Row 2 */}
         <Box
           gridColumn="span 8"
           gridRow={`span ${rssItems.length > 0 ? Math.ceil(rssItems.length / 3) + 2 : 2}`}
           backgroundColor={colors.primary[400]}
+          borderRadius="10px" 
         >
           <Box
             mt="25px"
             p="0 30px"
-            display="flex "
-            justifyContent="space-between"
-            alignItems="center"
           >
             <Box width="100%">
               <Typography
@@ -134,11 +134,16 @@ const Dashboard = () => {
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
-          overflow="auto"
+          borderRadius="10px" 
         >
-          <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-            Database Stats
-          </Typography>
+          <Box
+            mt="25px"
+            p="0 30px"
+          >
+            <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
+              Database Stats
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -117,7 +117,7 @@ const Sidebar = () => {
             variant="h6"
             fontWeight={"bold"}
             color={colors.grey[300]}
-            sx={{ m: "15px 0 5px 20px" }}
+            sx={{ m: "15px 0 5px 15px" }}
           >
             Markets
           </Typography>
@@ -166,7 +166,7 @@ const Sidebar = () => {
             variant="h6"
             color={colors.grey[300]}
             fontWeight={"bold"}
-            sx={{ m: "15px 0 5px 20px" }}
+            sx={{ m: "15px 0 5px 15px" }}
           >
             Data
           </Typography>
@@ -198,7 +198,7 @@ const Sidebar = () => {
                 variant="h6"
                 color={colors.grey[300]}
                 fontWeight={"bold"}
-                sx={{ m: "15px 0 5px 20px" }}
+                sx={{ m: "15px 0 5px 15px" }}
               >
                 Settings
               </Typography>
